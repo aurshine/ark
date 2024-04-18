@@ -2,13 +2,14 @@ import os
 import random
 import time
 from typing import Union, List
+from urllib.parse import urljoin
 import requests
 from requests.adapters import HTTPAdapter
 from bs4 import BeautifulSoup
 from ark.setting import *
-from .wash import wash_comments
-from .classify import add_url, is_exist
-from .comment import Comment
+from ark.spider.wash import wash_comments
+from ark.spider.classify import add_url, is_exist
+from ark.spider.comment import Comment
 
 __session = requests.Session()
 retries = HTTPAdapter(max_retries=3)
@@ -122,7 +123,7 @@ def join_with_tie_ba(path):
 
     https://tieba.baidu.com + path
     """
-    return os.path.join('https://tieba.baidu.com', path)
+    return urljoin('https://tieba.baidu.com', path)
 
 
 def get_ba_response(tbs):

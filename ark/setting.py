@@ -62,12 +62,3 @@ PROXIES = {
 
 # tuple对象, 每次请求后的时延区间
 DELAY_SECONDS = (1, 3)
-
-DEBUG = False
-
-
-def debug(mode: bool):
-    """设置debug模式 True为开启debug
-    """
-    global DEBUG
-    DEBUG = mode

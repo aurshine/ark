@@ -1,3 +1,4 @@
+```python
 from ark.analyse import analyse, ByType
 
 comments = ['你就是歌姬吧，你记住你什么都不是',
@@ -6,3 +7,4 @@ comments = ['你就是歌姬吧，你记住你什么都不是',
             'python是世界上最好的语言',
             'python是世界上最烂的语言']
 print(analyse(comments, by=ByType.BY_TEXT))
+```

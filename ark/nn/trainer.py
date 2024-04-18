@@ -6,7 +6,7 @@ import torch
 from torch import nn
 from torch.nn import init
 from ark.device import use_device
-from ark.nn.accuracy import Accuracy, AccuracyCell, Plot, clac_accuracy
+from ark.nn.accuracy import Accuracy, AccuracyCell
 
 
 class Trainer(nn.Module):

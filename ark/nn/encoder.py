@@ -2,8 +2,7 @@ import math
 import torch
 from torch import nn
 from ark.device import use_device
-from ark.nn.multi_layers import PositionWiseFFN, TransformerLayer
-from ark.nn.addnorm import AddNorm
+from ark.nn.multi_layers import TransformerLayer
 
 
 class Encoder(nn.Module):

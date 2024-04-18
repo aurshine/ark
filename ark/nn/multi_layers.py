@@ -168,6 +168,11 @@ class PositionWiseFFN(nn.Module):
 
 
 class TransformerLayer(nn.Module):
+    """
+    Transformer 块
+
+    由 MutiheadAttention -> Addnorm -> PositionWiseFFN -> Addnorm 组成
+    """
     def __init__(self, hidden_size, num_heads, dropout=0, device=None):
         super(TransformerLayer, self).__init__()
         self.device = use_device(device)

@@ -1,5 +1,5 @@
 from .classify import getLines, writeLines
-from .comment import Comment, set_comment_lock, permutes
+from .comment import Comment, permutes
 
 repEmoji = [('🤡', '小丑'),
             ('🐶', '舔狗'),
@@ -84,7 +84,6 @@ def wash_comments(comments):
     if isinstance(comments, Comment):
         comments = permutes(comments.tolist())
 
-    set_comment_lock(1)
     washed = Comment()
 
     def work(cmt: str, processes: list):

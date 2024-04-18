@@ -1,7 +1,7 @@
 from time import time
 import tkinter as tk
 from ark.spider.classify import getLines
-from ark.spider.comment import Comment, set_comment_lock
+from ark.spider.comment import Comment
 from ark.setting import *
 from ark.data.load import update_tie_ba
 
@@ -124,7 +124,6 @@ for div in divs:
 
 def tkDrive():
     start = time()
-    set_comment_lock(1)
     try:
         windows.mainloop()
     finally:
@@ -149,4 +148,3 @@ def tkDrive():
               f'未分类语义有 {len(un_class)}条\n')
 
         update_tie_ba()
-        set_comment_lock(0)

@@ -1,3 +1,4 @@
+import os
 import random
 import time
 from typing import Union, List
@@ -121,16 +122,15 @@ def join_with_tie_ba(path):
 
     https://tieba.baidu.com + path
     """
-    tie_ba = 'https://tieba.baidu.com'
-    if path[0] not in ['/', '\\']:
-        path = '/' + path
-    return tie_ba + path
+    return os.path.join('https://tieba.baidu.com', path)
 
 
 def get_ba_response(tbs):
-    r"""得到某些吧的响应
+    """
+    得到某些吧的响应
 
     :param tbs: 想要请求的吧名, 可以是一个str 或 iter[str] 类型
+
     :return: 返回所有响应的迭代器
 
     for res in get_ba_response(['孙笑川', '原神'])
@@ -145,7 +145,8 @@ def get_ba_response(tbs):
 
 
 def get_total_comment_param(html, pn=1):
-    """ 获取贴吧 totalComment请求需要的负载
+    """
+    获取贴吧 totalComment请求需要的负载
     """
     ret = {
         'pn': pn,
@@ -165,7 +166,8 @@ def get_total_comment_param(html, pn=1):
 
 
 def get_total_comment(html, pn=1, referer=None):
-    """获取一个页面帖子下的回复评论
+    """
+    获取一个页面帖子下的回复评论
     """
 
     response = session(mode='get', url=f'{join_with_tie_ba("p/totalComment")}',
@@ -193,8 +195,11 @@ def get_comment(html=Union[None, str], soup=Union[None, BeautifulSoup], pn=1, re
     """获取一个页面的评论
 
     :param html: None 或 字符串, 在soup为None的时候使用
+
     :param soup: None 或 BeautifulSoup, 不为 None的时候优先使用
+
     :param pn: page_num 某个帖子的页面页数, 下标从1开始
+
     :return: list[str]
     """
     if soup is None:
@@ -214,8 +219,11 @@ def page_spider(url, num_page, comments=None, referer=None):
     """爬取某个帖子的前num_page页
 
     :param url: 帖子的url
+
     :param num_page: 需要爬取的页数
+
     :param comments: 爬取结果存储的地方, list
+
     :return: comments
     """
     if comments is None:

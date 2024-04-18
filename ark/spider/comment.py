@@ -1,21 +1,17 @@
 import os.path
 
 from ark.setting import UN_CLASSIFY_PATH
-from .classify import writeLines, getLines, sortUnique
-
-
-comment_index = 0
-COMMENT_LOCK = 0
+from ark.spider.classify import writeLines, getLines, sortUnique
 
 
 class PermuteString:
     """
     记录一个base_string 以及其替换组
     """
-
     def __init__(self, base_string=None, replaces=None):
         if base_string is None:
             base_string = ''
+
         if replaces is None:
             replaces = []
 
@@ -39,11 +35,14 @@ class PermuteString:
         return s
 
     def append(self, _old, _new):
-        """添加一个替换组"""
+        """
+        添加一个替换组
+        """
         self.replaces.append((_old, _new))
 
     def transform(self):
-        """返回所有组合情况
+        """
+        返回所有组合情况
         """
         n = len(self.replaces)
 
@@ -51,35 +50,21 @@ class PermuteString:
         return [self.__getitem__(i) for i in range(0, 1 << n)]
 
 
-def set_comment_lock(set_v):
-    """ comment锁, 0表示在添加comment信息计数
-    :param set_v:
-    :return:
-    """
-    global COMMENT_LOCK
-    COMMENT_LOCK = set_v
-
-
 class Comment:
-    """用于存储PermuteString的容器
+    """
+    用于存储PermuteString的容器
     """
     def __init__(self, permute_string_list=None):
         if permute_string_list is None:
             permute_string_list = []
 
+        # list[str] -> list[PermuteString]
         if len(permute_string_list) > 0 and isinstance(permute_string_list[0], str):
             permute_string_list = [PermuteString(permute_string) for permute_string in permute_string_list]
 
         self.comments = permute_string_list
 
-    def append(self, comment, t=None):
-        t = COMMENT_LOCK if t is None else t
-
-        if t == 0:
-            global comment_index
-            comment_index += 1
-            print('comment ', comment_index)
-
+    def append(self, comment):
         if isinstance(comment, PermuteString):
             self.comments.append(comment)
         elif isinstance(comment, str):

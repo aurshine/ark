@@ -1,5 +1,7 @@
 import os
+
 from ark.data import load
+from ark.data.dataloader import get_tensor_loader
 from ark.setting import VOCAB_PATH, MODEL_LIB
 from ark.nn.text_process import Vocab, fusion_piny_letter
 from ark.nn.module import AttentionArk
@@ -90,6 +92,39 @@ def train():
         path = os.path.join(MODEL_LIB,
                             f'ark-{sub_acc.max().score: .2f}-{HIDDEN_SIZE}-{NUM_HEADS}-{EN_LAYER}-{DE_LAYER}.net')
         sub_ark.save_state_dict(path)
+
+
+def train_only():
+    # 读入数据
+    train_texts, train_labels, test_texts, test_labels = load.load_train_test_tieba(-1, drop_test=True)
+
+    # 构建词典
+    vocab = Vocab(VOCAB_PATH)
+
+    # 文本处理层
+    text_layer = fusion_piny_letter
+
+    # 数据预处理
+    train_x, valid_len = text_layer(train_texts, vocabs=vocab, steps=STEPS, front_pad=True)
+
+    # 构建模型
+    ark = AttentionArk(vocab,
+                       hidden_size=HIDDEN_SIZE,
+                       in_channel=3,
+                       num_steps=STEPS,
+                       num_heads=NUM_HEADS,
+                       en_num_layer=EN_LAYER,
+                       de_num_layer=DE_LAYER,
+                       dropout=DROPOUT,
+                       num_class=2)
+    train_loader = get_tensor_loader(train_x, train_labels, valid_len, batch_size=BATCH_SIZE)
+    _, train_acc, _ = ark.fit(train_loader,
+                              epochs=TRAIN_EPOCHS,
+                              stop_min_epoch=STOP_MIN_EPOCH,
+                              stop_loss_value=STOP_LOSS_VALUE,
+                              optim_params=OPTIMIZER_PARAMS)
+
+    ark.save_state_dict(os.path.join(MODEL_LIB, f'ark-{train_acc.max().score: .2f}-{HIDDEN_SIZE}-{NUM_HEADS}-{EN_LAYER}-{DE_LAYER}.net'), )
 
 
 if __name__ == '__main__':

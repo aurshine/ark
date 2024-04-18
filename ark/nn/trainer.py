@@ -47,7 +47,7 @@ class Trainer(nn.Module):
 
         :param valid_datas: 验证集
 
-        :return:
+        :return: 每轮训练的loss构成的列表, 每轮训练训练集的准确率, 每轮训练验证集的准确率
         """
         self.train()
         print(f'fit on {self.device}')

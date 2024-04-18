@@ -21,6 +21,9 @@ def analyse(model: Trainer, inputs, classes: List[str]):
 
 
 class AttentionArk(Trainer):
+    """
+    ark 注意力模型
+    """
     def __init__(self, vocab, hidden_size, in_channel, num_steps, num_heads, en_num_layer, de_num_layer, dropout, num_class, device=None):
         super(AttentionArk, self).__init__(num_class, device)
 

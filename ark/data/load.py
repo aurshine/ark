@@ -11,12 +11,12 @@ from ark.spider.classify import getLines, writeLines, clear
 CURRENT_FOLDER = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
 
 
-def load_cold(file_name='train', max_length=-1, replace=False) -> Tuple[List[str], List[int]]:
+def load_cold(file_name='train', num_texts=-1, replace=False) -> Tuple[List[str], List[int]]:
     """ 在COLD文件夹读取数据集
 
     :param file_name: 可选择 'train' 'test' 'dev' 'tie-ba' 'tie-ba-pos' 'tie-ba-neg'
 
-    :param max_length: 选择数据集的数量
+    :param num_texts: 选择数据集的数量
 
     :param replace: 是否有放回的取样
 
@@ -24,25 +24,26 @@ def load_cold(file_name='train', max_length=-1, replace=False) -> Tuple[List[str
     """
     cold = pd.read_csv(os.path.join(CURRENT_FOLDER, f'COLD/{file_name}.csv'))
 
-    if max_length < 0:
-        max_length = cold.shape[0]
-    cold = cold.iloc[np.random.choice(cold.shape[0], max_length, replace=replace)]
+    if num_texts < 0:
+        num_texts = cold.shape[0]
+    cold = cold.iloc[np.random.choice(cold.shape[0], num_texts, replace=replace)]
 
     texts, labels = cold['TEXT'], cold['label']
     return texts.tolist(), labels.tolist()
 
 
-def load_train_test_data(max_length: Union[int, list] = -1,
-                         replace=False,
-                         test_size=None,
-                         train_size=None,
-                         random_state=None,
-                         shuffle=True,
-                         drop_test=False
-                         ) -> Tuple[List[str], torch.LongTensor, Optional[List[str]], Optional[torch.LongTensor]]:
-    """加载训练集和测试集
+def load_train_test_tieba(num_texts: Union[int, list] = -1,
+                          replace=False,
+                          test_size=None,
+                          train_size=None,
+                          random_state=None,
+                          shuffle=True,
+                          drop_test=False
+                          ) -> Tuple[List[str], torch.LongTensor, Optional[List[str]], Optional[torch.LongTensor]]:
+    """
+    从 ark/data/COLD/tie-ba-pos.csv 和 ark/data/COLD/tie-ba-neg.csv 加载 训练集 和 测试集
 
-    :param max_length: 选择正样本和负样本的最大数量, 为 list 时应为 [正样本数, 负样本数]
+    :param num_texts: 选择正样本和负样本的数量, 为 list 时应为 [正样本数, 负样本数]
 
     :param replace: 是否有放回的取样
 
@@ -52,16 +53,16 @@ def load_train_test_data(max_length: Union[int, list] = -1,
 
     :param random_state: 随机种子
 
-    :param shuffle: 是否打乱
+    :param shuffle: 是否打乱，默认 True
 
-    :param drop_test: 是否抛弃测试集, 选择此参数时, 所有数据集将都作为训练集
+    :param drop_test: 是否抛弃测试集, 选择此参数时, 所有数据集将都作为训练集, 此时测试集返回 None
 
     :return: train_texts, train_labels, test_texts, test_labels
     """
-    if isinstance(max_length, (list, tuple)):
-        pos_length, neg_length = max_length
+    if isinstance(num_texts, (list, tuple)):
+        pos_length, neg_length = num_texts
     else:
-        pos_length, neg_length = max_length, max_length
+        pos_length, neg_length = num_texts, num_texts
 
     pos_texts, pos_labels = load_cold('tie-ba-pos', pos_length, replace)
     neg_texts, neg_labels = load_cold('tie-ba-neg', neg_length, replace)
@@ -72,7 +73,8 @@ def load_train_test_data(max_length: Union[int, list] = -1,
         np.random.shuffle(indices)
         return [train_texts[i] for i in indices], torch.LongTensor([train_labels[i] for i in indices]), None, None
 
-    train_texts, test_texts, train_labels, test_labels = train_test_split(pos_texts + neg_texts, pos_labels + neg_labels,
+    train_texts, test_texts, train_labels, test_labels = train_test_split(pos_texts + neg_texts,
+                                                                          pos_labels + neg_labels,
                                                                           test_size=test_size,
                                                                           train_size=train_size,
                                                                           random_state=random_state,
@@ -82,15 +84,27 @@ def load_train_test_data(max_length: Union[int, list] = -1,
 
 
 def load_train_test_cold():
+    """
+    从 ark/data/COLD/train.csv 和 ark/data/COLD/test.csv 加载 训练集 和 测试集
+    """
     train_texts, train_labels = load_cold('train')
     test_texts, test_labels = load_cold('test')
 
     return train_texts, torch.LongTensor(train_labels), test_texts, torch.LongTensor(test_labels)
 
 
-def copy_csv(_from: str, _to: str, encoding='utf-8-sig'):
-    csv = pd.read_csv(_from, encoding=encoding)
-    csv.to_csv(_to, index=False, encoding=encoding)
+def copy_csv(from_path: str, to_path: str, encoding='utf-8-sig'):
+    """
+    复制csv文件
+
+    :param from_path: 源文件路径
+
+    :param to_path: 目标文件路径
+
+    :param encoding: 编码方式
+    """
+    csv = pd.read_csv(from_path, encoding=encoding)
+    csv.to_csv(to_path, index=False, encoding=encoding)
 
 
 def update_tie_ba(encoding='utf-8-sig'):
@@ -137,6 +151,7 @@ def update_tie_ba_split(encoding='utf-8-sig'):
 
 
 def update_vocab():
+    """更新词表"""
     df = pd.read_csv(TIE_BA_CSV_PATH)
     vocab = set(getLines(VOCAB_PATH))
 

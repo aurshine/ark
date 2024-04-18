@@ -6,6 +6,7 @@ from ark.nn.module import AttentionArk
 from ark.nn.valid import k_fold_valid
 from ark.nn.accuracy import save_fig
 
+#################################################################################
 # 模型参数
 HIDDEN_SIZE = 64  # 隐藏层大小
 
@@ -19,7 +20,7 @@ STEPS = 128  # 每个文本的步长
 
 DROPOUT = 0.5  # 随机失活率
 
-
+#################################################################################
 # 训练参数
 K_FOLD = 5  # 交叉验证折数
 
@@ -34,6 +35,7 @@ STOP_MIN_EPOCH = 10  # 最小停止轮数
 STOP_LOSS_VALUE = 0.1  # 最小停止损失值
 
 OPTIMIZER_PARAMS = {'lr': 1e-3, 'weight_decay': 1e-3}  # 优化器参数
+#################################################################################
 
 
 def train():
@@ -41,11 +43,12 @@ def train():
     训练模型
     """
     # 读入数据
-    train_texts, train_labels, test_texts, test_labels = load.load_train_test_data(-1, drop_test=True)
+    train_texts, train_labels, test_texts, test_labels = load.load_train_test_tieba(-1, drop_test=True)
 
     # 构建词典
     vocab = Vocab(VOCAB_PATH)
 
+    # 文本处理层
     text_layer = fusion_piny_letter
 
     # 数据预处理

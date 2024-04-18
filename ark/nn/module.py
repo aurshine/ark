@@ -7,20 +7,19 @@ from ark.nn.attention import AdditiveAttention
 from ark.nn.encoder import LstmEncoder, PositionEncoder, ArkEncoder
 from ark.nn.decoder import LstmDecoder, ArkDecoder
 from ark.nn.encoder_decoder import EncoderDecoder
-from ark.nn.multi_layers import PositionWiseFFN
 from ark.nn.addnorm import AddNorm
 
 
 def analyse(model: Trainer, inputs, classes: List[str]):
     """
 
-    :param model:
+    :param model: 用于分析的模型
 
-    :param inputs:
+    :param inputs: 输入
 
-    :param classes:
+    :param classes: 类别
 
-    :return:
+    :return: 每个输入的预测结果
     """
     return [classes[index] for index in model.predict(inputs)]
 

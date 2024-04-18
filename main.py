@@ -8,8 +8,7 @@ from ark.nn.valid import k_fold_valid
 from ark.nn.accuracy import save_fig
 
 
-@complete
-def main():
+def train():
     train_texts, train_labels, test_texts, test_labels = load.load_train_test_data(-1, drop_test=True)
 
     vocab = Vocab(VOCAB_PATH)
@@ -45,5 +44,4 @@ def main():
                             f'ark-{sub_acc.max().score: .2f}-{hidden_size}-{num_heads}-{en_layer}-{de_layer}.net')
         sub_ark.save_state_dict(path)
 
-
-main()
+train()

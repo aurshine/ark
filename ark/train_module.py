@@ -1,5 +1,7 @@
 import os
 
+import torch
+
 from ark.data import load
 from ark.data.dataloader import get_tensor_loader
 from ark.setting import VOCAB_PATH, MODEL_LIB
@@ -32,9 +34,9 @@ BATCH_SIZE = 128  # 批量大小
 
 TRAIN_EPOCHS = 200  # 最大训练轮数
 
-STOP_MIN_EPOCH = 10  # 最小停止轮数
+STOP_MIN_EPOCH = 0  # 最小停止轮数
 
-STOP_LOSS_VALUE = 0.1  # 最小停止损失值
+STOP_LOSS_VALUE = 1  # 最小停止损失值
 
 OPTIMIZER_PARAMS = {'lr': 1e-3, 'weight_decay': 1e-3}  # 优化器参数
 #################################################################################
@@ -45,7 +47,11 @@ def train():
     训练模型
     """
     # 读入数据
-    train_texts, train_labels, test_texts, test_labels = load.load_train_test_tieba(-1, drop_test=True)
+    tieba_train_texts, tieba_train_labels, _, _ = load.load_train_test_tieba(-1, drop_test=True)
+    # cold_train_texts, cold_train_labels, _, _ = load.load_train_test_cold()
+
+    train_texts = tieba_train_texts
+    train_labels = tieba_train_labels
 
     # 构建词典
     vocab = Vocab(VOCAB_PATH)
@@ -96,7 +102,11 @@ def train():
 
 def train_only():
     # 读入数据
-    train_texts, train_labels, test_texts, test_labels = load.load_train_test_tieba(-1, drop_test=True)
+    tieba_train_texts, tieba_train_labels, _, _ = load.load_train_test_tieba(-1, drop_test=True)
+    cold_train_texts, cold_train_labels, _, _ = load.load_train_test_cold()
+
+    train_texts = tieba_train_texts + cold_train_texts
+    train_labels = torch.cat([tieba_train_labels, cold_train_labels], dim=-1)
 
     # 构建词典
     vocab = Vocab(VOCAB_PATH)

@@ -7,11 +7,13 @@ from torch import nn
 from torch.nn import init
 from ark.device import use_device
 from ark.nn.accuracy import Accuracy, AccuracyCell
+from ark.running import Timer
 
 
 class Trainer(nn.Module):
-    def __init__(self, num_class, device=None):
+    def __init__(self, num_class, mini_batch_size=128, device=None):
         super(Trainer, self).__init__()
+        self.mini_batch_size = mini_batch_size if mini_batch_size is not None and mini_batch_size > 0 else 128
         self.device = use_device(device)
         self.num_class = num_class
 
@@ -79,8 +81,8 @@ class Trainer(nn.Module):
     def print_fit_info(self, epoch: Union[int, str], loss: float, train_acc: AccuracyCell, valid_acc: AccuracyCell):
         print(f'epoch {epoch}:\n'
               f'exp_loss = {math.exp(loss)}\n'
-              f'train_accuracy: {train_acc.score}\n'
-              f'valid_accuracy: {valid_acc.score}\n')
+              f'train_accuracy: {train_acc}\n'
+              f'valid_accuracy: {valid_acc}\n')
 
     def fit_epoch(self, loader, optimizer, loss, max_norm=0, valid_loader: Union[List, Tuple, None] = None):
         """

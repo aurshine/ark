@@ -30,7 +30,6 @@ class AccuracyCell:
     """
     对单个预测值与实际值做准确率计算
     """
-
     def __init__(self, num_class, y_hat: Optional[torch.Tensor] = None, y: Optional[torch.Tensor] = None):
         self.num_class = num_class
         self._score = None

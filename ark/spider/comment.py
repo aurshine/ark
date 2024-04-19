@@ -1,5 +1,6 @@
 import os.path
 
+from typing import List
 from ark.setting import UN_CLASSIFY_PATH
 from ark.spider.classify import writeLines, getLines, sortUnique
 
@@ -104,6 +105,6 @@ class Comment:
         writeLines(sortUnique(comments), path=path, encoding=encoding, mode='w', info=True)
 
 
-def permutes(permute_strings: list[PermuteString]):
+def permutes(permute_strings: List[PermuteString]):
     """将所有PermuteString的排列结果用一维的list记录"""
     return [s for permute_string in permute_strings for s in permute_string.transform()]

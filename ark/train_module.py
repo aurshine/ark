@@ -1,6 +1,7 @@
 import os
 
 import torch
+from sklearn.model_selection import train_test_split
 
 from ark.data import load
 from ark.data.dataloader import get_tensor_loader
@@ -46,12 +47,14 @@ def train():
     """
     训练模型
     """
-    # 读入数据
-    tieba_train_texts, tieba_train_labels, _, _ = load.load_train_test_tieba(-1, drop_test=True)
-    cold_train_texts, cold_train_labels, _, _ = load.load_train_test_cold()
 
-    train_texts = tieba_train_texts + cold_train_texts
-    train_labels = torch.cat([tieba_train_labels, cold_train_labels], dim=-1)
+    # 读入数据
+    tieba_train_texts, tieba_train_labels = load.load_cold('tie-ba')
+    cold_train_texts, cold_train_labels = load.load_cold('cold')
+
+    train_texts, _, train_labels, _ = train_test_split(tieba_train_texts + cold_train_texts,
+                                                       tieba_train_labels + cold_train_labels, train_size=0.99)
+    train_labels = torch.tensor(train_labels)
 
     # 构建词典
     vocab = Vocab(VOCAB_PATH)
@@ -102,11 +105,12 @@ def train():
 
 def train_only():
     # 读入数据
-    tieba_train_texts, tieba_train_labels, _, _ = load.load_train_test_tieba(-1, drop_test=True)
-    cold_train_texts, cold_train_labels, _, _ = load.load_train_test_cold()
+    tieba_train_texts, tieba_train_labels = load.load_cold('tie-ba')
+    cold_train_texts, cold_train_labels = load.load_cold('cold')
 
-    train_texts = tieba_train_texts + cold_train_texts
-    train_labels = torch.cat([tieba_train_labels, cold_train_labels], dim=-1)
+    train_texts, _, train_labels, _ = train_test_split(tieba_train_texts + cold_train_texts,
+                                                       tieba_train_labels + cold_train_labels, train_size=0.99)
+    train_labels = torch.tensor(train_labels)
 
     # 构建词典
     vocab = Vocab(VOCAB_PATH)

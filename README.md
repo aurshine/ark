@@ -1,3 +1,8 @@
+# 安装
+```commandline
+pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
+```
+
 ```python
 from ark.analyse import analyse, ByType
 

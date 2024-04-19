@@ -126,7 +126,12 @@ def update_tie_ba(encoding='utf-8-sig'):
     df2 = pd.DataFrame(dic(NOT_BAD_TXT_PATH, 0))
     comment = pd.read_csv(TIE_BA_CSV_PATH, encoding=encoding)
 
-    comment = pd.concat([df1, df2, comment])
+    if df1.shape[0]:
+        comment = pd.concat([df1, comment])
+
+    if df2.shape[0]:
+        comment = pd.concat([df2, comment])
+    # comment = pd.concat([df1, df2, comment])
     comment = comment.sort_values(by=['label'], ascending=False)
     comment.to_csv(TIE_BA_CSV_PATH, index=False, encoding=encoding)
     clear(BAD_TXT_PATH), clear(NOT_BAD_TXT_PATH)
@@ -143,8 +148,8 @@ def update_tie_ba_split(encoding='utf-8-sig'):
     path = os.path.join(CURRENT_FOLDER, 'COLD')
     df = pd.read_csv(TIE_BA_CSV_PATH, encoding=encoding)
 
-    pos = df[df['label'] == 0.0]
-    neg = df[df['label'] == 1.0]
+    pos = df[df['label'] == 0]
+    neg = df[df['label'] == 1]
 
     pos.to_csv(os.path.join(path, 'tie-ba-pos.csv'), index=False, encoding=encoding)
     neg.to_csv(os.path.join(path, 'tie-ba-neg.csv'), index=False, encoding=encoding)

@@ -244,7 +244,7 @@ def page_spider(url, num_page, comments=None, referer=None):
     return comments
 
 
-def spider(tbs: Union[None, str, List[str]] = "孙笑川", num_pages=5, download=True):
+def spider(tbs: Union[None, str, List[str]] = "孙笑川", num_pages=1, download=True):
     """
     :param tbs: 需要爬的吧名, 默认孙吧
 

@@ -14,7 +14,7 @@ CURRENT_FOLDER = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
 def load_cold(file_name='train', num_texts=-1, replace=False) -> Tuple[List[str], List[int]]:
     """ 在COLD文件夹读取数据集
 
-    :param file_name: 可选择 'train' 'test' 'dev' 'tie-ba' 'tie-ba-pos' 'tie-ba-neg'
+    :param file_name: 可选择 'train' 'test' 'dev' 'tie-ba' 'tie-ba-pos' 'tie-ba-neg', 'cold'
 
     :param num_texts: 选择数据集的数量
 

@@ -9,9 +9,9 @@ vocab = Vocab(VOCAB_PATH)
 text_layer = fusion_piny_letter
 
 ark = AttentionArk(vocab, hidden_size=64, in_channel=3, num_steps=128, num_heads=4,
-                   en_num_layer=2, de_num_layer=4, dropout=0.5, num_class=2)
+                   en_num_layer=4, de_num_layer=8, dropout=0.5, num_class=2)
 
-ark.load(os.path.join(os.path.dirname(__file__), 'data/result-models/ark- 0.84-64-4-2-4.net'))
+ark.load(os.path.join(os.path.dirname(__file__), 'data/result-models/ark- 0.96-64-4-4-8.net'))
 
 
 class ByType(Enum):

@@ -48,10 +48,10 @@ def train():
     """
     # 读入数据
     tieba_train_texts, tieba_train_labels, _, _ = load.load_train_test_tieba(-1, drop_test=True)
-    # cold_train_texts, cold_train_labels, _, _ = load.load_train_test_cold()
+    cold_train_texts, cold_train_labels, _, _ = load.load_train_test_cold()
 
-    train_texts = tieba_train_texts
-    train_labels = tieba_train_labels
+    train_texts = tieba_train_texts + cold_train_texts
+    train_labels = torch.cat([tieba_train_labels, cold_train_labels], dim=-1)
 
     # 构建词典
     vocab = Vocab(VOCAB_PATH)

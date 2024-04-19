@@ -54,7 +54,8 @@ class AttentionArk(Trainer):
             results = []
             for i in range(0, batch_size, self.mini_batch_size):
                 x_batch = X[i: min(batch_size, i + self.mini_batch_size)].to(self.device)
-                results.append(self.linear(self.decoder(self.encoder(x_batch, valid_len))))
+                valid_len_batch = valid_len[i: min(batch_size, i + self.mini_batch_size)] if valid_len is not None else None
+                results.append(self.linear(self.decoder(self.encoder(x_batch, valid_len_batch))))
 
             return torch.cat(results, dim=0)
 

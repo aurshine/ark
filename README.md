@@ -3,6 +3,7 @@
 pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
 ```
 
+# 使用 analyse 分析恶意语句
 ```python
 from ark.analyse import analyse, ByType
 

@@ -88,7 +88,7 @@ class Vocab(nn.Module):
 
         elif isinstance(corpus, str):
             self.load_vocab(corpus)
-        else:
+        elif corpus is not None:
             raise RuntimeError
 
         self._ids = {token: i for i, token in enumerate(self._tokens)}

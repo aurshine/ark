@@ -2,16 +2,29 @@ import os
 from enum import Enum
 from typing import Union, List, Optional, Sequence
 from ark.nn.module import AttentionArk
-from ark.nn.text_process import VOCAB_PATH, Vocab, fusion_piny_letter
+from ark.nn.text_process import Vocab, fusion_piny_letter
+from ark.setting import MODEL_LIB, VOCAB_PATH
 
-vocab = Vocab(VOCAB_PATH)
 
 text_layer = fusion_piny_letter
+__ARK__ = None
 
-ark = AttentionArk(vocab, hidden_size=64, in_channel=3, num_steps=128, num_heads=4,
-                   en_num_layer=4, de_num_layer=8, dropout=0.5, num_class=2)
 
-ark.load(os.path.join(os.path.dirname(__file__), 'data/result-models/ark- 0.96-64-4-4-8.net'))
+def reload(accuracy: float,
+           vocab,
+           hidden_size,
+           in_channel,
+           num_steps,
+           num_heads,
+           en_num_layer,
+           de_num_layer,
+           dropout,
+           num_class):
+    global __ARK__
+    __ARK__ = AttentionArk(vocab, hidden_size=hidden_size, in_channel=in_channel, num_steps=num_steps, num_heads=num_heads,
+                           en_num_layer=en_num_layer, de_num_layer=de_num_layer, dropout=dropout, num_class=num_class)
+    __ARK__.load(os.path.join(MODEL_LIB, f'ark- {accuracy:.2f}-{hidden_size}-{num_heads}-{en_num_layer}-{de_num_layer}.net'))
+    return __ARK__
 
 
 class ByType(Enum):
@@ -44,5 +57,9 @@ def analyse(comments: Union[str, List[str]], classes: Optional[Sequence[str]] = 
     else:
         raise RuntimeError(f'by value as {by} was not define')
 
-    x, valid_len = fusion_piny_letter(comments, vocab, 128)
-    return ark.analyse(x, classes, valid_len=valid_len)
+    global __ARK__
+    if __ARK__ is None:
+        __ARK__ = reload(0.96, Vocab(VOCAB_PATH), hidden_size=64, in_channel=3, num_steps=128, num_heads=4, en_num_layer=4, de_num_layer=8, dropout=0.5, num_class=2)
+
+    x, valid_len = fusion_piny_letter(comments, __ARK__.vocab, 128)
+    return __ARK__.analyse(x, classes, valid_len=valid_len)

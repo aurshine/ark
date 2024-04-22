@@ -10,7 +10,6 @@ from ark.running import Timer
 
 def analyse(model: Trainer, inputs, classes: List[str]):
     """
-
     :param model: 用于分析的模型
 
     :param inputs: 输入
@@ -28,7 +27,7 @@ class AttentionArk(Trainer):
     """
     def __init__(self, vocab, hidden_size, in_channel, num_steps, num_heads, en_num_layer, de_num_layer, dropout, num_class, mini_batch_size=None, device=None):
         super(AttentionArk, self).__init__(num_class, mini_batch_size=mini_batch_size, device=device)
-
+        self.vocab = vocab
         self.encoder = ArkEncoder(vocab, hidden_size, in_channel, num_heads, num_layer=en_num_layer, dropout=dropout,
                                   device=self.device)
 

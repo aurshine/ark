@@ -32,6 +32,8 @@ TIE_BA_CSV_PATH = os.path.join(SETTING_PATH, 'data/COLD/tie-ba.csv')
 
 # 训练好的模型的存放文件夹
 MODEL_LIB = os.path.join(SETTING_PATH, 'data/result-models')
+if not os.path.exists(MODEL_LIB):
+    os.mkdir(MODEL_LIB)
 
 # 爬虫 headers 配置
 HEADERS = {

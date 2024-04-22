@@ -13,44 +13,44 @@ from ark.nn.accuracy import save_fig
 
 #################################################################################
 # 模型参数
-HIDDEN_SIZE = 64  # 隐藏层大小
+HIDDEN_SIZE = 64                                       # 隐藏层大小
 
-NUM_HEADS = 4  # 多头注意力头数
+NUM_HEADS = 4                                          # 多头注意力头数
 
-EN_LAYER = 4  # 编码器层数
+EN_LAYER = 4                                           # 编码器层数
 
-DE_LAYER = 8  # 解码器层数
+DE_LAYER = 4                                           # 解码器层数
 
-STEPS = 128  # 每个文本的步长
+STEPS = 128                                            # 每个文本的步长
 
-DROPOUT = 0.5  # 随机失活率
+DROPOUT = 0.5                                          # 随机失活率
 
 #################################################################################
 # 训练参数
-K_FOLD = 10  # 交叉验证折数
+K_FOLD = 10                                            # 交叉验证折数
 
-NUM_VALID = 5  # 验证次数, -1表示全部验证
+NUM_VALID = 5                                          # 验证次数, -1表示全部验证
 
-BATCH_SIZE = 128  # 批量大小
+BATCH_SIZE = 128                                       # 批量大小
 
-TRAIN_EPOCHS = 200  # 最大训练轮数
+TRAIN_EPOCHS = 200                                     # 最大训练轮数
 
-STOP_MIN_EPOCH = 0  # 最小停止轮数
+STOP_MIN_EPOCH = 0                                     # 最小停止轮数
 
-STOP_LOSS_VALUE = 0.1  # 最小停止损失值
+STOP_LOSS_VALUE = 0.1                                  # 最小停止损失值
 
-OPTIMIZER_PARAMS = {'lr': 1e-3, 'weight_decay': 1e-3}  # 优化器参数
+OPTIMIZER_PARAMS = {'lr': 1e-3, 'weight_decay': 1e-3}  # 优化器参数(学习率、权重衰减)
 #################################################################################
 
 
-def train():
+def train(use_cold=False):
     """
     训练模型
     """
 
     # 读入数据
     tieba_train_texts, tieba_train_labels = load.load_cold('tie-ba')
-    cold_train_texts, cold_train_labels = load.load_cold('cold')
+    cold_train_texts, cold_train_labels = load.load_cold('cold') if use_cold else [], []
 
     train_texts, _, train_labels, _ = train_test_split(tieba_train_texts + cold_train_texts,
                                                        tieba_train_labels + cold_train_labels, train_size=0.99)
@@ -103,10 +103,10 @@ def train():
         sub_ark.save_state_dict(path)
 
 
-def train_only():
+def train_only(use_cold=False):
     # 读入数据
     tieba_train_texts, tieba_train_labels = load.load_cold('tie-ba')
-    cold_train_texts, cold_train_labels = load.load_cold('cold')
+    cold_train_texts, cold_train_labels = load.load_cold('cold') if use_cold else [], []
 
     train_texts, _, train_labels, _ = train_test_split(tieba_train_texts + cold_train_texts,
                                                        tieba_train_labels + cold_train_labels, train_size=0.99)

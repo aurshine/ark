@@ -1,3 +1,4 @@
+from collections import deque
 import torch
 from torch import nn
 from ark.device import use_device
@@ -34,10 +35,11 @@ class ArkDecoderBlock(Decoder):
 
         :return: 形状为 (batch_size, steps, num_hidden)
         """
-        key_value = X
+        dq = deque([X], maxlen=3)
         for block in self.transformer_blocks:
+            key_value = torch.cat(list(dq), dim=1)
             X = block(X, key_value, key_value, **kwargs)
-            key_value = torch.cat([key_value, X], dim=1)
+            dq.append(X)
 
         return X
 

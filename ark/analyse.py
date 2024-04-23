@@ -10,7 +10,7 @@ text_layer = fusion_piny_letter
 __ARK__ = None
 
 
-def reload(accuracy: float,
+def reload(accuracy: int,
            vocab,
            hidden_size,
            in_channel,
@@ -23,7 +23,7 @@ def reload(accuracy: float,
     global __ARK__
     __ARK__ = AttentionArk(vocab, hidden_size=hidden_size, in_channel=in_channel, num_steps=num_steps, num_heads=num_heads,
                            en_num_layer=en_num_layer, de_num_layer=de_num_layer, dropout=dropout, num_class=num_class)
-    __ARK__.load(os.path.join(MODEL_LIB, f'ark-{accuracy:.2f}-{hidden_size}-{num_heads}-{en_num_layer}-{de_num_layer}.net'))
+    __ARK__.load(os.path.join(MODEL_LIB, f'ark-{accuracy}-{hidden_size}-{num_heads}-{en_num_layer}-{de_num_layer}.net'))
     return __ARK__
 
 
@@ -59,7 +59,7 @@ def analyse(comments: Union[str, List[str]], classes: Optional[Sequence[str]] = 
 
     global __ARK__
     if __ARK__ is None:
-        __ARK__ = reload(0.79, Vocab(VOCAB_PATH), hidden_size=128, in_channel=3, num_steps=128, num_heads=8, en_num_layer=4, de_num_layer=4, dropout=0.5, num_class=2)
+        __ARK__ = reload(78, Vocab(VOCAB_PATH), hidden_size=64, in_channel=3, num_steps=128, num_heads=4, en_num_layer=4, de_num_layer=8, dropout=0.5, num_class=2)
 
     x, valid_len = fusion_piny_letter(comments, __ARK__.vocab, 128)
     return __ARK__.analyse(x, classes, valid_len=valid_len)

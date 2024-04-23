@@ -17,9 +17,9 @@ HIDDEN_SIZE = 64                                       # 隐藏层大小
 
 NUM_HEADS = 4                                          # 多头注意力头数
 
-EN_LAYER = 4                                           # 编码器层数
+EN_LAYER = 3                                           # 编码器层数
 
-DE_LAYER = 4                                           # 解码器层数
+DE_LAYER = 6                                           # 解码器层数
 
 STEPS = 128                                            # 每个文本的步长
 
@@ -39,7 +39,7 @@ STOP_MIN_EPOCH = 0                                     # 最小停止轮数
 
 STOP_LOSS_VALUE = 0.1                                  # 最小停止损失值
 
-OPTIMIZER_PARAMS = {'lr': 1e-3, 'weight_decay': 1e-3}  # 优化器参数(学习率、权重衰减)
+OPTIMIZER_PARAMS = {'lr': 1e-3, 'weight_decay': 1e-2}  # 优化器参数(学习率、权重衰减)
 #################################################################################
 
 
@@ -99,7 +99,7 @@ def train(use_cold=False):
     print('avg acc:', avg_acc / len(k_valid_acc))
     for sub_ark, sub_acc in zip(ark, k_valid_acc):
         path = os.path.join(MODEL_LIB,
-                            f'ark-{sub_acc.max().score: .2f}-{HIDDEN_SIZE}-{NUM_HEADS}-{EN_LAYER}-{DE_LAYER}.net')
+                            f'ark-{int(sub_acc.avg_score() * 100)}-{HIDDEN_SIZE}-{NUM_HEADS}-{EN_LAYER}-{DE_LAYER}.net')
         sub_ark.save_state_dict(path)
 
 
@@ -138,7 +138,7 @@ def train_only(use_cold=False):
                               stop_loss_value=STOP_LOSS_VALUE,
                               optim_params=OPTIMIZER_PARAMS)
 
-    ark.save_state_dict(os.path.join(MODEL_LIB, f'ark-{train_acc.max().score: .2f}-{HIDDEN_SIZE}-{NUM_HEADS}-{EN_LAYER}-{DE_LAYER}.net'), )
+    ark.save_state_dict(os.path.join(MODEL_LIB, f'ark-{int(train_acc.avg_score() * 100)}-{HIDDEN_SIZE}-{NUM_HEADS}-{EN_LAYER}-{DE_LAYER}.net'), )
 
 
 if __name__ == '__main__':

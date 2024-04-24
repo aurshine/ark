@@ -3,7 +3,6 @@ from threading import Lock
 from typing import Iterable
 
 from typing import List
-from tqdm import tqdm
 from ark.setting import URLS, HAS_URLS_PATH
 
 
@@ -54,7 +53,7 @@ def write_lines(lines: Iterable, path, mode, encoding=None):
     with __io_lock__:
         cnt = 0
         with open(path, encoding=encoding, mode=mode) as f:
-            for line in tqdm(lines):
+            for line in lines:
                 cnt += 1
                 f.write(line + '\n')
 

@@ -1,4 +1,7 @@
+import random
+import time
 import json
+import traceback
 from typing import Generator, List, Union
 from concurrent.futures import ThreadPoolExecutor as Pool
 
@@ -7,7 +10,7 @@ from bs4 import BeautifulSoup
 
 from ark.spider.classify import is_exist, add_url
 from ark.spider.wash import wash_comments, Comment
-from ark.setting import HEADERS
+from ark.setting import HEADERS, DELAY_SECONDS
 
 
 __session__ = requests.Session()
@@ -23,6 +26,8 @@ def get_text(url: str, **kwargs):
 
     :return: 响应文本内容
     """
+    # 随机延时
+    time.sleep(random.uniform(DELAY_SECONDS[0], DELAY_SECONDS[1]))
     if 'headers' not in kwargs:
         kwargs['headers'] = HEADERS
 
@@ -31,7 +36,7 @@ def get_text(url: str, **kwargs):
     return response.text
 
 
-def get_tie_ba_html(tie_ba_name: str, page=0) -> str:
+def get_tie_ba_html(tie_ba_name: str, page=0, **kwargs) -> str:
     """
     获取贴吧的 html 内容
 
@@ -39,12 +44,14 @@ def get_tie_ba_html(tie_ba_name: str, page=0) -> str:
 
     :param page: 页码, 默认为 0
 
+    :param kwargs: requests.get() 的参数
+
     :return: 贴吧 html 内容
     """
     url = f'https://tieba.baidu.com/f'
     params = {'kw': tie_ba_name, 'pn': 50 * page, 'ie': 'utf-8'}
 
-    html = get_text(url, params=params)
+    html = get_text(url, params=params, **kwargs)
     begin = html.find('<ul id="thread_list" class="threadlist_bright j_threadlist_bright">')
     end = html.find('<div class="thread_list_bottom clearfix">')
 
@@ -72,17 +79,19 @@ def parse_tie_ba_html(html: str) -> Generator[str, None, None]:
                 yield str(tie_zi_id)
 
 
-def into_tie_ba_content_page(p_id: str) -> Comment:
+def into_tie_ba_content_page(p_id: str, **kwargs) -> Comment:
     """
     进入贴吧帖子内容页
 
     :param p_id: 帖子 id
+
+    :param kwargs: requests.get() 的参数
     """
     if is_exist(p_id):
         return Comment()
 
     url = f'https://tieba.baidu.com/p/{p_id}'
-    html = get_text(url)
+    html = get_text(url, **kwargs)
     soup = BeautifulSoup(html, 'lxml')
     main_comments = soup.select('.d_post_content')
     replay_comments = soup.select('.lzl_content_main')
@@ -92,13 +101,13 @@ def into_tie_ba_content_page(p_id: str) -> Comment:
     return wash_comments(res)
 
 
-def spider_main(tie_ba_names: Union[str, List[str]], path: str, num_work=None, encoding=None):
+def spider_main(tie_ba_names: Union[str, List[str]], save_path: str, num_work=None, encoding=None):
     """
     贴吧爬虫主函数
 
     :param tie_ba_names: 贴吧名列表或单个贴吧名
 
-    :param path: 保存路径
+    :param save_path: 保存路径
 
     :param num_work: 线程池线程数, 默认为 None, 表示不使用线程池
 
@@ -111,7 +120,7 @@ def spider_main(tie_ba_names: Union[str, List[str]], path: str, num_work=None, e
         for tie_ba_name in tie_ba_names:
             html = get_tie_ba_html(tie_ba_name)
             for tie_zi_id in parse_tie_ba_html(html):
-                into_tie_ba_content_page(tie_zi_id).download(path=path, encoding=encoding, mode='a')
+                into_tie_ba_content_page(tie_zi_id).download(path=save_path, encoding=encoding, mode='a')
     else:
         tie_zi_ids = []
         for tie_ba_name in tie_ba_names:
@@ -121,4 +130,4 @@ def spider_main(tie_ba_names: Union[str, List[str]], path: str, num_work=None, e
         with Pool(num_work) as pool:
             for tid in tie_zi_ids:
                 pool.submit(lambda t_id:
-                            into_tie_ba_content_page(t_id).download(path=path, encoding=encoding, mode='a'), tid)
+                            into_tie_ba_content_page(t_id).download(path=save_path, encoding=encoding, mode='a'), tid)

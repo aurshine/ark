@@ -1,4 +1,5 @@
 import os
+from threading import Lock
 
 from typing import List, Tuple, Union, Generator
 
@@ -72,6 +73,10 @@ class Comment:
     """
     用于存储PermuteString的容器, 本质是一个 list 结构
     """
+
+    # Comment 对象做download操作时的锁
+    __comment_lock__ = Lock()
+
     def __init__(self, string_list: Union[List[PermuteString], List[str]] = None):
         if string_list is None:
             string_list = []
@@ -139,10 +144,11 @@ class Comment:
             encoding = 'utf-8'
 
         comments = permutes(self.comments)
-        if mode == 'a' and os.path.exists(path):
-            comments += get_lines(path=path, encoding=encoding)
+        with Comment.__comment_lock__:
+            if mode == 'a' and os.path.exists(path):
+                comments += get_lines(path=path, encoding=encoding)
 
-        write_lines(sort_unique(comments), path=path, encoding=encoding, mode='w')
+            write_lines(sort_unique(comments), path=path, encoding=encoding, mode='w')
 
 
 def permutes(permute_strings: List[PermuteString]) -> Generator[str, None, None]:

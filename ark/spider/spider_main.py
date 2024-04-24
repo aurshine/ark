@@ -1,7 +1,6 @@
 import random
 import time
 import json
-import traceback
 from typing import Generator, List, Union
 from concurrent.futures import ThreadPoolExecutor as Pool
 

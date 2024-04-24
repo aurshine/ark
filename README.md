@@ -46,3 +46,67 @@ train_module.train() # 开始训练模型, 并验证效果
 
 train_module.train_only() # 仅训练模型, 不验证效果
 ```
+训练的模型均保存在 `ark/data/result-models/`路径下
+
+可使用 setting.MODEL_LIB 指定`ark/data/result-models/`路径
+```python
+from ark.setting import MODEL_LIB
+
+
+print(MODEL_LIB)
+```
+使用`train_module.train()`在训练结束后会在 `ark/` 下生成 `train.png` 和 `valid.png` 两个图片，分别表示训练集和验证集的准确率变化曲线。
+
+# 添加数据集集
+所有非恶意数据用0表示，所有恶意数据用1表示
+
+### 通过.txt文件添加数据集
+1. 将非恶意数据集复制粘贴至 `ark/spider/cache/notBad.txt`, 并将恶意数据集复制粘贴至 `ark/spider/cache/bad.txt`
+2. 使用 ark.data.load.update_tie_ba 合并数据集
+```python
+from ark.data.load import update_tie_ba
+from ark.setting import NOT_BAD_TXT_PATH, BAD_TXT_PATH
+
+some_not_bad = ''
+some_bad = ''
+with open(NOT_BAD_TXT_PATH, 'w', encoding='utf-8') as f:
+    f.write(some_not_bad)
+
+with open(BAD_TXT_PATH, 'w', encoding='utf-8') as f:
+    f.write(some_bad)
+
+update_tie_ba() # 合并数据集
+```
+
+### 通过.csv文件添加数据集
+1. 合并的csv文件需要包含TEXT列和label列
+2. 与 `ark/data/COLD/tie_ba.csv` 合并
+3. 使用 ark.data.load.update_tie_ba 合并数据集
+```python
+import pandas as pd
+from ark.setting import TIE_BA_CSV_PATH
+from ark.data.load import update_tie_ba
+
+df1 = pd.read_csv(TIE_BA_CSV_PATH, encoding='utf-8')
+df2 = pd.DataFrame({'TEXT': [], 'label': []})
+
+df = pd.concat([df1, df2], ignore_index=True)
+df.to_csv(TIE_BA_CSV_PATH, index=False, encoding='utf-8')
+
+update_tie_ba()
+```
+
+# 抓取数据
+```python
+from ark.spider.requestSpiderMain import spider
+
+tie_ba = [] # 吧名
+num_pages = 1 # 抓取页数
+spider(tie_ba, num_pages) # 开始抓取数据
+```
+# 分析数据
+```python
+from ark.spider.interface import tkDrive
+
+tkDrive() # gui分析数据
+```

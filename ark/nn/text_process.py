@@ -3,7 +3,7 @@ from typing import Tuple, Union, List
 import torch
 from torch import nn, Tensor
 import jieba
-from ark.spider.classify import getLines, writeLines
+from ark.spider.classify import get_lines, write_lines
 from ark.setting import VOCAB_PATH
 from ark.nn.pinyin import translate_piny
 
@@ -119,8 +119,9 @@ class Vocab(nn.Module):
     def __len__(self):
         return len(self._tokens)
 
-    def to_index(self, inputs: Union[list, tuple, str]) -> list:
-        """词元映射到数字
+    def to_index(self, inputs: Union[list, tuple, str]) -> Union[list, int]:
+        """
+        词元映射到数字
         """
         ret = []
         if isinstance(inputs, (tuple, list)):
@@ -132,10 +133,10 @@ class Vocab(nn.Module):
 
     def load_vocab(self, path):
         """读取对应文件的词表, 每行表示一个词元"""
-        self._tokens = [self.unk] + getLines(path)
+        self._tokens = [self.unk] + get_lines(path)
 
     def download(self, path=VOCAB_PATH):
-        writeLines(self._tokens, path=path, encoding='utf-8', mode='w', info=True)
+        write_lines(self._tokens, path=path, encoding='utf-8', mode='w')
 
 
 class TextProcess(nn.Module):

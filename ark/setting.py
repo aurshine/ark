@@ -1,7 +1,7 @@
 import os
 
 with open(os.path.join(os.path.dirname(__file__), 'spider/cache/hasUrls')) as f:
-    URLS = set(line.strip() for line in f.readlines())
+    URLS = set(f.readlines())
 
 # setting.py 所在的文件夹地址
 SETTING_PATH = os.path.abspath(os.path.dirname(__file__))

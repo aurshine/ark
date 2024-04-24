@@ -1,11 +1,10 @@
-import random
 from typing import Tuple, List, Union, Optional
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 import torch
 from ark.setting import *
-from ark.spider.classify import getLines, writeLines, clear
+from ark.spider.classify import get_lines, write_lines, clear
 
 
 CURRENT_FOLDER = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
@@ -116,7 +115,7 @@ def update_tie_ba(encoding='utf-8-sig'):
     print('更新贴吧数据集')
 
     def dic(path, label):
-        lines = getLines(path, encoding=encoding)
+        lines = get_lines(path, encoding=encoding)
         return {
             'TEXT': lines,
             'label': [label] * len(lines)
@@ -158,7 +157,7 @@ def update_tie_ba_split(encoding='utf-8-sig'):
 def update_vocab():
     """更新词表"""
     df = pd.read_csv(TIE_BA_CSV_PATH)
-    vocab = set(getLines(VOCAB_PATH))
+    vocab = set(get_lines(VOCAB_PATH))
 
     add_news = []
     for line in df['TEXT']:
@@ -167,4 +166,4 @@ def update_vocab():
                 vocab.add(c)
                 add_news.append(c)
 
-    writeLines(add_news, VOCAB_PATH)
+    write_lines(add_news, VOCAB_PATH, mode='a')

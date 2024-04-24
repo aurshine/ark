@@ -1,7 +1,10 @@
-from .classify import getLines, writeLines
-from .comment import Comment, permutes
+from typing import List, Union
 
-repEmoji = [('🤡', '小丑'),
+from ark.spider.classify import get_lines
+from ark.spider.comment import Comment, permutes
+
+
+rep_emoji = [('🤡', '小丑'),
             ('🐶', '舔狗'),
             ('🐭🐭', '鼠鼠'),
             ('🐭', '我'),
@@ -43,9 +46,10 @@ repEmoji = [('🤡', '小丑'),
 
 
 def wash_emoji(comment: str):
-    """文字替换emoji
     """
-    for pair in repEmoji:
+    文字替换emoji
+    """
+    for pair in rep_emoji:
         emoji, rep = pair
         comment = comment.replace(emoji, rep)
 
@@ -53,52 +57,60 @@ def wash_emoji(comment: str):
 
 
 def wash_reply(comment: str):
-    """清除 回复<a ...>B</a> : 的格式
+    """清除 回复 用户名 :回复内容 的格式
 
-    >>> wash_reply('回复<a href="...." ...>九享阳</a> :原始人启动')
+    >>> wash_reply('回复 九享阳 :原始人启动')
     '原始人启动'
     """
-    comment = comment.strip()
-
-    reply_idx = comment.find('回复')
-    tail_idx = comment.find('</a> :', reply_idx)
-
-    if tail_idx != -1:
-        comment = comment[:reply_idx] + wash_reply(comment[tail_idx + 6:])
+    if comment.startswith('回复'):
+        end_idx = comment.find(' :')
+        comment = comment[end_idx + 2:]
     return comment
 
 
-def wash_img(comment: str):
-    """清除img标签
+def wash_comments(comments: Union[Comment, List[str]], wash_rule=None, filter_rule=None) -> Comment:
     """
-    comment = comment.strip()
-    l_idx = comment.find('<img')
-    if l_idx == -1:
-        return comment
+    清洗评论，包括emoji替换，回复格式清除，评论长度限制
 
-    r_idx = comment.find('>', l_idx)
-    return comment[: l_idx] + wash_img(comment[r_idx + 1:])
+    :param comments: 评论列表或Comment对象
 
+    :param wash_rule: 评论清洗规则函数，输入为评论字符串，输出为清洗后的评论字符串
 
-def wash_comments(comments):
+    :param filter_rule: 评论过滤规则函数，输入为评论字符串，输出为True或False，True表示保留该评论，False表示过滤该评论
+    """
     if isinstance(comments, Comment):
         comments = permutes(comments.tolist())
 
+    wash_rules = [str.strip, wash_emoji, wash_reply]
+    if wash_rule is not None:
+        wash_rules.append(wash_rule)
+
+    filter_rules = [lambda x: 5 < len(x) < 128]
+    if filter_rule is not None:
+        filter_rules.append(filter_rule)
+
     washed = Comment()
-
-    def work(cmt: str, processes: list):
-        for process in processes:
-            cmt = process(cmt)
-        return cmt
-
     for comment in comments:
-        comment = work(comment, [wash_emoji, wash_reply, wash_img])
-        if 5 < len(comment) < 128:
+        for wr in wash_rules:
+            comment = wr(comment)
+
+        if all(fr(comment) for fr in filter_rules):
             washed.append(comment)
 
     return washed
 
 
-def wash_file(path, encoding='utf-8'):
-    lines = getLines(path, encoding=encoding)
-    wash_comments(lines).download(path=path, encoding=encoding, mode='w')
+def wash_file(path, wash_rule=None, filter_rule=None, encoding=None):
+    """
+    清洗文件中的评论，并保存到文件中
+
+    :param path: 文件路径
+
+    :param wash_rule: 评论清洗规则函数，输入为评论字符串，输出为清洗后的评论字符串
+
+    :param filter_rule: 评论过滤规则函数，输入为评论字符串，输出为True或False，True表示保留该评论，False表示过滤该评论
+
+    :param encoding: 文件编码
+    """
+    lines = get_lines(path, encoding=encoding)
+    wash_comments(lines, wash_rule=wash_rule, filter_rule=filter_rule).download(path=path, encoding=encoding, mode='w')

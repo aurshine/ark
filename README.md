@@ -66,14 +66,13 @@ print(MODEL_LIB)
 ```python
 from ark.data.load import update_tie_ba
 from ark.setting import NOT_BAD_TXT_PATH, BAD_TXT_PATH
+from ark.spider.classify import write_lines
 
-some_not_bad = ''
-some_bad = ''
-with open(NOT_BAD_TXT_PATH, 'w', encoding='utf-8') as f:
-    f.write(some_not_bad)
+some_not_bad = []
+some_bad = []
 
-with open(BAD_TXT_PATH, 'w', encoding='utf-8') as f:
-    f.write(some_bad)
+write_lines(some_bad, BAD_TXT_PATH, mode='a')
+write_lines(some_not_bad, NOT_BAD_TXT_PATH, mode='a')
 
 update_tie_ba() # 合并数据集
 ```
@@ -98,11 +97,11 @@ update_tie_ba()
 
 # 抓取数据
 ```python
-from ark.spider.requestSpiderMain import spider
+from ark.spider.spider_main import spider_main
+from ark.setting import UN_CLASSIFY_PATH
 
 tie_ba = [] # 吧名
-num_pages = 1 # 抓取页数
-spider(tie_ba, num_pages) # 开始抓取数据
+spider_main(tie_ba, path=UN_CLASSIFY_PATH, num_work=5) # 开始抓取数据
 ```
 # 分析数据
 ```python

@@ -1,13 +1,13 @@
 from time import time
 import tkinter as tk
-from ark.spider.classify import getLines
+from ark.spider.classify import get_lines
 from ark.spider.comment import Comment
 from ark.setting import *
 from ark.data.load import update_tie_ba
 
 
 font_style = ('宋体', 20, 'bold')
-comments = Comment(getLines(path=UN_CLASSIFY_PATH))
+comments = Comment(get_lines(path=UN_CLASSIFY_PATH))
 
 curIdx, maxLength = 0, len(comments)  # 当前读到
 labels = [0 for _ in range(maxLength)]  # 初始所有语句都分在unClassify

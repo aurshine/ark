@@ -1,9 +1,17 @@
 # 安装
+### github
 ```commandline
 git clone https://github.com/aurshine/ark.git
 cd ark
 pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
 ```
+### gitee (不保证同步更新)
+```commandline
+git clone https://gitee.com/jiuxiangyang/ark.git
+cd ark
+pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
+```
+
 
 # 使用 analyse 分析恶意语句
 ```python
@@ -20,9 +28,10 @@ print(analyse(comments, by=ByType.BY_TEXT))
 
 # 自调参训练模型
 `ark/train_module.py`
-提供参数调整:
+### 提供参数调整:
+
 - 隐藏层大小
-- 多头注意力头数
+- 多头注意力头数 
 - 编码器层数
 - 解码器层数
 - 每个文本的步长
@@ -51,7 +60,6 @@ train_module.train_only() # 仅训练模型, 不验证效果
 可使用 setting.MODEL_LIB 指定`ark/data/result-models/`路径
 ```python
 from ark.setting import MODEL_LIB
-
 
 print(MODEL_LIB)
 ```

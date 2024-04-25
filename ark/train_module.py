@@ -50,7 +50,7 @@ def train(use_cold=False):
 
     # 读入数据
     tieba_train_texts, tieba_train_labels = load.load_cold('tie-ba')
-    cold_train_texts, cold_train_labels = load.load_cold('cold') if use_cold else [], []
+    cold_train_texts, cold_train_labels = load.load_cold('cold') if use_cold else ([], [])
 
     train_texts, _, train_labels, _ = train_test_split(tieba_train_texts + cold_train_texts,
                                                        tieba_train_labels + cold_train_labels, train_size=0.99)
@@ -106,7 +106,7 @@ def train(use_cold=False):
 def train_only(use_cold=False):
     # 读入数据
     tieba_train_texts, tieba_train_labels = load.load_cold('tie-ba')
-    cold_train_texts, cold_train_labels = load.load_cold('cold') if use_cold else [], []
+    cold_train_texts, cold_train_labels = load.load_cold('cold') if use_cold else ([], [])
 
     train_texts, _, train_labels, _ = train_test_split(tieba_train_texts + cold_train_texts,
                                                        tieba_train_labels + cold_train_labels, train_size=0.99)

@@ -1,7 +1,8 @@
 import random
 import time
 import json
-from typing import Generator, List, Union
+import traceback
+from typing import Generator, List, Union, Optional
 from concurrent.futures import ThreadPoolExecutor as Pool
 
 import requests
@@ -15,7 +16,7 @@ from ark.setting import HEADERS, DELAY_SECONDS
 __session__ = requests.Session()
 
 
-def get_text(url: str, **kwargs):
+def get_text(url: str, **kwargs) -> Optional[str]:
     """
     get 请求得到 url 的响应文本内容
 
@@ -30,9 +31,14 @@ def get_text(url: str, **kwargs):
     if 'headers' not in kwargs:
         kwargs['headers'] = HEADERS
 
-    response = __session__.get(url=url, **kwargs)
-    response.raise_for_status()
-    return response.text
+    try:
+        response = __session__.get(url=url, **kwargs)
+        response.raise_for_status()
+        return response.text
+    except requests.exceptions.TooManyRedirects as e:
+        traceback.print_exc()
+        print(f'url = {url} {e}')
+    return None
 
 
 def get_tie_ba_html(tie_ba_name: str, page=0, **kwargs) -> str:
@@ -51,6 +57,8 @@ def get_tie_ba_html(tie_ba_name: str, page=0, **kwargs) -> str:
     params = {'kw': tie_ba_name, 'pn': 50 * page, 'ie': 'utf-8'}
 
     html = get_text(url, params=params, **kwargs)
+    if html is None:
+        return ''
     begin = html.find('<ul id="thread_list" class="threadlist_bright j_threadlist_bright">')
     end = html.find('<div class="thread_list_bottom clearfix">')
 
@@ -91,6 +99,8 @@ def into_tie_ba_content_page(p_id: str, **kwargs) -> Comment:
 
     url = f'https://tieba.baidu.com/p/{p_id}'
     html = get_text(url, **kwargs)
+    if html is None:
+        return Comment()
     soup = BeautifulSoup(html, 'lxml')
     main_comments = soup.select('.d_post_content')
     replay_comments = soup.select('.lzl_content_main')
@@ -115,18 +125,17 @@ def spider_main(tie_ba_names: Union[str, List[str]], save_path: str, num_work=No
     if isinstance(tie_ba_names, str):
         tie_ba_names = [tie_ba_names]
 
-    if num_work is None:
-        for tie_ba_name in tie_ba_names:
-            html = get_tie_ba_html(tie_ba_name)
-            for tie_zi_id in parse_tie_ba_html(html):
-                into_tie_ba_content_page(tie_zi_id).download(path=save_path, encoding=encoding, mode='a')
-    else:
-        tie_zi_ids = []
-        for tie_ba_name in tie_ba_names:
-            html = get_tie_ba_html(tie_ba_name)
-            tie_zi_ids.extend(parse_tie_ba_html(html))
+    tids = []
+    for tie_ba_name in tie_ba_names:
+        html = get_tie_ba_html(tie_ba_name)
+        tids.extend(parse_tie_ba_html(html))
 
+    if num_work is None:
+        for tid in tids:
+            into_tie_ba_content_page(tid).download(path=save_path, encoding=encoding, mode='a')
+    else:
         with Pool(num_work) as pool:
-            for tid in tie_zi_ids:
-                pool.submit(lambda t_id:
-                            into_tie_ba_content_page(t_id).download(path=save_path, encoding=encoding, mode='a'), tid)
+            def work(t_id):
+                into_tie_ba_content_page(t_id).download(path=save_path, encoding=encoding, mode='a')
+            for tid in tids:
+                pool.submit(work, tid)

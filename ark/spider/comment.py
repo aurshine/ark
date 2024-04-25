@@ -136,6 +136,7 @@ class Comment:
 
         :param encoding: 文件编码，默认utf-8
         """
+        print('download')
         assert mode in ['w', 'a'], "mode must be 'w' or 'a'"
         if self.__len__() == 0:
             return

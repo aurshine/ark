@@ -1,4 +1,5 @@
 # 安装
+要求python3.9及以上
 ### github
 ```commandline
 git clone https://github.com/aurshine/ark.git

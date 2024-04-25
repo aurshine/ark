@@ -136,7 +136,6 @@ class Comment:
 
         :param encoding: 文件编码，默认utf-8
         """
-        print('download')
         assert mode in ['w', 'a'], "mode must be 'w' or 'a'"
         if self.__len__() == 0:
             return
@@ -144,7 +143,7 @@ class Comment:
         if encoding is None:
             encoding = 'utf-8'
 
-        comments = permutes(self.comments)
+        comments = list(permutes(self.comments))
         with Comment.__comment_lock__:
             if mode == 'a' and os.path.exists(path):
                 comments += get_lines(path=path, encoding=encoding)

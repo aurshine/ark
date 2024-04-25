@@ -134,7 +134,7 @@ def spider_main(tie_ba_names: Union[str, List[str]], save_path: str, num_work=No
         for tid in tids:
             into_tie_ba_content_page(tid).download(path=save_path, encoding=encoding, mode='a')
     else:
-        with Pool(num_work) as pool:
+        with Pool(max_workers=num_work) as pool:
             def work(t_id):
                 into_tie_ba_content_page(t_id).download(path=save_path, encoding=encoding, mode='a')
             for tid in tids:

@@ -65,4 +65,4 @@ PROXIES = {
 }
 
 # tuple对象, 每次请求后的时延区间
-DELAY_SECONDS = (1, 3)
+DELAY_SECONDS = (5, 10)

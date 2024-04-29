@@ -2,7 +2,7 @@ import math
 import torch
 from torch import nn
 from ark.device import use_device
-from ark.nn.multi_layers import TransformerLayer
+from ark.nn.multi_layers import TransformerLayer, HistoryTransformerLayers
 
 
 class Encoder(nn.Module):
@@ -89,7 +89,7 @@ class ArkEncoder(Encoder):
         self.embedding = nn.Embedding(len(vocab), hidden_size, padding_idx=vocab.unk_index, device=self.device)
         self.position_encoding = PositionEncoder(hidden_size)
         self.sqrt_hidden = math.sqrt(hidden_size)
-        self.encoder_blocks = nn.ModuleList([ArkEncoderBlock(hidden_size, num_heads, num_layer, dropout, device=self.device)
+        self.encoder_blocks = nn.ModuleList([HistoryTransformerLayers(hidden_size, num_heads, num_layer, dropout=dropout, device=self.device)
                                              for _ in range(num_channel)])
         self.fusion = TransformerLayer(hidden_size, num_heads, dropout, device=self.device)
 

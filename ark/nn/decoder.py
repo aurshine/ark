@@ -2,7 +2,7 @@ from collections import deque
 import torch
 from torch import nn
 from ark.device import use_device
-from ark.nn.multi_layers import PositionWiseFFN, TransformerLayer
+from ark.nn.multi_layers import PositionWiseFFN, TransformerLayer, HistoryTransformerLayers
 
 
 class Decoder(nn.Module):
@@ -18,39 +18,13 @@ class Decoder(nn.Module):
         raise NotImplementedError
 
 
-class ArkDecoderBlock(Decoder):
-    def __init__(self, hidden_size, num_heads, num_layer=1, dropout=0, device=None):
-        super(ArkDecoderBlock, self).__init__(device=device)
-        self.transformer_blocks = nn.ModuleList([TransformerLayer(hidden_size, num_heads, dropout, device=self.device)
-                                                 for _ in range(num_layer)])
-
-    def init_state(self, enc_output, *args):
-        return None
-
-    def forward(self, X, **kwargs):
-        """
-        :param X: 形状为 (batch_size, steps, num_hidden)
-
-        :param kwargs: MultiHeadAttention 的其它参数
-
-        :return: 形状为 (batch_size, steps, num_hidden)
-        """
-        dq = deque([X], maxlen=3)
-        for block in self.transformer_blocks:
-            key_value = torch.cat(list(dq), dim=1)
-            X = block(X, key_value, key_value, **kwargs)
-            dq.append(X)
-
-        return X
-
-
 class ArkDecoder(Decoder):
     def __init__(self, hidden_size, num_heads, num_layer, num_steps, dropout=0, device=None):
         super(ArkDecoder, self).__init__(device)
-        self.decoder_block = ArkDecoderBlock(hidden_size, num_heads, num_layer, dropout, device=self.device)
+        self.history_layers = HistoryTransformerLayers(hidden_size, num_heads, num_layer, dropout=dropout, device=self.device)
         self.flatten = nn.Flatten()
-        self.ffn = PositionWiseFFN(hidden_size * num_steps, hidden_size, hidden_size, dropout, device=self.device)
-        self.fusion = TransformerLayer(hidden_size, num_heads, dropout, device=self.device)
+        self.ffn = PositionWiseFFN(hidden_size * num_steps, hidden_size, hidden_size, dropout=dropout, device=self.device)
+        self.fusion = TransformerLayer(hidden_size, num_heads, dropout=dropout, device=self.device)
 
     def init_state(self, enc_output, *args):
         return None
@@ -62,7 +36,7 @@ class ArkDecoder(Decoder):
         :param kwargs: MultiHeadAttention 的其它参数
         """
         X = X.to(self.device)
-        X = self.decoder_block(X, **kwargs)
+        X = self.history_layers(X, **kwargs)
 
         # 形状为 (batch_size, 1, hidden_size)
         query = self.ffn(self.flatten(X)).unsqueeze(1)

@@ -104,7 +104,7 @@ class AccuracyCell:
         else:
             return float(np.sum(self.class_matrix[index]))
 
-    def confusion_matrix(self, label):
+    def confusion_matrix(self, label=None):
         """
         绘制混淆矩阵, 并保存在 confusion_matrix.png
 

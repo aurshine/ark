@@ -88,12 +88,17 @@ def train(use_cold=False):
                                                               stop_min_epoch=STOP_MIN_EPOCH,
                                                               optim_params=OPTIMIZER_PARAMS)
 
+    max_cell = None
     # 平均准确率
     avg_acc = 0
     for i, valid_acc in enumerate(k_valid_acc):
+        if max_cell is None or valid_acc[-1].score > max_cell.score:
+            max_cell = valid_acc[-1]
+
         avg_acc += valid_acc[-1].score / len(k_valid_acc)
         valid_acc.plot('epochs', 'accuracy', [f'fold-{i}'], 'valid-k-fold-cross-valid', save=False)
     save_fig('valid.png')
+    max_cell.confusion_matrix()
 
     for i, train_acc in enumerate(k_train_acc):
         train_acc.plot('epochs', 'accuracy', [f'fold-{i}'], 'train-k-fold-cross-valid', save=False)

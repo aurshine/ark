@@ -209,7 +209,7 @@ class HistoryTransformerLayers(nn.Module):
 
     每一层的 key-value 由前 max_history_len 层的输出在steps维度拼接组成
     """
-    def __init__(self, hidden_size, num_heads, num_layers, max_history_len=5, dropout=0, device=None):
+    def __init__(self, hidden_size, num_heads, num_layers, max_history_len=3, dropout=0, device=None):
         super(HistoryTransformerLayers, self).__init__()
         self.device = use_device(device)
         self.attentions = nn.ModuleList([TransformerLayer(hidden_size, num_heads, dropout, device=self.device) for _ in range(num_layers)])

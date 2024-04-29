@@ -28,7 +28,7 @@ class Trainer(nn.Module):
             optim_params: Optional[Dict] = None,
             loss=None,
             max_norm=-1,
-            valid_datas=None) -> Tuple[List, Accuracy, Accuracy]:
+            valid_loader=None) -> Tuple[List, Accuracy, Accuracy]:
         """
         训练函数
         :param train_loader: 训练集导入器
@@ -47,7 +47,7 @@ class Trainer(nn.Module):
 
         :param optim_params: 当 optimizer 为 None 时, 对默认优化器初始化
 
-        :param valid_datas: 验证集
+        :param valid_loader: 验证集
 
         :return: 每轮训练的loss构成的列表, 每轮训练训练集的准确率, 每轮训练验证集的准确率
         """
@@ -65,7 +65,7 @@ class Trainer(nn.Module):
         # 记录 每个 epoch 的 loss, 训练集准确率，验证集准确率
         loss_list, train_acc, valid_acc = [], Accuracy(self.num_class), Accuracy(self.num_class)
         for epoch in range(epochs):
-            epoch_loss, train_cell, valid_cell = self.fit_epoch(train_loader, optimizer, loss, max_norm, valid_datas)
+            epoch_loss, train_cell, valid_cell = self.fit_epoch(train_loader, optimizer, loss, max_norm, valid_loader)
             train_acc.add_cell(train_cell)
             valid_acc.add_cell(valid_cell)
 
@@ -87,7 +87,7 @@ class Trainer(nn.Module):
               f'train_accuracy: {train_acc}\n'
               f'valid_accuracy: {valid_acc}\n')
 
-    def fit_epoch(self, loader, optimizer, loss, max_norm=0, valid_dater: Union[List, Tuple, None] = None) -> Tuple[float, AccuracyCell, AccuracyCell]:
+    def fit_epoch(self, loader, optimizer, loss, max_norm=0, valid_loader: Union[List, Tuple, None] = None) -> Tuple[float, AccuracyCell, AccuracyCell]:
         """
         训练一个 epoch 的操作
 
@@ -99,7 +99,7 @@ class Trainer(nn.Module):
 
         :param max_norm: 梯度剪裁
 
-        :param valid_dater: 验证集 (valid_x, valid_y, *args)
+        :param valid_loader: 验证集导入器 (valid_x, valid_y, *args)
 
         :return: 训练集的平均损失, 训练集的准确率, 验证集的准确率
         """
@@ -123,10 +123,13 @@ class Trainer(nn.Module):
             train_accuracy += AccuracyCell(self.num_class, torch.argmax(y_hat, dim=-1), y)
 
         # 训练结束验证
-        if valid_dater is not None:
-            valid_x, valid_y, *valid_args = valid_dater
-            valid_x, valid_y = valid_x.to(self.device), valid_y.to(self.device)
-            valid_accuracy = AccuracyCell(self.num_class, self.predict(valid_x, *valid_args), valid_y)
+        if valid_loader is not None:
+            self.eval()
+            for valid_x, valid_y, *valid_args in valid_loader:
+                valid_x, valid_y = valid_x.to(self.device), valid_y.to(self.device)
+                y_hat = self.forward(valid_x, *valid_args)
+                valid_accuracy += AccuracyCell(self.num_class, torch.argmax(y_hat, dim=-1), valid_y)
+            self.train()
 
         return epoch_loss, train_accuracy, valid_accuracy
 

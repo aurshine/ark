@@ -112,7 +112,7 @@ class AccuracyCell:
         """
         cmd = ConfusionMatrixDisplay(self.class_matrix, display_labels=label)
         cmd.plot()
-        plt.show()
+        plt.clf()
         plt.savefig('confusion_matrix.png')
 
     def __len__(self):

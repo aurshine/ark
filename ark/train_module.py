@@ -17,9 +17,9 @@ HIDDEN_SIZE = 64                                       # 隐藏层大小
 
 NUM_HEADS = 4                                          # 多头注意力头数
 
-EN_LAYER = 3                                           # 编码器层数
+EN_LAYER = 4                                           # 编码器层数
 
-DE_LAYER = 6                                           # 解码器层数
+DE_LAYER = 4                                           # 解码器层数
 
 STEPS = 128                                            # 每个文本的步长
 
@@ -27,7 +27,7 @@ DROPOUT = 0.5                                          # 随机失活率
 
 #################################################################################
 # 训练参数
-K_FOLD = 10                                            # 交叉验证折数
+K_FOLD = 15                                            # 交叉验证折数
 
 NUM_VALID = 5                                          # 验证次数, -1表示全部验证
 
@@ -98,11 +98,11 @@ def train(use_cold=False):
         avg_acc += valid_acc[-1].score / len(k_valid_acc)
         valid_acc.plot('epochs', 'accuracy', [f'fold-{i}'], 'valid-k-fold-cross-valid', save=False)
     save_fig('valid.png')
-    max_cell.confusion_matrix()
 
     for i, train_acc in enumerate(k_train_acc):
         train_acc.plot('epochs', 'accuracy', [f'fold-{i}'], 'train-k-fold-cross-valid', save=False)
     save_fig('train.png')
+    max_cell.confusion_matrix()
 
     print('avg acc:', avg_acc)
 

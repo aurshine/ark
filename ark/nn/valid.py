@@ -56,9 +56,10 @@ def k_fold_valid(k: int, *datas: Tensor, model, num_class, num_valid=-1, batch_s
         train_data, valid_data = get_k_fold(k, i, *datas)
 
         models.append(deepcopy(model))
-        loader = get_tensor_loader(*train_data, batch_size=batch_size, drop_last=True)
+        train_loader = get_tensor_loader(*train_data, batch_size=batch_size, drop_last=True)
+        valid_loader = get_tensor_loader(*valid_data, batch_size=batch_size, drop_last=True)
 
-        loss_list, train_acc, valid_acc = models[-1].fit(loader, valid_datas=valid_data, **kwargs)
+        loss_list, train_acc, valid_acc = models[-1].fit(train_loader, valid_loader=valid_loader, **kwargs)
 
         k_loss_list.append(loss_list)
         k_train_acc.append(train_acc)

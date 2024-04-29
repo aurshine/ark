@@ -28,7 +28,7 @@ class Trainer(nn.Module):
             optim_params: Optional[Dict] = None,
             loss=None,
             max_norm=-1,
-            valid_datas=None):
+            valid_datas=None) -> Tuple[List, Accuracy, Accuracy]:
         """
         训练函数
         :param train_loader: 训练集导入器
@@ -79,12 +79,15 @@ class Trainer(nn.Module):
         return loss_list, train_acc, valid_acc
 
     def print_fit_info(self, epoch: Union[int, str], loss: float, train_acc: AccuracyCell, valid_acc: AccuracyCell):
+        """
+        打印训练信息
+        """
         print(f'epoch {epoch}:\n'
               f'exp_loss = {math.exp(loss)}\n'
               f'train_accuracy: {train_acc}\n'
               f'valid_accuracy: {valid_acc}\n')
 
-    def fit_epoch(self, loader, optimizer, loss, max_norm=0, valid_loader: Union[List, Tuple, None] = None):
+    def fit_epoch(self, loader, optimizer, loss, max_norm=0, valid_dater: Union[List, Tuple, None] = None) -> Tuple[float, AccuracyCell, AccuracyCell]:
         """
         训练一个 epoch 的操作
 
@@ -96,9 +99,9 @@ class Trainer(nn.Module):
 
         :param max_norm: 梯度剪裁
 
-        :param valid_loader: (valid_x, valid_y, *args)
+        :param valid_dater: 验证集 (valid_x, valid_y, *args)
 
-        :return:
+        :return: 训练集的平均损失, 训练集的准确率, 验证集的准确率
         """
         epoch_loss = 0
         train_accuracy, valid_accuracy = AccuracyCell(self.num_class), AccuracyCell(self.num_class)
@@ -107,7 +110,7 @@ class Trainer(nn.Module):
             x, y = x.to(self.device), y.to(self.device)
             y_hat = self.forward(x, *args)
             batch_loss = loss(y_hat, y)
-            epoch_loss += batch_loss.item()
+            epoch_loss += batch_loss.item() / len(loader)
 
             # 梯度计算
             batch_loss.backward()
@@ -119,17 +122,26 @@ class Trainer(nn.Module):
             # 准确率计算
             train_accuracy += AccuracyCell(self.num_class, torch.argmax(y_hat, dim=-1), y)
 
-        if valid_loader is not None:
-            valid_x, valid_y, *valid_args = valid_loader
+        # 训练结束验证
+        if valid_dater is not None:
+            valid_x, valid_y, *valid_args = valid_dater
             valid_x, valid_y = valid_x.to(self.device), valid_y.to(self.device)
             valid_accuracy = AccuracyCell(self.num_class, self.predict(valid_x, *valid_args), valid_y)
 
-        epoch_loss /= len(loader)
         return epoch_loss, train_accuracy, valid_accuracy
 
-    @torch.no_grad()
-    def predict(self, x, *args, **kwargs) -> torch.Tensor:
-        """ 返回长度为batch_size的一维tensor"""
+    def predict(self, x: torch.Tensor, *args, **kwargs) -> torch.Tensor:
+        """
+        进入eval模式, 预测输入数据 x 的标签
+
+        :param x: 形状与 forward 函数的输入相同
+
+        :param args: 其他参数
+
+        :param kwargs: 其他参数
+
+        :returns: 返回长度为batch_size的一维tensor
+        """
         self.eval()
 
         y = self.forward(x, *args, **kwargs)
@@ -138,9 +150,9 @@ class Trainer(nn.Module):
             y = y[:, :self.num_class]
         return torch.argmax(y, dim=-1)
 
-    def analyse(self, x, classes: list, **kwargs) -> list:
+    def analyse(self, x: torch.Tensor, classes: list, **kwargs) -> list:
         """
-        :param x: 形状为 (batch_size, ...)
+        :param x: 形状与forward函数的输入相同
 
         :param classes:  列表组成的分类名, ['非恶意', '恶意']
 
@@ -171,7 +183,10 @@ class Trainer(nn.Module):
         """读取本地模型"""
         self.load_state_dict(torch.load(path, map_location=use_device()))
 
-    def init(self):
+    def init_params(self):
+        """
+        初始化模型参数
+        """
         for name, param in self.named_parameters():
             try:
                 if isinstance(param, nn.parameter.UninitializedParameter):

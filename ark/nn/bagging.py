@@ -16,8 +16,8 @@ class Bagging(Trainer):
         for model in self.models:
             model.fit(*args, **kwargs)
 
-    def forward(self, x, **kwargs):
-        return [model.forward(x, **kwargs) for model in self.models]
+    def forward(self, x, *args, **kwargs):
+        return [model.forward(x, *args, **kwargs) for model in self.models]
 
     def predict(self, x, **kwargs):
         # outputs 的形状为 (batch_size, num_models)
@@ -30,8 +30,11 @@ class Bagging(Trainer):
 
         return torch.argmax(pred.sum(dim=1), dim=-1)
 
-    def __getitem__(self, item):
-        return self.models[item]
+    def __getitem__(self, index):
+        return self.models[index]
 
     def __len__(self):
         return len(self.models)
+
+    def __iter__(self):
+        return iter(self.models)

@@ -38,6 +38,9 @@ class AccuracyCell:
             self.__call__(y_hat, y)
 
     def clear(self):
+        """
+        清空之前保存的值
+        """
         self._score = None
         self.class_matrix.fill(0)
 
@@ -54,7 +57,8 @@ class AccuracyCell:
         return r, t, rate
 
     def __call__(self, y_hat: torch.Tensor, y: torch.Tensor):
-        """y 和 y_hat 必须是一维的tensor
+        """
+        传入预测值和真实值, y 和 y_hat 必须是一维的tensor
 
         清空之前保存的值, 计算当前传入的准确率
 
@@ -71,13 +75,20 @@ class AccuracyCell:
 
     @property
     def score(self):
+        """
+        计算准确率, 并缓存结果
+
+        :return: 准确率
+        """
         if self._score is None:
             self._score = self.__getitem__()[2]
 
         return self._score
 
     def right(self, index=None) -> float:
-        """某一类的正确数, index=None 表示所有类"""
+        """
+        :param index: index类的正确数, 为None 表示所有类
+        """
         if index is None:
             indices = list(range(self.num_class))
             return float(np.sum(self.class_matrix[indices, indices]))
@@ -85,13 +96,20 @@ class AccuracyCell:
             return float(self.class_matrix[index, index])
 
     def total(self, index=None) -> float:
-        """某一类真实的数量, index=None 表示所有类"""
+        """
+        :param index: index类真实的数量, 为None 表示所有类
+        """
         if index is None:
             return float(np.sum(self.class_matrix))
         else:
             return float(np.sum(self.class_matrix[index]))
 
     def confusion_matrix(self, label):
+        """
+        绘制混淆矩阵, 并保存在 confusion_matrix.png
+
+        :param label: 标签列表
+        """
         cmd = ConfusionMatrixDisplay(self.class_matrix, display_labels=label)
         cmd.plot()
         plt.show()
@@ -125,7 +143,8 @@ class AccuracyCell:
 
 
 class Accuracy:
-    """记录准确率的对象
+    """
+    记录多个历史准确率的对象, AccuracyCell 对象专属的 List
 
     通过add方法添加预测值和真实值
     """

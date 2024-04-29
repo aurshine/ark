@@ -1,6 +1,9 @@
+from collections import deque
 from typing import Union, List, Tuple, Optional
+
 import torch
 from torch import nn
+
 from ark.device import use_device
 from ark.nn.addnorm import AddNorm
 
@@ -31,7 +34,7 @@ class MultiLinear(nn.Module):
         super(MultiLinear, self).__init__()
 
         self.device = use_device(device)
-        self.dense = []
+        layers = []
         num_layer = len(num_outputs)
 
         assert num_layer > 0
@@ -41,23 +44,23 @@ class MultiLinear(nn.Module):
             dropout += [0] * (num_layer - len(dropout))
 
         for num_output, drop in zip(num_outputs, dropout):
-            self.dense.append(nn.LazyLinear(num_output, device=self.device)
+            layers.append(nn.LazyLinear(num_output, device=self.device)
                               if num_input is None
                               else nn.Linear(num_input, num_output, device=self.device)
                               )
             if drop > 0:
-                self.dense.append(nn.Dropout(drop))
+                layers.append(nn.Dropout(drop))
             elif norm == 'batch_norm':
-                self.dense.append(nn.BatchNorm1d(num_output, device=self.device))
+                layers.append(nn.BatchNorm1d(num_output, device=self.device))
             elif norm == 'layer_norm':
-                self.dense.append(nn.LayerNorm(num_output, device=self.device))
+                layers.append(nn.LayerNorm(num_output, device=self.device))
 
-            self.dense.append(active)
+            layers.append(active)
             num_input = num_output
 
         if not save_last_active:
-            self.dense.pop()
-        self.dense = nn.Sequential(*self.dense)
+            layers.pop()
+        self.dense = nn.Sequential(*layers)
 
     def forward(self, X):
         return self.dense(X.to(self.device))
@@ -156,7 +159,7 @@ class PositionWiseFFN(nn.Module):
     def __init__(self, input_size, hidden_size, output_size, dropout=0, device=None):
         super(PositionWiseFFN, self).__init__()
         self.device = use_device(device)
-        self.linear1 = MultiLinear([hidden_size, output_size], active=nn.ReLU(), dropout=dropout, num_input=input_size, device=self.device)
+        self.linear1 = MultiLinear([hidden_size, output_size], active=nn.LeakyReLU(), dropout=dropout, num_input=input_size, device=self.device)
         self.linear2 = nn.Linear(input_size, output_size, device=self.device) if input_size != output_size else None
         self.add_norm = AddNorm(output_size, dropout=dropout, device=self.device)
 
@@ -171,7 +174,7 @@ class TransformerLayer(nn.Module):
     """
     Transformer 块
 
-    由 MutiheadAttention -> Addnorm -> PositionWiseFFN -> Addnorm 组成
+    由 MultiheadAttention -> Addnorm -> PositionWiseFFN -> Addnorm 组成
     """
     def __init__(self, hidden_size, num_heads, dropout=0, device=None):
         super(TransformerLayer, self).__init__()
@@ -182,4 +185,43 @@ class TransformerLayer(nn.Module):
         self.ffn = PositionWiseFFN(hidden_size, hidden_size, hidden_size, dropout, device=self.device)
 
     def forward(self, query, key, value, key_padding_mask=None, **kwargs):
-        return self.ffn(self.add_norm(query, self.attention.forward(query, key, value, key_padding_mask, **kwargs)[0]))
+        """
+        :param query: 形状为 (batch_size, query_steps, hidden_size)
+
+        :param key: 形状为 (batch_size, key_steps, hidden_size)
+
+        :param value: 形状为 (batch_size, key_steps, hidden_size)
+
+        :param key_padding_mask: BoolTensor类型 形状为 (batch_size, key_steps)
+
+        :param kwargs: 可选参数, 用于 nn.MultiheadAttention 的其它参数
+
+        :return: 形状为 (batch_size, query_steps, hidden_size)
+        """
+        return self.ffn(self.add_norm(query, self.attention(query, key, value, key_padding_mask, **kwargs)[0]))
+
+
+class HistoryTransformerLayers(nn.Module):
+    """
+    记录历史的 Transformer 层
+
+    由多层的TransformerLayer组成
+
+    每一层的 key-value 由前 max_history_len 层的输出在steps维度拼接组成
+    """
+    def __init__(self, hidden_size, num_heads, num_layers, max_history_len=3, dropout=0, device=None):
+        super(HistoryTransformerLayers, self).__init__()
+        self.device = use_device(device)
+        self.attentions = nn.ModuleList([TransformerLayer(hidden_size, num_heads, dropout, device=self.device) for _ in range(num_layers)])
+        self.max_history_len = max_history_len
+
+    def forward(self, x, key_padding_mask=None, **kwargs):
+        deque_key_values = deque([x], maxlen=self.max_history_len)
+
+        for attention in self.attentions:
+            key_values = torch.cat(list(deque_key_values), dim=1)
+            x = attention(x, key_values, key_values, key_padding_mask=key_padding_mask, **kwargs)
+            deque_key_values.append(x)
+            key_padding_mask = None
+
+        return x

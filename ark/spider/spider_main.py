@@ -31,14 +31,9 @@ def get_text(url: str, **kwargs) -> Optional[str]:
     if 'headers' not in kwargs:
         kwargs['headers'] = HEADERS
 
-    try:
-        response = __session__.get(url=url, **kwargs)
-        response.raise_for_status()
-        return response.text
-    except requests.exceptions.TooManyRedirects as e:
-        traceback.print_exc()
-        print(f'url = {url} {e}')
-    return None
+    response = __session__.get(url=url, **kwargs)
+    response.raise_for_status()
+    return response.text
 
 
 def get_tie_ba_html(tie_ba_name: str, page=0, **kwargs) -> str:

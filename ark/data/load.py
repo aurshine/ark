@@ -11,7 +11,7 @@ CURRENT_FOLDER = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
 
 
 def load_cold(file_name='train', num_texts=-1, replace=False) -> Tuple[List[str], List[int]]:
-    """ 在COLD文件夹读取数据集
+    """ 在DATASET文件夹读取数据集
 
     :param file_name: 可选择 'train' 'test' 'dev' 'tie-ba' 'tie-ba-pos' 'tie-ba-neg', 'cold'
 
@@ -21,7 +21,7 @@ def load_cold(file_name='train', num_texts=-1, replace=False) -> Tuple[List[str]
 
     :return: 返回 texts, labels
     """
-    cold = pd.read_csv(os.path.join(CURRENT_FOLDER, f'COLD/{file_name}.csv'))
+    cold = pd.read_csv(os.path.join(CURRENT_FOLDER, f'DATASET/{file_name}.csv'))
 
     if num_texts < 0:
         num_texts = cold.shape[0]
@@ -40,7 +40,7 @@ def load_train_test_tieba(num_texts: Union[int, list] = -1,
                           drop_test=False
                           ) -> Tuple[List[str], torch.LongTensor, Optional[List[str]], Optional[torch.LongTensor]]:
     """
-    从 ark/data/COLD/tie-ba-pos.csv 和 ark/data/COLD/tie-ba-neg.csv 加载 训练集 和 测试集
+    从 ark/data/DATASET/tie-ba-pos.csv 和 ark/data/DATASET/tie-ba-neg.csv 加载 训练集 和 测试集
 
     :param num_texts: 选择正样本和负样本的数量, 为 list 时应为 [正样本数, 负样本数]
 
@@ -84,7 +84,7 @@ def load_train_test_tieba(num_texts: Union[int, list] = -1,
 
 def load_train_test_cold():
     """
-    从 ark/data/COLD/train.csv 和 ark/data/COLD/test.csv 加载 训练集 和 测试集
+    从 ark/data/DATASET/train.csv 和 ark/data/DATASET/test.csv 加载 训练集 和 测试集
     """
     train_texts, train_labels = load_cold('train')
     test_texts, test_labels = load_cold('test')
@@ -144,7 +144,7 @@ def update_tie_ba_split(encoding='utf-8-sig'):
 
     将tie-ba数据集分为pos和nag两个数据集
     """
-    path = os.path.join(CURRENT_FOLDER, 'COLD')
+    path = os.path.join(CURRENT_FOLDER, 'DATASET')
     df = pd.read_csv(TIE_BA_CSV_PATH, encoding=encoding)
 
     pos = df[df['label'] == 0]

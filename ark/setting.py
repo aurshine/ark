@@ -16,19 +16,19 @@ BAD_TXT_PATH = os.path.join(SETTING_PATH, 'spider/cache/bad.txt')
 NOT_BAD_TXT_PATH = os.path.join(SETTING_PATH, 'spider/cache/notBad.txt')
 
 # 词表存储地址
-VOCAB_PATH = os.path.join(SETTING_PATH, 'data/COLD/vocab.txt')
+VOCAB_PATH = os.path.join(SETTING_PATH, 'data/DATASET/vocab.txt')
 
 # 拼音表储存地址
-PINYIN_VOCAB_PATH = os.path.join(SETTING_PATH, 'data/COLD/pinyin.txt')
+PINYIN_VOCAB_PATH = os.path.join(SETTING_PATH, 'data/DATASET/pinyin.txt')
 
 # 首字母表存储地址
-LETTER_VOCAB_PATH = os.path.join(SETTING_PATH, 'data/COLD/letter.txt')
+LETTER_VOCAB_PATH = os.path.join(SETTING_PATH, 'data/DATASET/letter.txt')
 
 # 爬取过的url的存储地址
 HAS_URLS_PATH = os.path.join(SETTING_PATH, 'spider/cache/hasUrls')
 
 # 贴吧数据集地址
-TIE_BA_CSV_PATH = os.path.join(SETTING_PATH, 'data/COLD/tie-ba.csv')
+TIE_BA_CSV_PATH = os.path.join(SETTING_PATH, 'data/DATASET/tie-ba.csv')
 
 # 训练好的模型的存放文件夹
 MODEL_LIB = os.path.join(SETTING_PATH, 'data/result-models')
@@ -65,4 +65,4 @@ PROXIES = {
 }
 
 # tuple对象, 每次请求后的时延区间
-DELAY_SECONDS = (1, 3)
+DELAY_SECONDS = (5, 10)

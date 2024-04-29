@@ -20,6 +20,15 @@ class Trainer(nn.Module):
     def forward(self, inputs, *args, **kwargs):
         raise NotImplementedError
 
+    def print_fit_info(self, epoch: Union[int, str], loss: float, train_acc: AccuracyCell, valid_acc: AccuracyCell):
+        """
+        打印训练信息
+        """
+        print(f'epoch {epoch}:\n'
+              f'exp_loss = {math.exp(loss)}\n'
+              f'train_accuracy: {train_acc}\n'
+              f'valid_accuracy: {valid_acc}\n')
+
     def fit(self, train_loader,
             epochs=500,
             stop_loss_value=-1,
@@ -77,15 +86,6 @@ class Trainer(nn.Module):
                 self.print_fit_info(epoch, epoch_loss, train_cell, valid_cell)
 
         return loss_list, train_acc, valid_acc
-
-    def print_fit_info(self, epoch: Union[int, str], loss: float, train_acc: AccuracyCell, valid_acc: AccuracyCell):
-        """
-        打印训练信息
-        """
-        print(f'epoch {epoch}:\n'
-              f'exp_loss = {math.exp(loss)}\n'
-              f'train_accuracy: {train_acc}\n'
-              f'valid_accuracy: {valid_acc}\n')
 
     def fit_epoch(self, loader, optimizer, loss, max_norm=0, valid_loader: Union[List, Tuple, None] = None) -> Tuple[float, AccuracyCell, AccuracyCell]:
         """

@@ -1,3 +1,7 @@
+import random
+
+from ark.setting import COMMON_CHAR_PATH
+from ark.spider.classify import get_lines
 from pypinyin import lazy_pinyin, Style
 
 EXTEND_PINY = {
@@ -53,7 +57,9 @@ def translate_piny(inputs, style=None):
 
 
 def translate_char(c: str, style=None):
-    """单字符转化拼音"""
+    """
+    单字符转化拼音
+    """
     if style is None:
         style = Style.NORMAL
     else:
@@ -61,3 +67,35 @@ def translate_char(c: str, style=None):
     assert len(c) == 1, f'c = {c} c.len = {len(c)}'
 
     return lazy_pinyin(c, style=style, v_to_u=False)[0]
+
+
+piny_dict = None
+
+
+def translate_into_other_piny(text: str, p: float = 0):
+    """
+    将一段文本的部分词元翻译为同拼音的其它词元
+
+    :param text: 传入文本
+
+    :param p: 每个词元被翻译的概率
+
+    :return: 新的文本
+    """
+    global piny_dict
+    if piny_dict is None:
+        piny_dict = {}
+        for line in get_lines(COMMON_CHAR_PATH):
+            line = line.split()
+            piny_dict[line[0]] = line[1:]
+
+    ret = ''
+    for s in text:
+        u = random.uniform(0, 1)
+        if u <= p:
+            s_p = translate_char(s)
+            s = random.choice(piny_dict.get(s_p, [s]))
+
+        ret += s
+
+    return ret

@@ -230,17 +230,3 @@ def fusion_piny_letter(texts, vocabs: Union[List[Vocab], Vocab], steps=128, fron
     letter = translate_piny(texts, Style.FIRST_LETTER)
 
     return n_texts_process([texts, piny, letter], vocabs, steps, modes=['char', None, None], front_pad=front_pad)
-
-
-def list_shape(lst, shape=None):
-    """
-    返回一个list的形状
-    """
-    if shape is None:
-        shape = []
-
-    if isinstance(lst, (list, tuple)):
-        shape.append(len(lst))
-        list_shape(lst[0], shape)
-
-    return shape

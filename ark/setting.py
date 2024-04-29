@@ -1,39 +1,51 @@
 import os
 
-with open(os.path.join(os.path.dirname(__file__), 'spider/cache/hasUrls')) as f:
-    URLS = set(f.readlines())
 
 # setting.py 所在的文件夹地址
 SETTING_PATH = os.path.abspath(os.path.dirname(__file__))
 
+# cache文件夹地址
+CACHE_PATH = os.path.join(SETTING_PATH, 'spider/cache')
+
 # 未分类文件的存储地址
-UN_CLASSIFY_PATH = os.path.join(SETTING_PATH, 'spider/cache/un_classify.txt')
+UN_CLASSIFY_PATH = os.path.join(CACHE_PATH, 'un_classify.txt')
 
 # 恶意语句的存储地址
-BAD_TXT_PATH = os.path.join(SETTING_PATH, 'spider/cache/bad.txt')
+BAD_TXT_PATH = os.path.join(CACHE_PATH, 'bad.txt')
 
 # 非恶意语句的存储地址
-NOT_BAD_TXT_PATH = os.path.join(SETTING_PATH, 'spider/cache/notBad.txt')
-
-# 词表存储地址
-VOCAB_PATH = os.path.join(SETTING_PATH, 'data/DATASET/vocab.txt')
-
-# 拼音表储存地址
-PINYIN_VOCAB_PATH = os.path.join(SETTING_PATH, 'data/DATASET/pinyin.txt')
-
-# 首字母表存储地址
-LETTER_VOCAB_PATH = os.path.join(SETTING_PATH, 'data/DATASET/letter.txt')
+NOT_BAD_TXT_PATH = os.path.join(CACHE_PATH, 'notBad.txt')
 
 # 爬取过的url的存储地址
-HAS_URLS_PATH = os.path.join(SETTING_PATH, 'spider/cache/hasUrls')
+HAS_URLS_PATH = os.path.join(CACHE_PATH, 'hasUrls')
+
+# DATASET 文件夹地址
+DATASET_PATH = os.path.join(SETTING_PATH, 'data/DATASET')
+
+# 词表存储地址
+VOCAB_PATH = os.path.join(DATASET_PATH, 'vocab.txt')
+
+# 拼音表储存地址
+PINYIN_VOCAB_PATH = os.path.join(DATASET_PATH, 'pinyin.txt')
+
+# 首字母表存储地址
+LETTER_VOCAB_PATH = os.path.join(SETTING_PATH, 'letter.txt')
 
 # 贴吧数据集地址
-TIE_BA_CSV_PATH = os.path.join(SETTING_PATH, 'data/DATASET/tie-ba.csv')
+TIE_BA_CSV_PATH = os.path.join(DATASET_PATH, 'tie-ba.csv')
+
+# 中文常见字地址
+COMMON_CHAR_PATH = os.path.join(DATASET_PATH, 'common_char.txt')
 
 # 训练好的模型的存放文件夹
 MODEL_LIB = os.path.join(SETTING_PATH, 'data/result-models')
-if not os.path.exists(MODEL_LIB):
-    os.mkdir(MODEL_LIB)
+
+for dir_name in [CACHE_PATH, DATASET_PATH, MODEL_LIB]:
+    if not os.path.exists(dir_name):
+        os.mkdir(dir_name)
+
+with open(HAS_URLS_PATH, encoding='utf-8', mode='r') as f:
+    URLS = set(f.readlines())
 
 # 爬虫 headers 配置
 HEADERS = {

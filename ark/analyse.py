@@ -65,7 +65,7 @@ def analyse(comments: Union[str, List[str]], classes: Optional[Sequence[str]] = 
 
     global __ARK__
     if __ARK__ is None:
-        __ARK__ = reload(99, Vocab(VOCAB_PATH), hidden_size=64, in_channel=3, num_heads=4, en_num_layer=4, de_num_layer=8, dropout=0.5, num_class=2)
+        __ARK__ = reload(97, Vocab(VOCAB_PATH), hidden_size=32, in_channel=3, num_heads=4, en_num_layer=4, de_num_layer=8, dropout=0.5, num_class=2)
 
     x, valid_len = fusion_piny_letter(comments, __ARK__.vocab, 128)
     return __ARK__.analyse(x, classes, valid_len=valid_len)

@@ -112,8 +112,6 @@ def update_tie_ba(encoding='utf-8-sig'):
 
     :param encoding: 编码方式
     """
-    print('更新贴吧数据集')
-
     def dic(path, label):
         lines = get_lines(path, encoding=encoding)
         return {
@@ -136,6 +134,7 @@ def update_tie_ba(encoding='utf-8-sig'):
     clear(BAD_TXT_PATH), clear(NOT_BAD_TXT_PATH)
 
     update_tie_ba_split(encoding=encoding)
+    print('更新贴吧数据集')
 
 
 def update_tie_ba_split(encoding='utf-8-sig'):

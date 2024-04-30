@@ -123,8 +123,10 @@ def train_only(use_cold=False):
     tieba_train_texts, tieba_train_labels = load.load_cold('tie-ba')
     cold_train_texts, cold_train_labels = load.load_cold('cold') if use_cold else ([], [])
 
-    train_texts, _, train_labels, _ = train_test_split(tieba_train_texts + cold_train_texts,
-                                                       tieba_train_labels + cold_train_labels, train_size=0.99)
+    texts, labels = tieba_train_texts + cold_train_texts, tieba_train_labels + cold_train_labels
+    data_augment_(texts, labels)
+
+    train_texts, _, train_labels, _ = train_test_split(texts, labels, train_size=0.99)
     train_labels = torch.tensor(train_labels)
 
     # 构建词典
@@ -154,4 +156,4 @@ def train_only(use_cold=False):
                               optim_params=OPTIMIZER_PARAMS)
 
     ark.save_state_dict(os.path.join(MODEL_LIB,
-                                     f'ark-{int(train_acc[-1]() * 100)}-{HIDDEN_SIZE}-{NUM_HEADS}-{EN_LAYER}-{DE_LAYER}.net'))
+                                     f'ark-{int(train_acc[-1].score * 100)}-{HIDDEN_SIZE}-{NUM_HEADS}-{EN_LAYER}-{DE_LAYER}.net'))

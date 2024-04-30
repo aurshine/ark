@@ -1,6 +1,6 @@
 import random
 from collections import Counter
-from typing import Tuple, Union, List
+from typing import Tuple, Union, List, Optional
 import torch
 from torch import nn, Tensor
 import jieba
@@ -233,13 +233,13 @@ def fusion_piny_letter(texts, vocabs: Union[List[Vocab], Vocab], steps=128, fron
     return n_texts_process([texts, piny, letter], vocabs, steps, modes=['char', None, None], front_pad=front_pad)
 
 
-def data_augment_(texts: List[str], labels: List, choice_p: float = 0.2, mdf_p: float = 0.1) -> Tuple[List[str], List]:
+def data_augment_(texts: List[str], labels: List = None, choice_p: float = 0.2, mdf_p: float = 0.1) -> Tuple[List[str], Optional[List]]:
     """
     数据增广, 在原列表里操作
 
     :param texts: 所有文本
 
-    :param labels: 文本对应的标签
+    :param labels: 文本对应的标签, 默认为None
 
     :param choice_p: 每个文本被选择的概率
 
@@ -247,4 +247,34 @@ def data_augment_(texts: List[str], labels: List, choice_p: float = 0.2, mdf_p: 
 
     :return:  返回增广后的数据
     """
-    for text, label in zip(texts, labels):
+    len_texts = len(texts)
+    for i in range(len_texts):
+        text, label = texts[i], (labels[i] if labels else None)
+
+        u_choice = random.uniform(0, 1)
+        if u_choice < choice_p:
+            texts.append(translate_into_other_piny(text, mdf_p))
+            if labels is not None:
+                labels.append(label)
+
+    return texts, labels
+
+
+def data_augment(texts: List[str], labels: List = None, choice_p: float = 0.2, mdf_p: float = 0.1) -> Tuple[List[str], Optional[List]]:
+    """
+    数据增广, 在原列表里操作
+
+    :param texts: 所有文本
+
+    :param labels: 文本对应的标签, 默认为None
+
+    :param choice_p: 每个文本被选择的概率
+
+    :param mdf_p: 每个词元被修改的概率
+
+    :return:  返回增广后的数据
+    """
+    texts_ = [text for text in texts]
+    labels_ = [label for label in labels]
+    return data_augment_(texts_, labels_, choice_p, mdf_p)
+

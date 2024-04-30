@@ -19,11 +19,9 @@ class Decoder(nn.Module):
 
 
 class ArkDecoder(Decoder):
-    def __init__(self, hidden_size, num_heads, num_layer, num_steps, dropout=0, device=None):
+    def __init__(self, hidden_size, num_heads, num_layer, dropout=0, device=None):
         super(ArkDecoder, self).__init__(device)
         self.history_layers = HistoryTransformerLayers(hidden_size, num_heads, num_layer, dropout=dropout, device=self.device)
-        # self.flatten = nn.Flatten()
-        # self.ffn = PositionWiseFFN(hidden_size * num_steps, hidden_size, hidden_size, dropout=dropout, device=self.device)
         self.query = nn.Parameter(torch.randn(size=(1, 1, hidden_size), device=self.device))
         self.fusion = TransformerLayer(hidden_size, num_heads, dropout=dropout, device=self.device)
 
@@ -41,7 +39,5 @@ class ArkDecoder(Decoder):
 
         # 形状为 (batch_size, 1, hidden_size)
         query = self.query.repeat(X.shape[0], 1, 1)
-
-        # query = self.ffn(self.flatten(X)).unsqueeze(1)
 
         return self.fusion(query, X, X, **kwargs).squeeze(1)

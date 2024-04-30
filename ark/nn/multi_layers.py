@@ -208,7 +208,8 @@ class TransformerLayers(nn.Module):
     由多层的 TransformerLayer 组成
     """
     def __init__(self, hidden_size, num_heads, num_layer=1, dropout=0, device=None):
-        super(TransformerLayers, self).__init__(device)
+        super(TransformerLayers, self).__init__()
+        self.device = use_device(device)
         self.transformer_blocks = nn.ModuleList([TransformerLayer(hidden_size, num_heads, dropout, device=self.device)
                                                  for _ in range(num_layer)])
 

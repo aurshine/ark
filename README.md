@@ -1,20 +1,25 @@
 # 安装
+
 要求python3.9及以上
+
 ### github
+
 ```commandline
 git clone https://github.com/aurshine/ark.git
 cd ark
 pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
 ```
+
 ### gitee (不保证同步更新)
+
 ```commandline
 git clone https://gitee.com/jiuxiangyang/ark.git
 cd ark
 pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
 ```
 
-
 # 使用 analyse 分析恶意语句
+
 ```python
 from ark.analyse import analyse, ByType
 
@@ -28,7 +33,9 @@ print(analyse(comments, by=ByType.BY_TEXT))
 ```
 
 # 自调参训练模型
-`ark/train_module.py`
+
+文件地址: `ark/train_module.py`
+
 ### 提供参数调整:
 
 - 隐藏层大小
@@ -56,22 +63,28 @@ train_module.train() # 开始训练模型, 并验证效果
 
 train_module.train_only() # 仅训练模型, 不验证效果
 ```
+
 训练的模型均保存在 `ark/data/result-models/`路径下
 
 可使用 setting.MODEL_LIB 指定`ark/data/result-models/`路径
+
 ```python
 from ark.setting import MODEL_LIB
 
 print(MODEL_LIB)
 ```
-使用`train_module.train()`在训练结束后会在 `ark/` 下生成 `train.png` 和 `valid.png` 两个图片，分别表示训练集和验证集的准确率变化曲线。
+
+使用`train_module.train()`在训练结束后会在 `ark/` 下生成 `train.png` 和 `valid.png` 两个图片，分别表示训练集和验证集的准确率变化曲线和`matrix_confusion.png`图片表示混淆矩阵。
 
 # 添加数据集集
-所有非恶意数据用0表示，所有恶意数据用1表示
+
+$\textcolor{red}{所有非恶意数据用0表示，所有恶意数据用1表示}$
 
 ### 通过.txt文件添加数据集
+
 1. 将非恶意数据集复制粘贴至 `ark/spider/cache/notBad.txt`, 并将恶意数据集复制粘贴至 `ark/spider/cache/bad.txt`
 2. 使用 ark.data.load.update_tie_ba 合并数据集
+
 ```python
 from ark.data.load import update_tie_ba
 from ark.setting import NOT_BAD_TXT_PATH, BAD_TXT_PATH
@@ -87,9 +100,11 @@ update_tie_ba() # 合并数据集
 ```
 
 ### 通过.csv文件添加数据集
+
 1. 合并的csv文件需要包含TEXT列和label列
 2. 与 `ark/data/COLD/tie_ba.csv` 合并
 3. 使用 ark.data.load.update_tie_ba 合并数据集
+
 ```python
 import pandas as pd
 from ark.setting import TIE_BA_CSV_PATH
@@ -105,14 +120,17 @@ update_tie_ba()
 ```
 
 # 抓取数据
+
 ```python
 from ark.spider.spider_main import spider_main
 from ark.setting import UN_CLASSIFY_PATH
 
 tie_ba = [] # 吧名
-spider_main(tie_ba, path=UN_CLASSIFY_PATH, num_work=5) # 开始抓取数据
+spider_main(tie_ba, save_path=UN_CLASSIFY_PATH, num_work=5) # 开始抓取数据
 ```
+
 # 分析数据
+
 ```python
 from ark.spider.interface import tkDrive
 

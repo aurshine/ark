@@ -1,3 +1,4 @@
+import random
 from collections import Counter
 from typing import Tuple, Union, List
 import torch
@@ -5,7 +6,7 @@ from torch import nn, Tensor
 import jieba
 from ark.spider.classify import get_lines, write_lines
 from ark.setting import VOCAB_PATH
-from ark.nn.pinyin import translate_piny
+from ark.nn.pinyin import translate_piny, translate_into_other_piny
 
 
 class Tokenize(nn.Module):
@@ -230,3 +231,20 @@ def fusion_piny_letter(texts, vocabs: Union[List[Vocab], Vocab], steps=128, fron
     letter = translate_piny(texts, Style.FIRST_LETTER)
 
     return n_texts_process([texts, piny, letter], vocabs, steps, modes=['char', None, None], front_pad=front_pad)
+
+
+def data_augment_(texts: List[str], labels: List, choice_p: float = 0.2, mdf_p: float = 0.1) -> Tuple[List[str], List]:
+    """
+    数据增广, 在原列表里操作
+
+    :param texts: 所有文本
+
+    :param labels: 文本对应的标签
+
+    :param choice_p: 每个文本被选择的概率
+
+    :param mdf_p: 每个词元被修改的概率
+
+    :return:  返回增广后的数据
+    """
+    for text, label in zip(texts, labels):

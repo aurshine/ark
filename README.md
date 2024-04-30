@@ -21,7 +21,7 @@ pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
 # 使用 analyse 分析恶意语句
 
 ```python
-from ark.analyse import analyse, ByType
+from ark.analyse import analyse
 
 comments = ['你就是歌姬吧，你记住你什么都不是',
             '杀马特团长你等着我，我和你没完，你等着！！',
@@ -29,7 +29,7 @@ comments = ['你就是歌姬吧，你记住你什么都不是',
             'python是世界上最好的语言',
             '鸡你太美',
             '原神启动']
-print(analyse(comments, by=ByType.BY_TEXT))
+print(analyse(comments))
 ```
 
 # 自调参训练模型
@@ -125,7 +125,7 @@ update_tie_ba()
 from ark.spider.spider_main import spider_main
 from ark.setting import UN_CLASSIFY_PATH
 
-tie_ba = [] # 吧名
+tie_ba = ['孙笑川', '弱智'] # 吧名
 spider_main(tie_ba, save_path=UN_CLASSIFY_PATH, num_work=5) # 开始抓取数据
 ```
 

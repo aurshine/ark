@@ -2,7 +2,7 @@ import math
 import torch
 from torch import nn
 from ark.device import use_device
-from ark.nn.multi_layers import TransformerLayer, HistoryTransformerLayers
+from ark.nn.multi_layers import TransformerLayer, TransformerLayers
 
 
 class Encoder(nn.Module):
@@ -63,33 +63,28 @@ class PositionEncoder(Encoder):
         return self.dropout(x)
 
 
-class ArkEncoderBlock(Encoder):
-    def __init__(self, hidden_size, num_heads, num_layer=1, dropout=0, device=None):
-        super(ArkEncoderBlock, self).__init__(device)
-        self.transformer_blocks = nn.ModuleList([TransformerLayer(hidden_size, num_heads, dropout, device=self.device)
-                                                 for _ in range(num_layer)])
-
-    def forward(self, X, **kwargs):
-        """
-        :param X: 形状为(batch_size, steps, num_hidden)
-
-        :return: 形状为(batch_size, steps, num_hidden)
-        """
-        X = X.to(self.device)
-
-        for block in self.transformer_blocks:
-            X = block(X, X, X, **kwargs)
-
-        return X
-
-
 class ArkEncoder(Encoder):
     def __init__(self, vocab, hidden_size, num_channel, num_heads, num_layer=1, dropout=0, device=None):
+        """
+        :param vocab: 词典
+
+        :param hidden_size: 隐藏层大小
+
+        :param num_channel: 输入通道数
+
+        :param num_heads: 多头注意力层的个数
+
+        :param num_layer: 编码器层数
+
+        :param dropout: dropout值
+
+        :param device: 模型训练的环境 (cpu/gpu)
+        """
         super(ArkEncoder, self).__init__(device)
         self.embedding = nn.Embedding(len(vocab), hidden_size, padding_idx=vocab.unk_index, device=self.device)
         self.position_encoding = PositionEncoder(hidden_size)
         self.sqrt_hidden = math.sqrt(hidden_size)
-        self.encoder_blocks = nn.ModuleList([HistoryTransformerLayers(hidden_size, num_heads, num_layer, dropout=dropout, device=self.device)
+        self.encoder_blocks = nn.ModuleList([TransformerLayers(hidden_size, num_heads, num_layer, dropout=dropout, device=self.device)
                                              for _ in range(num_channel)])
         self.fusion = TransformerLayer(hidden_size, num_heads, dropout, device=self.device)
 

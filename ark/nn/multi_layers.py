@@ -201,6 +201,32 @@ class TransformerLayer(nn.Module):
         return self.ffn(self.add_norm(query, self.attention(query, key, value, key_padding_mask, **kwargs)[0]))
 
 
+class TransformerLayers(nn.Module):
+    """
+    多层的 Transformer 块
+
+    由多层的 TransformerLayer 组成
+    """
+    def __init__(self, hidden_size, num_heads, num_layer=1, dropout=0, device=None):
+        super(TransformerLayers, self).__init__()
+        self.device = use_device(device)
+        self.transformer_blocks = nn.ModuleList([TransformerLayer(hidden_size, num_heads, dropout, device=self.device)
+                                                 for _ in range(num_layer)])
+
+    def forward(self, x, **kwargs):
+        """
+        :param x: 形状为(batch_size, steps, num_hidden)
+
+        :return: 形状为(batch_size, steps, num_hidden)
+        """
+        x = x.to(self.device)
+
+        for block in self.transformer_blocks:
+            x = block(x, x, x, **kwargs)
+
+        return x
+
+
 class HistoryTransformerLayers(nn.Module):
     """
     记录历史的 Transformer 层
@@ -216,6 +242,16 @@ class HistoryTransformerLayers(nn.Module):
         self.max_history_len = max_history_len
 
     def forward(self, x, key_padding_mask=None, **kwargs):
+        """
+        :param x: 形状为(batch_size, steps, num_hidden)
+
+
+        :param key_padding_mask: BoolTensor类型 形状为 (batch_size, key_steps)
+
+        :param kwargs: 可选参数, 用于 nn.MultiheadAttention 的其它参数
+
+        :return: 形状为(batch_size, steps, num_hidden)
+        """
         deque_key_values = deque([x], maxlen=self.max_history_len)
 
         for attention in self.attentions:

@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split
 from ark.data import load
 from ark.data.dataloader import get_tensor_loader
 from ark.setting import VOCAB_PATH, MODEL_LIB
-from ark.nn.text_process import Vocab, fusion_piny_letter
+from ark.nn.text_process import Vocab, fusion_piny_letter, data_augment_
 from ark.nn.module import AttentionArk
 from ark.nn.valid import k_fold_valid
 from ark.nn.accuracy import save_fig
@@ -54,8 +54,10 @@ def train(use_cold=False):
     tieba_train_texts, tieba_train_labels = load.load_cold('tie-ba')
     cold_train_texts, cold_train_labels = load.load_cold('cold') if use_cold else ([], [])
 
-    train_texts, _, train_labels, _ = train_test_split(tieba_train_texts + cold_train_texts,
-                                                       tieba_train_labels + cold_train_labels, train_size=0.99)
+    texts, labels = tieba_train_texts + cold_train_texts, tieba_train_labels + cold_train_labels
+    data_augment_(texts, labels)
+
+    train_texts, _, train_labels, _ = train_test_split(texts, labels, train_size=0.99)
     train_labels = torch.tensor(train_labels)
 
     # 构建词典
@@ -71,7 +73,6 @@ def train(use_cold=False):
     model = AttentionArk(vocab,
                          hidden_size=HIDDEN_SIZE,
                          in_channel=3,
-                         num_steps=STEPS,
                          num_heads=NUM_HEADS,
                          en_num_layer=EN_LAYER,
                          de_num_layer=DE_LAYER,
@@ -113,12 +114,19 @@ def train(use_cold=False):
 
 
 def train_only(use_cold=False):
+    """
+    训练模型，不进行k折交叉验证
+
+    :param use_cold: 是否使用COLD数据
+    """
     # 读入数据
     tieba_train_texts, tieba_train_labels = load.load_cold('tie-ba')
     cold_train_texts, cold_train_labels = load.load_cold('cold') if use_cold else ([], [])
 
-    train_texts, _, train_labels, _ = train_test_split(tieba_train_texts + cold_train_texts,
-                                                       tieba_train_labels + cold_train_labels, train_size=0.99)
+    texts, labels = tieba_train_texts + cold_train_texts, tieba_train_labels + cold_train_labels
+    data_augment_(texts, labels)
+
+    train_texts, _, train_labels, _ = train_test_split(texts, labels, train_size=0.99)
     train_labels = torch.tensor(train_labels)
 
     # 构建词典
@@ -134,7 +142,6 @@ def train_only(use_cold=False):
     ark = AttentionArk(vocab,
                        hidden_size=HIDDEN_SIZE,
                        in_channel=3,
-                       num_steps=STEPS,
                        num_heads=NUM_HEADS,
                        en_num_layer=EN_LAYER,
                        de_num_layer=DE_LAYER,
@@ -149,8 +156,4 @@ def train_only(use_cold=False):
                               optim_params=OPTIMIZER_PARAMS)
 
     ark.save_state_dict(os.path.join(MODEL_LIB,
-                                     f'ark-{int(train_acc[-1]() * 100)}-{HIDDEN_SIZE}-{NUM_HEADS}-{EN_LAYER}-{DE_LAYER}.net'))
-
-
-if __name__ == '__main__':
-    train()
+                                     f'ark-{int(train_acc[-1].score * 100)}-{HIDDEN_SIZE}-{NUM_HEADS}-{EN_LAYER}-{DE_LAYER}.net'))

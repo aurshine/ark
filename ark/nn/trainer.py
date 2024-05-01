@@ -153,6 +153,7 @@ class Trainer(nn.Module):
             y = y[:, :self.num_class]
         return torch.argmax(y, dim=-1)
 
+    @Timer()
     def analyse(self, x: torch.Tensor, classes: list, **kwargs) -> list:
         """
         :param x: 形状与forward函数的输入相同

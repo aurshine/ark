@@ -17,9 +17,7 @@ HIDDEN_SIZE = 64                                       # 隐藏层大小
 
 NUM_HEADS = 4                                          # 多头注意力头数
 
-EN_LAYER = 4                                           # 编码器层数
-
-DE_LAYER = 4                                           # 解码器层数
+DE_LAYER = 8                                           # 解码器层数
 
 STEPS = 128                                            # 每个文本的步长
 
@@ -43,18 +41,13 @@ OPTIMIZER_PARAMS = {'lr': 1e-3, 'weight_decay': 1e-2}  # 优化器参数(学习�
 #################################################################################
 
 
-def train(use_cold=False):
+def train():
     """
     训练模型
-
-    :param use_cold: 是否使用COLD数据
     """
-
     # 读入数据
-    tieba_train_texts, tieba_train_labels = load.load_cold('tie-ba')
-    cold_train_texts, cold_train_labels = load.load_cold('cold') if use_cold else ([], [])
+    texts, labels = load.load('tie-ba.csv')
 
-    texts, labels = tieba_train_texts + cold_train_texts, tieba_train_labels + cold_train_labels
     data_augment_(texts, labels)
 
     train_texts, _, train_labels, _ = train_test_split(texts, labels, train_size=0.99)
@@ -77,6 +70,7 @@ def train(use_cold=False):
                          en_num_layer=EN_LAYER,
                          de_num_layer=DE_LAYER,
                          dropout=DROPOUT,
+                         steps=STEPS,
                          num_class=2)
 
     # 训练模型 k折交叉验证
@@ -146,6 +140,7 @@ def train_only(use_cold=False):
                        en_num_layer=EN_LAYER,
                        de_num_layer=DE_LAYER,
                        dropout=DROPOUT,
+                       steps=STEPS,
                        num_class=2)
 
     train_loader = get_tensor_loader(train_x, train_labels, valid_len, batch_size=BATCH_SIZE)

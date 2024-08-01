@@ -1,4 +1,3 @@
-from torch.utils import data
 from torch.utils.data import DataLoader, TensorDataset
 
 

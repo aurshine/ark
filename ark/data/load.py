@@ -10,6 +10,17 @@ from ark.spider.classify import get_lines, write_lines, clear
 CURRENT_FOLDER = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
 
 
+def load(file_name='tie-ba.csv') -> Tuple[List[str], List[int]]:
+    """
+    读取csv文件, 返回text和label两个列表
+
+    :param file_name: 文件名
+    """
+    df = pd.read_csv(os.path.join(DATASET_PATH, file_name), encoding='utf-8', sep=',')
+
+    return df['TEXT'].tolist(), df['label'].astype('int32').tolist()
+
+
 def load_cold(file_name='train', num_texts=-1, replace=False) -> Tuple[List[str], List[int]]:
     """ 在DATASET文件夹读取数据集
 

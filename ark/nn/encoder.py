@@ -2,7 +2,7 @@ import math
 import torch
 from torch import nn
 from ark.device import use_device
-from ark.nn.multi_layers import TransformerLayer, TransformerLayers
+from ark.nn.multi_layers import TransformerLayer, TransformerLayers, FusionChannel
 
 
 class Encoder(nn.Module):
@@ -64,7 +64,10 @@ class PositionEncoder(Encoder):
 
 
 class ArkEncoder(Encoder):
-    def __init__(self, vocab, hidden_size, num_channel, num_heads, num_layer=1, dropout=0, device=None):
+    """
+    词嵌入并融合通道信息
+    """
+    def __init__(self, vocab, hidden_size, num_channel, steps, dropout=0, device=None):
         """
         :param vocab: 词典
 
@@ -84,29 +87,27 @@ class ArkEncoder(Encoder):
         self.embedding = nn.Embedding(len(vocab), hidden_size, padding_idx=vocab.unk_index, device=self.device)
         self.position_encoding = PositionEncoder(hidden_size)
         self.sqrt_hidden = math.sqrt(hidden_size)
-        self.encoder_blocks = nn.ModuleList([TransformerLayers(hidden_size, num_heads, num_layer, dropout=dropout, device=self.device)
-                                             for _ in range(num_channel)])
-        self.fusion = TransformerLayer(hidden_size, num_heads, dropout, device=self.device)
+        self.fusion_ch = FusionChannel(hidden_size=hidden_size,
+                                       num_channel=num_channel,
+                                       steps=steps,
+                                       dropout=dropout,
+                                       device=self.device
+                                       )
 
-    def forward(self, X, valid_len=None):
+    def forward(self, x: torch.Tensor, valid_len=None):
         """
-        :param X: 形状为 (batch_size, num_channels, steps)
+        :param x: 形状为 (batch_size, num_channels, steps)
 
         :param valid_len: 形状为 (batch_size, )
 
         :return: 形状为 (batch_size, steps, hidden_size)
         """
-        X = X.to(self.device).permute(1, 0, 2)
+        # (batch_size, steps, num_channels)
+        x = x.transpose(1, 2)
+        # (batch_size, steps, num_channels, hidden_size)
+        x_embedding = self.embedding(x) * self.sqrt_hidden
+        # (batch_size, steps, hidden_size)
+        x = self.fusion_ch(x_embedding)
+        x = self.position_encoding(x)
 
-        # [原字通道, piny通道, 首字母通道], 形状均为 (batch_size, steps, hidden_size)
-        Xs = [self.position_encoding(self.embedding(x) * self.sqrt_hidden) for x in X]
-        steps = X.shape[-1]
-
-        valid_len = steps - valid_len
-        mask = torch.arange(steps).repeat(valid_len.shape[0], 1) < valid_len.repeat_interleave(steps).reshape(-1, steps)
-        mask = mask.to(self.device)
-
-        Ys = [block(x, key_padding_mask=mask) for x, block in zip(Xs, self.encoder_blocks)]
-        Y = torch.cat(Ys, dim=1)
-
-        return self.fusion(Xs[0], Y, Y)
+        return x

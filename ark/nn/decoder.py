@@ -1,8 +1,7 @@
-from collections import deque
 import torch
 from torch import nn
 from ark.device import use_device
-from ark.nn.multi_layers import PositionWiseFFN, TransformerLayer, HistoryTransformerLayers
+from ark.nn.multi_layers import TransformerLayers, TransformerLayer
 
 
 class Decoder(nn.Module):
@@ -21,7 +20,7 @@ class Decoder(nn.Module):
 class ArkDecoder(Decoder):
     def __init__(self, hidden_size, num_heads, num_layer, dropout=0, device=None):
         super(ArkDecoder, self).__init__(device)
-        self.history_layers = HistoryTransformerLayers(hidden_size, num_heads, num_layer, dropout=dropout, device=self.device)
+        self.history_layers = TransformerLayers(hidden_size, num_heads, num_layer, dropout=dropout, device=self.device)
         self.query = nn.Parameter(torch.randn(size=(1, 1, hidden_size), device=self.device))
         self.fusion = TransformerLayer(hidden_size, num_heads, dropout=dropout, device=self.device)
 
@@ -34,7 +33,6 @@ class ArkDecoder(Decoder):
 
         :param kwargs: MultiHeadAttention 的其它参数
         """
-        X = X.to(self.device)
         X = self.history_layers(X, **kwargs)
 
         # 形状为 (batch_size, 1, hidden_size)

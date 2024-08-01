@@ -261,3 +261,34 @@ class HistoryTransformerLayers(nn.Module):
             key_padding_mask = None
 
         return x
+
+
+class FusionChannel(nn.Module):
+    def __init__(self, hidden_size, num_channel, steps=None, dropout=0.5, device=None):
+        super(FusionChannel, self).__init__()
+        self.device = use_device(device)
+        if steps is None:
+            steps = 1
+
+        self.c_weight = nn.Parameter(torch.randn(size=(steps, num_channel, 1), device=self.device), requires_grad=True)
+        self.lin = MultiLinear([hidden_size, hidden_size],
+                               dropout=dropout,
+                               active=nn.ReLU(),
+                               num_input=hidden_size,
+                               norm='layer_norm',
+                               save_last_active=True,
+                               device=self.device
+                               )
+
+    def forward(self, x: torch.Tensor):
+        """
+        :param x: 3D-(batch_size, channels, hidden_size), 4D-(batch_size, steps, channels, hidden_size)
+
+        :return: 2D-(batch_size, hidden_size) if x is 3D else 3D-(batch_size, steps, hidden_size)
+        """
+        if x.dim() == 3:
+            x = torch.unsqueeze(x, dim=1)
+
+        y = torch.sum(self.c_weight * x, dim=-2)
+        y = self.lin(y)
+        return y

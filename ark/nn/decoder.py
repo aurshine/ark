@@ -20,22 +20,23 @@ class Decoder(nn.Module):
 class ArkDecoder(Decoder):
     def __init__(self, hidden_size, num_heads, num_layer, dropout=0, device=None):
         super(ArkDecoder, self).__init__(device)
-        self.history_layers = TransformerLayers(hidden_size, num_heads, num_layer, dropout=dropout, device=self.device)
-        self.query = nn.Parameter(torch.randn(size=(1, 1, hidden_size), device=self.device))
+        self.transformer_layers = TransformerLayers(hidden_size, num_heads, num_layer, dropout=dropout, device=self.device)
+        self.query = nn.Parameter(torch.empty(size=(1, 1, hidden_size), device=self.device))
+        nn.init.xavier_normal_(self.query)
         self.fusion = TransformerLayer(hidden_size, num_heads, dropout=dropout, device=self.device)
 
     def init_state(self, enc_output, *args):
         return None
 
-    def forward(self, X, **kwargs):
+    def forward(self, x, **kwargs):
         """
-        :param X:  形状为 (batch_size, steps, hidden_size)
+        :param x:  形状为 (batch_size, steps, hidden_size)
 
         :param kwargs: MultiHeadAttention 的其它参数
         """
-        X = self.history_layers(X, **kwargs)
+        x = self.transformer_layers(x, **kwargs)
 
         # 形状为 (batch_size, 1, hidden_size)
-        query = self.query.repeat(X.shape[0], 1, 1)
+        query = self.query.repeat(x.shape[0], 1, 1)
 
-        return self.fusion(query, X, X, **kwargs).squeeze(1)
+        return self.fusion(query, x, x, **kwargs).squeeze(1)

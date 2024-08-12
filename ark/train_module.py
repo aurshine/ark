@@ -17,12 +17,11 @@ HIDDEN_SIZE = 64                                       # 隐藏层大小
 
 NUM_HEADS = 4                                          # 多头注意力头数
 
-DE_LAYER = 8                                           # 解码器层数
+NUM_LAYER = 8                                           # 解码器层数
 
 STEPS = 128                                            # 每个文本的步长
 
 DROPOUT = 0.5                                          # 随机失活率
-
 #################################################################################
 # 训练参数
 K_FOLD = 15                                            # 交叉验证折数
@@ -48,7 +47,7 @@ def train():
     # 读入数据
     texts, labels = load.load('tie-ba.csv')
 
-    data_augment_(texts, labels)
+    # data_augment_(texts, labels)
 
     train_texts, _, train_labels, _ = train_test_split(texts, labels, train_size=0.99)
     train_labels = torch.tensor(train_labels)
@@ -64,13 +63,12 @@ def train():
 
     # 构建模型
     model = AttentionArk(vocab,
+                         steps=STEPS,
                          hidden_size=HIDDEN_SIZE,
                          in_channel=3,
                          num_heads=NUM_HEADS,
-                         en_num_layer=EN_LAYER,
-                         de_num_layer=DE_LAYER,
+                         num_layer=NUM_LAYER,
                          dropout=DROPOUT,
-                         steps=STEPS,
                          num_class=2)
 
     # 训练模型 k折交叉验证
@@ -103,7 +101,7 @@ def train():
 
     for sub_ark, sub_acc in zip(ark, k_valid_acc):
         path = os.path.join(MODEL_LIB,
-                            f'ark-{int(sub_acc[-1].score * 100)}-{HIDDEN_SIZE}-{NUM_HEADS}-{EN_LAYER}-{DE_LAYER}.net')
+                            f'ark-{int(sub_acc[-1].score * 100)}-{HIDDEN_SIZE}-{NUM_HEADS}-{NUM_LAYER}.net')
         sub_ark.save_state_dict(path)
 
 
@@ -134,14 +132,13 @@ def train_only(use_cold=False):
 
     # 构建模型
     ark = AttentionArk(vocab,
-                       hidden_size=HIDDEN_SIZE,
-                       in_channel=3,
-                       num_heads=NUM_HEADS,
-                       en_num_layer=EN_LAYER,
-                       de_num_layer=DE_LAYER,
-                       dropout=DROPOUT,
-                       steps=STEPS,
-                       num_class=2)
+                     steps=STEPS,
+                     hidden_size=HIDDEN_SIZE,
+                     in_channel=3,
+                     num_heads=NUM_HEADS,
+                     num_layer=NUM_LAYER,
+                     dropout=DROPOUT,
+                     num_class=2)
 
     train_loader = get_tensor_loader(train_x, train_labels, valid_len, batch_size=BATCH_SIZE)
     _, train_acc, _ = ark.fit(train_loader,
@@ -151,4 +148,4 @@ def train_only(use_cold=False):
                               optim_params=OPTIMIZER_PARAMS)
 
     ark.save_state_dict(os.path.join(MODEL_LIB,
-                                     f'ark-{int(train_acc[-1].score * 100)}-{HIDDEN_SIZE}-{NUM_HEADS}-{EN_LAYER}-{DE_LAYER}.net'))
+                                     f'ark-{int(train_acc[-1].score * 100)}-{HIDDEN_SIZE}-{NUM_HEADS}-{NUM_LAYER}-.net'))

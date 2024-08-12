@@ -1,7 +1,7 @@
 import os
-import time
 from enum import Enum
 from typing import Union, List, Optional, Sequence
+
 from ark.nn.module import AttentionArk
 from ark.nn.text_process import Vocab, fusion_piny_letter
 from ark.setting import MODEL_LIB, VOCAB_PATH
@@ -16,6 +16,7 @@ def reload(accuracy: int,
            hidden_size,
            in_channel,
            num_heads,
+           steps,
            en_num_layer,
            de_num_layer,
            dropout,
@@ -25,6 +26,7 @@ def reload(accuracy: int,
                            hidden_size=hidden_size,
                            in_channel=in_channel,
                            num_heads=num_heads,
+                           steps=steps,
                            en_num_layer=en_num_layer,
                            de_num_layer=de_num_layer,
                            dropout=dropout,
@@ -66,7 +68,7 @@ def analyse(comments: Union[str, List[str]], classes: Optional[Sequence[str]] = 
 
     global __ARK__
     if __ARK__ is None:
-        __ARK__ = reload(97, Vocab(VOCAB_PATH), hidden_size=32, in_channel=3, num_heads=4, en_num_layer=4, de_num_layer=8, dropout=0.5, num_class=2)
+        __ARK__ = reload(97, Vocab(VOCAB_PATH), hidden_size=32, in_channel=3, num_heads=4, en_num_layer=4, de_num_layer=8, steps=128, dropout=0.5, num_class=2)
 
     x, valid_len = fusion_piny_letter(comments, __ARK__.vocab, 128)
     return __ARK__.analyse(x, classes, valid_len=valid_len)

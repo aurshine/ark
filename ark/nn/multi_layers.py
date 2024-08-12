@@ -1,18 +1,21 @@
+import math
 from collections import deque
-from typing import Union, List, Tuple, Optional
+from typing import Union, List, Tuple, Optional, Callable
 
 import torch
 from torch import nn
+import torch.nn.functional as F
 
 from ark.device import use_device
 from ark.nn.addnorm import AddNorm
+from ark.nn.attention import scaled_dot_product_attention
 
 
 class MultiLinear(nn.Module):
     def __init__(self,
                  num_outputs: List[int],
                  active,
-                 dropout: Union[List[float], float] = 0,
+                 dropout: float = 0,
                  norm=None,
                  num_input=None,
                  save_last_active=False,
@@ -21,9 +24,9 @@ class MultiLinear(nn.Module):
 
         :param num_outputs: 每层的输出节点数
 
-        :param active: 每层输出后的激活函数, 最后一层没有
+        :param active: 每层输出后的激活函数
 
-        :param dropout: 抛弃层, 在每层的输出之前, 如果为 list, 长度需要不大于 num_outputs
+        :param dropout: 抛弃层, 在每层的输出之前
 
         :param norm: 归一化层, 可选 'batch_norm' 'layer_norm' 在每层的输出之后, 激活函数之前, 不与 dropout 同时使用
 
@@ -38,18 +41,13 @@ class MultiLinear(nn.Module):
         num_layer = len(num_outputs)
 
         assert num_layer > 0
-        if isinstance(dropout, (int, float)):
-            dropout = [dropout] * num_layer
-        if len(dropout) < num_layer:
-            dropout += [0] * (num_layer - len(dropout))
-
-        for num_output, drop in zip(num_outputs, dropout):
+        for num_output in num_outputs:
             layers.append(nn.LazyLinear(num_output, device=self.device)
-                              if num_input is None
-                              else nn.Linear(num_input, num_output, device=self.device)
-                              )
-            if drop > 0:
-                layers.append(nn.Dropout(drop))
+                          if num_input is None
+                          else nn.Linear(num_input, num_output, device=self.device)
+                          )
+            if dropout > 0:
+                layers.append(nn.Dropout(dropout))
             elif norm == 'batch_norm':
                 layers.append(nn.BatchNorm1d(num_output, device=self.device))
             elif norm == 'layer_norm':
@@ -62,8 +60,8 @@ class MultiLinear(nn.Module):
             layers.pop()
         self.dense = nn.Sequential(*layers)
 
-    def forward(self, X):
-        return self.dense(X.to(self.device))
+    def forward(self, x):
+        return self.dense(x.to(self.device))
 
 
 class MultiConv2d(nn.Module):
@@ -119,55 +117,131 @@ class MultiConv2d(nn.Module):
         return self.conv(X.to(self.device))
 
 
-class MultiEmbedding(nn.Module):
-    def __init__(self, num_embeddings: List[int], embedding_size: int, paddings_idx: Optional[List[int]] = None, **kwargs):
-        """
-        :param num_embeddings: 每个词表里词元的数量
-
-        :param embedding_size: 向量化的长度
-
-        :param padding_idx: 填充词元的下标
-
-        :param kwargs: nn.Embedding 的其它参数
-        """
-        super(MultiEmbedding, self).__init__()
-
-        if paddings_idx is None:
-            paddings_idx = [None] * len(num_embeddings)
-
-        self.embedding_layers = [nn.Embedding(num_embedding, embedding_size, padding_idx, **kwargs)
-                                 for num_embedding, padding_idx in zip(num_embeddings, paddings_idx)
-                                 ]
-
-    def forward(self, X: torch.Tensor):
-        """将数字向量化, 每个通道对应不同的 Embedding 层
-
-        :param X: 形状为 (batch_size, num_channels, steps)
-
-        :return: (batch_size, num_channels, steps, embedding_size)
-        """
-        assert X.shape[1] == len(self.embedding_layers)
-
-        X = X.permute(1, 0, 2)
-
-        Y = [embedding(x) for x, embedding in zip(X, self.embedding_layers)]
-
-        return torch.stack(Y).permute(1, 0, 2, 3)
-
-
 class PositionWiseFFN(nn.Module):
     def __init__(self, input_size, hidden_size, output_size, dropout=0, device=None):
         super(PositionWiseFFN, self).__init__()
         self.device = use_device(device)
-        self.linear1 = MultiLinear([hidden_size, output_size], active=nn.LeakyReLU(), dropout=dropout, num_input=input_size, device=self.device)
-        self.linear2 = nn.Linear(input_size, output_size, device=self.device) if input_size != output_size else None
-        self.add_norm = AddNorm(output_size, dropout=dropout, device=self.device)
+        self.linear = MultiLinear([hidden_size, output_size], num_input=input_size, active=nn.LeakyReLU(), dropout=dropout, device=self.device)
 
-    def forward(self, X):
-        if self.linear2 is None:
-            return self.add_norm(X, self.linear1(X))
-        else:
-            return self.add_norm(self.linear2(X), self.linear1(X))
+        if input_size == output_size:
+            self.add_norm = AddNorm(output_size, dropout=dropout, device=self.device)
+
+    def forward(self, x):
+        y = self.linear(x)
+
+        if hasattr(self, 'add_norm'):
+            y = self.add_norm(x, y)
+
+        return y
+
+
+class Attention(nn.Module):
+    def __init__(self, query_size: int, key_size: int, hidden_size: Optional[int] = None, device=None):
+        super(Attention, self).__init__()
+        self._qk2same_size = hidden_size is not None
+        self.device = use_device(device)
+
+        if not self._qk2same_size:
+            self.query2hidden = nn.Linear(query_size, hidden_size, device=self.device)
+            self.key2hidden = nn.Linear(key_size, hidden_size, device=self.device)
+
+    def forward(self,
+                queries: torch.Tensor,
+                keys: torch.Tensor,
+                values: torch.Tensor,
+                get_qk_weight: Callable[[torch.Tensor, torch.Tensor], torch.Tensor]):
+        """
+        :param queries: (batch_size, query_steps, query_size)
+
+        :param keys: (batch_size, kv_steps, key_size)
+
+        :param values: (batch_size, kv_steps, value_size)
+
+        :param get_qk_weight: 传入query key， 得到每个key的权重，用于计算注意力
+
+        :return: (batch_size, query_steps, value_size)
+        """
+        if not self._qk2same_size:
+            # (batch_size, query_steps, hidden_size)
+            queries = self.query2hidden(queries)
+            keys = self.key2hidden(keys)
+
+        # (batch_size, query_steps, kv_steps)
+        weight = get_qk_weight(queries, keys)
+
+        # (batch_size, query_steps, value_size)
+        output = torch.bmm(weight, values)
+
+        return output
+
+
+class MultiHeadAttention(nn.Module):
+    def __init__(self, query_size: int, key_size: int, num_heads: int, head_hidden_size: Optional[int] = None, device=None):
+        super(MultiHeadAttention, self).__init__()
+        self.num_heads = num_heads
+        self.device = use_device(device)
+        assert query_size % num_heads == 0, "query size should be divisible by num_heads"
+        assert key_size % num_heads == 0, "key size should be divisible by num_heads"
+
+        self.attention = Attention(query_size // num_heads,
+                                   key_size // num_heads,
+                                   head_hidden_size,
+                                   device=self.device)
+
+    def separate_heads(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        将输入的tensor分割成多个头，并转置
+
+        :param x: (batch_size, steps, feature_size)
+
+        :return: (batch_size * num_heads, steps, feature_size // num_heads)
+        """
+        if x.shape[-1] % self.num_heads != 0:
+            raise ValueError("feature size should be divisible by num_heads")
+
+        # (batch_size, steps, num_heads, feature_size // num_heads)
+        y = x.reshape(x.shape[0], x.shape[1], self.num_heads, -1)
+        # (batch_size, num_heads, steps, feature_size // num_heads)
+        y = y.transpose(1, 2)
+
+        return y.reshape(-1, y.shape[2], y.shape[3])
+
+    def concat_heads(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        将输入的tensor合并成多个头
+
+        :param x: (batch_size * num_heads, steps, feature_size // num_heads)
+        """
+        if x.shape[0] % self.num_heads != 0:
+            raise ValueError("batch size should be divisible by num_heads")
+
+        # (batch_size, num_heads, steps, feature_size // num_heads)
+        x = x.reshape(-1, self.num_heads, x.shape[1], x.shape[2])
+        # (batch_size, steps, num_heads, feature_size // num_heads)
+        x = x.transpose(1, 2)
+        # (batch_size, steps, feature_size)
+        x = x.reshape(x.shape[0], x.shape[1], -1)
+        return x
+
+    def forward(self,
+                queries: torch.Tensor,
+                keys: torch.Tensor,
+                values: torch.Tensor,
+                get_qk_weight: Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
+                ) -> torch.Tensor:
+        """
+        :return: (batch_size, query_steps, value_size)
+        """
+        queries = self.separate_heads(queries)
+        keys = self.separate_heads(keys)
+        values = self.separate_heads(values)
+
+        # (batch_size * num_heads, query_steps, value_size // num_heads)
+        heads = self.attention(queries, keys, values, get_qk_weight)
+        # (batch_size, num_heads, query_steps, value_size // num_heads)
+        heads = self.concat_heads(heads)
+
+        return heads
 
 
 class TransformerLayer(nn.Module):
@@ -176,29 +250,65 @@ class TransformerLayer(nn.Module):
 
     由 MultiheadAttention -> Addnorm -> PositionWiseFFN -> Addnorm 组成
     """
-    def __init__(self, hidden_size, num_heads, dropout=0, device=None):
+    def __init__(self, query_size: int, num_heads: int, key_size: int = None, value_size: int = None, hidden_size: Optional[int] = None, dropout=0.5, device=None):
         super(TransformerLayer, self).__init__()
         self.device = use_device(device)
+        key_size = query_size if key_size is None else key_size
+        value_size = key_size if value_size is None else value_size
 
-        self.attention = nn.MultiheadAttention(hidden_size, num_heads, dropout, batch_first=True, device=self.device)
-        self.add_norm = AddNorm(hidden_size, dropout, device=self.device)
-        self.ffn = PositionWiseFFN(hidden_size, hidden_size, hidden_size, dropout, device=self.device)
+        self.attention = MultiHeadAttention(query_size, key_size, num_heads, hidden_size, device=self.device)
+        self.ffn = PositionWiseFFN(value_size, value_size, value_size, device=self.device)
+        self.add_norm1 = AddNorm(value_size, dropout=dropout, device=self.device)
+        self.add_norm2 = AddNorm(value_size, dropout=dropout, device=self.device)
 
-    def forward(self, query, key, value, key_padding_mask=None, **kwargs):
-        """
-        :param query: 形状为 (batch_size, query_steps, hidden_size)
+    def forward(self,
+                q: torch.Tensor,
+                k: torch.Tensor = None,
+                v: torch.Tensor = None,
+                get_qk_weight: Callable[[torch.Tensor, torch.Tensor], torch.Tensor] = None):
+        if get_qk_weight is None:
+            get_qk_weight = scaled_dot_product_attention
 
-        :param key: 形状为 (batch_size, key_steps, hidden_size)
+        k = q if k is None else k
+        v = k if v is None else v
 
-        :param value: 形状为 (batch_size, key_steps, hidden_size)
+        y1 = self.attention(q, k, v, get_qk_weight)
+        y1 = self.add_norm1(q, y1)
+        y2 = self.ffn(y1)
+        y2 = self.add_norm2(y1, y2)
 
-        :param key_padding_mask: BoolTensor类型 形状为 (batch_size, key_steps)
+        return y2
 
-        :param kwargs: 可选参数, 用于 nn.MultiheadAttention 的其它参数
 
-        :return: 形状为 (batch_size, query_steps, hidden_size)
-        """
-        return self.ffn(self.add_norm(query, self.attention(query, key, value, key_padding_mask, **kwargs)[0]))
+# class TransformerLayer(nn.Module):
+#     """
+#     Transformer 块
+#
+#     由 MultiheadAttention -> Addnorm -> PositionWiseFFN -> Addnorm 组成
+#     """
+#     def __init__(self, hidden_size, num_heads, dropout=0, device=None):
+#         super(TransformerLayer, self).__init__()
+#         self.device = use_device(device)
+#
+#         self.attention = nn.MultiheadAttention(hidden_size, num_heads, dropout, batch_first=True, device=self.device)
+#         self.add_norm = AddNorm(hidden_size, dropout, device=self.device)
+#         self.ffn = PositionWiseFFN(hidden_size, hidden_size, hidden_size, dropout, device=self.device)
+#
+#     def forward(self, query, key, value, key_padding_mask=None, **kwargs):
+#         """
+#         :param query: 形状为 (batch_size, query_steps, hidden_size)
+#
+#         :param key: 形状为 (batch_size, key_steps, hidden_size)
+#
+#         :param value: 形状为 (batch_size, key_steps, hidden_size)
+#
+#         :param key_padding_mask: BoolTensor类型 形状为 (batch_size, key_steps)
+#
+#         :param kwargs: 可选参数, 用于 nn.MultiheadAttention 的其它参数
+#
+#         :return: 形状为 (batch_size, query_steps, hidden_size)
+#         """
+#         return self.ffn(self.add_norm(query, self.attention(query, key, value, key_padding_mask, **kwargs)[0]))
 
 
 class TransformerLayers(nn.Module):
@@ -207,60 +317,24 @@ class TransformerLayers(nn.Module):
 
     由多层的 TransformerLayer 组成
     """
-    def __init__(self, hidden_size, num_heads, num_layer=1, dropout=0, device=None):
+    def __init__(self, query_size, num_heads, num_layer, key_size=None, value_size=None, hidden_size=None, dropout=0.5, device=None):
         super(TransformerLayers, self).__init__()
         self.device = use_device(device)
-        self.transformer_blocks = nn.ModuleList([TransformerLayer(hidden_size, num_heads, dropout, device=self.device)
+        self.transformer_blocks = nn.ModuleList([TransformerLayer(query_size, key_size, value_size, num_heads, hidden_size, dropout, device=self.device)
                                                  for _ in range(num_layer)])
 
-    def forward(self, x, **kwargs):
+    def forward(self,
+                q: torch.Tensor,
+                k: torch.Tensor = None,
+                v: torch.Tensor = None):
         """
-        :param x: 形状为(batch_size, steps, num_hidden)
-
-        :return: 形状为(batch_size, steps, num_hidden)
+        :return: 形状为(batch_size, steps, hidden_size)
         """
-        x = x.to(self.device)
-
+        y = q
         for block in self.transformer_blocks:
-            x = block(x, x, x, **kwargs)
+            y = block(q, k, v)
 
-        return x
-
-
-class HistoryTransformerLayers(nn.Module):
-    """
-    记录历史的 Transformer 层
-
-    由多层的TransformerLayer组成
-
-    每一层的 key-value 由前 max_history_len 层的输出在steps维度拼接组成
-    """
-    def __init__(self, hidden_size, num_heads, num_layers, max_history_len=3, dropout=0, device=None):
-        super(HistoryTransformerLayers, self).__init__()
-        self.device = use_device(device)
-        self.attentions = nn.ModuleList([TransformerLayer(hidden_size, num_heads, dropout, device=self.device) for _ in range(num_layers)])
-        self.max_history_len = max_history_len
-
-    def forward(self, x, key_padding_mask=None, **kwargs):
-        """
-        :param x: 形状为(batch_size, steps, num_hidden)
-
-
-        :param key_padding_mask: BoolTensor类型 形状为 (batch_size, key_steps)
-
-        :param kwargs: 可选参数, 用于 nn.MultiheadAttention 的其它参数
-
-        :return: 形状为(batch_size, steps, num_hidden)
-        """
-        deque_key_values = deque([x], maxlen=self.max_history_len)
-
-        for attention in self.attentions:
-            key_values = torch.cat(list(deque_key_values), dim=1)
-            x = attention(x, key_values, key_values, key_padding_mask=key_padding_mask, **kwargs)
-            deque_key_values.append(x)
-            key_padding_mask = None
-
-        return x
+        return y
 
 
 class FusionChannel(nn.Module):
@@ -286,9 +360,16 @@ class FusionChannel(nn.Module):
 
         :return: 2D-(batch_size, hidden_size) if x is 3D else 3D-(batch_size, steps, hidden_size)
         """
+        assert x.dim() in [3, 4], "x should be 3D or 4D"
+
+        expect_dim = x.dim() - 1
         if x.dim() == 3:
             x = torch.unsqueeze(x, dim=1)
 
         y = torch.sum(self.c_weight * x, dim=-2)
         y = self.lin(y)
+
+        if expect_dim == 2:
+            y = torch.squeeze(y, dim=-2)
+
         return y

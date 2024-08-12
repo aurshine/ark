@@ -9,6 +9,6 @@ class AddNorm(nn.Module):
         self.ln = nn.LayerNorm(norm_shape, device=device)
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, X, Y):
-        ret = self.ln(self.dropout(Y) + X)
+    def forward(self, x, y):
+        ret = self.ln(self.dropout(y) + x)
         return ret

@@ -5,7 +5,6 @@ from typing import List
 from ark.nn.trainer import Trainer
 from ark.nn.encoder import ArkEncoder
 from ark.nn.decoder import ArkDecoder
-from ark.running import Timer
 
 
 def analyse(model: Trainer, inputs, classes: List[str]):
@@ -25,20 +24,20 @@ class AttentionArk(Trainer):
     """
     ark 注意力模型
     """
-    def __init__(self, vocab, hidden_size, in_channel, num_heads, steps, en_num_layer, de_num_layer, dropout, num_class, mini_batch_size=None, device=None):
+    def __init__(self, vocab, steps, hidden_size, in_channel, num_heads, num_layer, num_class, dropout=0.5, mini_batch_size=None, device=None):
         super(AttentionArk, self).__init__(num_class, mini_batch_size=mini_batch_size, device=device)
         self.vocab = vocab
         self.encoder = ArkEncoder(vocab,
                                   hidden_size,
                                   in_channel,
-                                  num_heads,
+                                  steps=steps,
                                   dropout=dropout,
                                   device=self.device
                                   )
 
         self.decoder = ArkDecoder(hidden_size,
                                   num_heads,
-                                  num_layer=de_num_layer,
+                                  num_layer=num_layer,
                                   dropout=dropout,
                                   device=self.device
                                   )

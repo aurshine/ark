@@ -1,9 +1,11 @@
 import random
 from collections import Counter
 from typing import Tuple, Union, List, Optional
+
 import torch
 from torch import nn, Tensor
 import jieba
+
 from ark.spider.classify import get_lines, write_lines
 from ark.setting import VOCAB_PATH
 from ark.nn.pinyin import translate_piny, translate_into_other_piny

@@ -11,28 +11,22 @@ text_layer = fusion_piny_letter
 __ARK__ = None
 
 
-def reload(accuracy: int,
-           vocab,
-           hidden_size,
-           in_channel,
-           num_heads,
-           steps,
-           en_num_layer,
-           de_num_layer,
-           dropout,
-           num_class):
+def reload(vocab: Vocab, model_path: str):
     global __ARK__
+    model_name = os.path.split(model_path)[1]
+    model_name = os.path.splitext(model_name)[0]
+
+    accuracy, hidden_size, steps, num_heads, num_layer, num_class = model_name.split('-')
     __ARK__ = AttentionArk(vocab,
                            hidden_size=hidden_size,
-                           in_channel=in_channel,
+                           in_channel=3,
                            num_heads=num_heads,
                            steps=steps,
-                           en_num_layer=en_num_layer,
-                           de_num_layer=de_num_layer,
-                           dropout=dropout,
+                           num_layer=num_layer,
+                           dropout=0,
                            num_class=num_class)
-
-    __ARK__.load(os.path.join(MODEL_LIB, f'ark-{accuracy}-{hidden_size}-{num_heads}-{en_num_layer}-{de_num_layer}.net'))
+    __ARK__.eval()
+    __ARK__.load(model_path)
     return __ARK__
 
 
@@ -41,7 +35,7 @@ class ByType(Enum):
     BY_LABEL = 1
 
 
-def analyse(comments: Union[str, List[str]], classes: Optional[Sequence[str]] = None, by: Optional[ByType] = None) -> list:
+def analyse(comments: Union[str, List[str]], classes: Optional[Sequence[str]] = None, by: Optional[ByType] = None, model_path: str = None) -> list:
     """
     :param comments: 需要分析的文本, 可以是str 或 list[str]
 
@@ -68,7 +62,7 @@ def analyse(comments: Union[str, List[str]], classes: Optional[Sequence[str]] = 
 
     global __ARK__
     if __ARK__ is None:
-        __ARK__ = reload(97, Vocab(VOCAB_PATH), hidden_size=32, in_channel=3, num_heads=4, en_num_layer=4, de_num_layer=8, steps=128, dropout=0.5, num_class=2)
+        __ARK__ = reload(Vocab(VOCAB_PATH), model_path)
 
     x, valid_len = fusion_piny_letter(comments, __ARK__.vocab, 128)
     return __ARK__.analyse(x, classes, valid_len=valid_len)

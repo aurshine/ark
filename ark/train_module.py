@@ -47,8 +47,6 @@ def train():
     # 读入数据
     texts, labels = load.load('tie-ba.csv')
 
-    # data_augment_(texts, labels)
-
     train_texts, _, train_labels, _ = train_test_split(texts, labels, train_size=0.99)
     train_labels = torch.tensor(train_labels)
 
@@ -101,51 +99,5 @@ def train():
 
     for sub_ark, sub_acc in zip(ark, k_valid_acc):
         path = os.path.join(MODEL_LIB,
-                            f'ark-{int(sub_acc[-1].score * 100)}-{HIDDEN_SIZE}-{NUM_HEADS}-{NUM_LAYER}.net')
+                            f'ark-{int(sub_acc[-1].score * 100)}-{HIDDEN_SIZE}-{STEPS}-{NUM_HEADS}-{NUM_LAYER}-{2}.net')
         sub_ark.save_state_dict(path)
-
-
-def train_only(use_cold=False):
-    """
-    训练模型，不进行k折交叉验证
-
-    :param use_cold: 是否使用COLD数据
-    """
-    # 读入数据
-    tieba_train_texts, tieba_train_labels = load.load_cold('tie-ba')
-    cold_train_texts, cold_train_labels = load.load_cold('cold') if use_cold else ([], [])
-
-    texts, labels = tieba_train_texts + cold_train_texts, tieba_train_labels + cold_train_labels
-    data_augment_(texts, labels)
-
-    train_texts, _, train_labels, _ = train_test_split(texts, labels, train_size=0.99)
-    train_labels = torch.tensor(train_labels)
-
-    # 构建词典
-    vocab = Vocab(VOCAB_PATH)
-
-    # 文本处理层
-    text_layer = fusion_piny_letter
-
-    # 数据预处理
-    train_x, valid_len = text_layer(train_texts, vocabs=vocab, steps=STEPS, front_pad=True)
-
-    # 构建模型
-    ark = AttentionArk(vocab,
-                     steps=STEPS,
-                     hidden_size=HIDDEN_SIZE,
-                     in_channel=3,
-                     num_heads=NUM_HEADS,
-                     num_layer=NUM_LAYER,
-                     dropout=DROPOUT,
-                     num_class=2)
-
-    train_loader = get_tensor_loader(train_x, train_labels, valid_len, batch_size=BATCH_SIZE)
-    _, train_acc, _ = ark.fit(train_loader,
-                              epochs=TRAIN_EPOCHS,
-                              stop_min_epoch=STOP_MIN_EPOCH,
-                              stop_loss_value=STOP_LOSS_VALUE,
-                              optim_params=OPTIMIZER_PARAMS)
-
-    ark.save_state_dict(os.path.join(MODEL_LIB,
-                                     f'ark-{int(train_acc[-1].score * 100)}-{HIDDEN_SIZE}-{NUM_HEADS}-{NUM_LAYER}-.net'))

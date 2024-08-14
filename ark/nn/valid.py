@@ -1,15 +1,26 @@
-import sys
 from copy import deepcopy
 from typing import Tuple, List
+
 from tqdm import tqdm
 import torch
 from torch import Tensor
-from ark.nn.accuracy import Accuracy, AccuracyCell
+
+from ark.nn.accuracy import Accuracy
 from ark.nn.bagging import Bagging
+from ark.nn.trainer import Trainer
 from ark.data.dataloader import get_tensor_loader
 
 
 def get_k_fold(k: int, valid_index: int, *datas: List[Tensor]) -> Tuple[List[Tensor], List[Tensor]]:
+    """
+    得到第 valid_index 折的训练集和测试集
+
+    :param k: k折数
+
+    :param valid_index: 作为验证集的第 valid_index 折
+
+    :param datas: 数据
+    """
     assert len(datas) != 0
 
     fold_size = len(datas[0]) // k
@@ -26,24 +37,27 @@ def get_k_fold(k: int, valid_index: int, *datas: List[Tensor]) -> Tuple[List[Ten
     return [torch.cat(data) for data in train_fold], valid_fold
 
 
-def k_fold_valid(k: int, *datas: Tensor, model, num_class, num_valid=-1, batch_size=64, **kwargs) \
+def k_fold_valid(k: int,
+                 *datas: Tensor,
+                 model: Trainer,
+                 num_valid: int = -1,
+                 batch_size: int = 64,
+                 **kwargs) \
         -> Tuple[List, List[Accuracy], List[Accuracy], Bagging]:
     """
     得到 k 折交叉验证的训练集和测试集
 
     :param k: k折数
 
-    :param datas: datas[0]需要为输入X, datas[1]需要是label Y
+    :param datas: datas[0]需要为输入X, datas[1]需要是label Y, datas[2:]为其他参数
 
     :param model: 训练模型
-
-    :param num_class: 分类类别数
 
     :param num_valid: 验证的次数, 为 -1 时验证 k 次
 
     :param batch_size: 批量大小
 
-    :param kwargs: 模型训练需要的超参数
+    :param kwargs: Trainer类 模型训练需要的超参数
 
     :return: k_loss_list, k_train_acc, k_valid_acc, Bagging(models, num_class)
     """
@@ -66,4 +80,4 @@ def k_fold_valid(k: int, *datas: Tensor, model, num_class, num_valid=-1, batch_s
         k_valid_acc.append(valid_acc)
         print(valid_acc.max())
 
-    return k_loss_list, k_train_acc, k_valid_acc, Bagging(models, num_class)
+    return k_loss_list, k_train_acc, k_valid_acc, Bagging(models, model.num_class)

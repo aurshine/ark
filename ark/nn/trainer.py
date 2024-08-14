@@ -29,7 +29,8 @@ class Trainer(nn.Module):
               f'train_accuracy: {train_acc}\n'
               f'valid_accuracy: {valid_acc}\n')
 
-    def fit(self, train_loader,
+    def fit(self,
+            train_loader,
             epochs=500,
             stop_loss_value=-1,
             stop_min_epoch=0,
@@ -87,15 +88,21 @@ class Trainer(nn.Module):
 
         return loss_list, train_acc, valid_acc
 
-    def fit_epoch(self, loader, optimizer, loss, max_norm=0, valid_loader: Union[List, Tuple, None] = None) -> Tuple[float, AccuracyCell, AccuracyCell]:
+    def fit_epoch(self,
+                  train_loader,
+                  optimizer,
+                  loss_fn,
+                  max_norm=0,
+                  valid_loader=None
+                  ) -> Tuple[float, AccuracyCell, AccuracyCell]:
         """
         训练一个 epoch 的操作
 
-        :param loader: 训练集导入器 (x, y, *args)
+        :param train_loader: 训练集导入器 (x, y, *args)
 
         :param optimizer: 优化器
 
-        :param loss: 计算损失的函数
+        :param loss_fn: 计算损失的函数
 
         :param max_norm: 梯度剪裁
 
@@ -106,11 +113,13 @@ class Trainer(nn.Module):
         epoch_loss = 0
         train_accuracy, valid_accuracy = AccuracyCell(self.num_class), AccuracyCell(self.num_class)
 
-        for x, y, *args in loader:
-            x, y = x.to(self.device), y.to(self.device)
+        for x, y, *args in train_loader:
+            if not self.training:
+                self.train()
+
             y_hat = self.forward(x, *args)
-            batch_loss = loss(y_hat, y)
-            epoch_loss += batch_loss.item() / len(loader)
+            batch_loss = loss_fn(y_hat, y)
+            epoch_loss += batch_loss.item() / len(train_loader)
 
             # 梯度计算
             batch_loss.backward()
@@ -126,10 +135,8 @@ class Trainer(nn.Module):
         if valid_loader is not None:
             self.eval()
             for valid_x, valid_y, *valid_args in valid_loader:
-                valid_x, valid_y = valid_x.to(self.device), valid_y.to(self.device)
                 y_hat = self.forward(valid_x, *valid_args)
                 valid_accuracy += AccuracyCell(self.num_class, torch.argmax(y_hat, dim=-1), valid_y)
-            self.train()
 
         return epoch_loss, train_accuracy, valid_accuracy
 

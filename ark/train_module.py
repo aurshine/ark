@@ -1,12 +1,8 @@
 import os
 
-import torch
-from sklearn.model_selection import train_test_split
-
 from ark.data import load
-from ark.data.dataloader import get_tensor_loader
 from ark.setting import VOCAB_PATH, MODEL_LIB
-from ark.nn.text_process import Vocab, fusion_piny_letter, data_augment_
+from ark.nn.text_process import Vocab, fusion_piny_letter
 from ark.nn.module import AttentionArk
 from ark.nn.valid import k_fold_valid
 from ark.nn.accuracy import save_fig
@@ -47,9 +43,6 @@ def train():
     # 读入数据
     texts, labels = load.load('tie-ba.csv')
 
-    train_texts, _, train_labels, _ = train_test_split(texts, labels, train_size=0.99)
-    train_labels = torch.tensor(train_labels)
-
     # 构建词典
     vocab = Vocab(VOCAB_PATH)
 
@@ -57,7 +50,7 @@ def train():
     text_layer = fusion_piny_letter
 
     # 数据预处理
-    train_x, valid_len = text_layer(train_texts, vocabs=vocab, steps=STEPS, front_pad=True)
+    train_x, valid_len = text_layer(texts, vocabs=vocab, steps=STEPS, front_pad=True)
 
     # 构建模型
     model = AttentionArk(vocab,
@@ -70,8 +63,8 @@ def train():
                          num_class=2)
 
     # 训练模型 k折交叉验证
-    k_loss_list, k_train_acc, k_valid_acc, ark = k_fold_valid(K_FOLD, train_x, train_labels, valid_len, model=model,
-                                                              num_class=2,
+    k_loss_list, k_train_acc, k_valid_acc, ark = k_fold_valid(K_FOLD, train_x, labels, valid_len,
+                                                              model=model,
                                                               num_valid=NUM_VALID,
                                                               batch_size=BATCH_SIZE,
                                                               epochs=TRAIN_EPOCHS,

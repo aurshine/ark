@@ -62,7 +62,7 @@ class Trainer(nn.Module):
         :return: 每轮训练的loss构成的列表, 每轮训练训练集的准确率, 每轮训练验证集的准确率
         """
         self.train()
-        print(f'fit on {self.device}')
+        print(f'fit on {self.device}\n')
 
         if optimizer is None:
             if optim_params is None:

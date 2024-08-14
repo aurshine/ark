@@ -65,7 +65,7 @@ def train(device=None):
                          dropout=DROPOUT,
                          num_class=2,
                          device=device)
-
+    print(model)
     # 训练模型 k折交叉验证
     k_loss_list, k_train_acc, k_valid_acc, ark = k_fold_valid(K_FOLD, train_x, labels, valid_len,
                                                               model=model,

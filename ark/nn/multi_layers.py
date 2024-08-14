@@ -1,14 +1,11 @@
-import math
-from collections import deque
 from typing import Union, List, Tuple, Optional, Callable
 
 import torch
 from torch import nn
-import torch.nn.functional as F
 
 from ark.device import use_device
 from ark.nn.addnorm import AddNorm
-from ark.nn.attention import scaled_dot_product_attention
+from ark.nn.attention import cosine_similarity_attention
 
 
 class MultiLinear(nn.Module):
@@ -272,7 +269,7 @@ class TransformerLayer(nn.Module):
                 v: torch.Tensor = None,
                 get_qk_weight: Callable[[torch.Tensor, torch.Tensor], torch.Tensor] = None):
         if get_qk_weight is None:
-            get_qk_weight = scaled_dot_product_attention
+            get_qk_weight = cosine_similarity_attention
 
         k = q if k is None else k
         v = k if v is None else v
@@ -283,37 +280,6 @@ class TransformerLayer(nn.Module):
         y2 = self.add_norm2(y1, y2)
 
         return y2
-
-
-# class TransformerLayer(nn.Module):
-#     """
-#     Transformer 块
-#
-#     由 MultiheadAttention -> Addnorm -> PositionWiseFFN -> Addnorm 组成
-#     """
-#     def __init__(self, hidden_size, num_heads, dropout=0, device=None):
-#         super(TransformerLayer, self).__init__()
-#         self.device = use_device(device)
-#
-#         self.attention = nn.MultiheadAttention(hidden_size, num_heads, dropout, batch_first=True, device=self.device)
-#         self.add_norm = AddNorm(hidden_size, dropout, device=self.device)
-#         self.ffn = PositionWiseFFN(hidden_size, hidden_size, hidden_size, dropout, device=self.device)
-#
-#     def forward(self, query, key, value, key_padding_mask=None, **kwargs):
-#         """
-#         :param query: 形状为 (batch_size, query_steps, hidden_size)
-#
-#         :param key: 形状为 (batch_size, key_steps, hidden_size)
-#
-#         :param value: 形状为 (batch_size, key_steps, hidden_size)
-#
-#         :param key_padding_mask: BoolTensor类型 形状为 (batch_size, key_steps)
-#
-#         :param kwargs: 可选参数, 用于 nn.MultiheadAttention 的其它参数
-#
-#         :return: 形状为 (batch_size, query_steps, hidden_size)
-#         """
-#         return self.ffn(self.add_norm(query, self.attention(query, key, value, key_padding_mask, **kwargs)[0]))
 
 
 class TransformerLayers(nn.Module):

@@ -2,7 +2,7 @@ from typing import Tuple, List
 
 import torch
 import pandas as pd
-from numpy import int32 as np_int32
+from numpy import int64 as np_int64
 
 from ark.setting import *
 from ark.spider.classify import get_lines, write_lines, clear
@@ -37,7 +37,7 @@ def load(file_path='tie-ba.csv',
     df = pd.read_csv(file_path, encoding='utf-8', sep=sep)
     df = df.sample(frac=1, ignore_index=True)
 
-    texts, labels = df[text_col].tolist(), torch.from_numpy(df[label_col].to_numpy(dtype=np_int32))
+    texts, labels = df[text_col].tolist(), torch.from_numpy(df[label_col].to_numpy(dtype=np_int64))
 
     return texts, labels.to(device)
 

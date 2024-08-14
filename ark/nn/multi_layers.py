@@ -121,7 +121,8 @@ class PositionWiseFFN(nn.Module):
     def __init__(self, input_size, hidden_size, output_size, dropout=0, device=None):
         super(PositionWiseFFN, self).__init__()
         self.device = use_device(device)
-        self.linear = MultiLinear([hidden_size, output_size], num_input=input_size, active=nn.LeakyReLU(), dropout=dropout, device=self.device)
+        self.linear = MultiLinear([hidden_size, output_size], num_input=input_size, active=nn.LeakyReLU(),
+                                  dropout=dropout, device=self.device)
 
         if input_size == output_size:
             self.add_norm = AddNorm(output_size, dropout=dropout, device=self.device)
@@ -138,10 +139,11 @@ class PositionWiseFFN(nn.Module):
 class Attention(nn.Module):
     def __init__(self, query_size: int, key_size: int, hidden_size: Optional[int] = None, device=None):
         super(Attention, self).__init__()
-        self._qk2same_size = hidden_size is not None
+        self._qk2same_size = query_size == key_size
         self.device = use_device(device)
 
         if not self._qk2same_size:
+            assert hidden_size is not None, "hidden_size can not be None"
             self.query2hidden = nn.Linear(query_size, hidden_size, device=self.device)
             self.key2hidden = nn.Linear(key_size, hidden_size, device=self.device)
 
@@ -176,7 +178,8 @@ class Attention(nn.Module):
 
 
 class MultiHeadAttention(nn.Module):
-    def __init__(self, query_size: int, key_size: int, num_heads: int, head_hidden_size: Optional[int] = None, device=None):
+    def __init__(self, query_size: int, key_size: int, num_heads: int, head_hidden_size: Optional[int] = None,
+                 device=None):
         super(MultiHeadAttention, self).__init__()
         self.num_heads = num_heads
         self.device = use_device(device)
@@ -250,7 +253,9 @@ class TransformerLayer(nn.Module):
 
     由 MultiheadAttention -> Addnorm -> PositionWiseFFN -> Addnorm 组成
     """
-    def __init__(self, query_size: int, num_heads: int, key_size: int = None, value_size: int = None, hidden_size: Optional[int] = None, dropout=0.5, device=None):
+
+    def __init__(self, query_size: int, num_heads: int, key_size: int = None, value_size: int = None,
+                 hidden_size: Optional[int] = None, dropout=0.5, device=None):
         super(TransformerLayer, self).__init__()
         self.device = use_device(device)
         key_size = query_size if key_size is None else key_size
@@ -317,10 +322,13 @@ class TransformerLayers(nn.Module):
 
     由多层的 TransformerLayer 组成
     """
-    def __init__(self, query_size, num_heads, num_layer, key_size=None, value_size=None, hidden_size=None, dropout=0.5, device=None):
+
+    def __init__(self, query_size, num_heads, num_layer, key_size=None, value_size=None, hidden_size=None, dropout=0.5,
+                 device=None):
         super(TransformerLayers, self).__init__()
         self.device = use_device(device)
-        self.transformer_blocks = nn.ModuleList([TransformerLayer(query_size, key_size, value_size, num_heads, hidden_size, dropout, device=self.device)
+        self.transformer_blocks = nn.ModuleList([TransformerLayer(query_size, num_heads, key_size, value_size,
+                                                                  hidden_size, dropout=dropout, device=self.device)
                                                  for _ in range(num_layer)])
 
     def forward(self,

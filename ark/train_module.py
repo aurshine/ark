@@ -2,6 +2,7 @@ import os
 
 from ark.data import load
 from ark.setting import VOCAB_PATH, MODEL_LIB
+from ark.device import use_device
 from ark.nn.text_process import Vocab, fusion_piny_letter
 from ark.nn.module import AttentionArk
 from ark.nn.valid import k_fold_valid
@@ -36,12 +37,13 @@ OPTIMIZER_PARAMS = {'lr': 1e-3, 'weight_decay': 1e-2}  # 优化器参数(学习�
 #################################################################################
 
 
-def train():
+def train(device=None):
     """
     训练模型
     """
+    device = use_device(device)
     # 读入数据
-    texts, labels = load.load('tie-ba.csv')
+    texts, labels = load.load('tie-ba.csv', device=device)
 
     # 构建词典
     vocab = Vocab(VOCAB_PATH)
@@ -51,6 +53,7 @@ def train():
 
     # 数据预处理
     train_x, valid_len = text_layer(texts, vocabs=vocab, steps=STEPS, front_pad=True)
+    train_x, valid_len = train_x.to(device), valid_len.to(device)
 
     # 构建模型
     model = AttentionArk(vocab,
@@ -60,7 +63,8 @@ def train():
                          num_heads=NUM_HEADS,
                          num_layer=NUM_LAYER,
                          dropout=DROPOUT,
-                         num_class=2)
+                         num_class=2,
+                         device=device)
 
     # 训练模型 k折交叉验证
     k_loss_list, k_train_acc, k_valid_acc, ark = k_fold_valid(K_FOLD, train_x, labels, valid_len,
@@ -70,7 +74,7 @@ def train():
                                                               epochs=TRAIN_EPOCHS,
                                                               stop_loss_value=STOP_LOSS_VALUE,
                                                               stop_min_epoch=STOP_MIN_EPOCH,
-                                                              optim_params=OPTIMIZER_PARAMS)
+                                                              optim_params=OPTIMIZER_PARAMS,)
 
     max_cell = None
     # 平均准确率

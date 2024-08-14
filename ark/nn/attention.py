@@ -3,6 +3,7 @@ import math
 import torch
 from torch import nn
 
+from ark.device import use_device
 
 def scaled_dot_product_attention(queries: torch.Tensor, keys: torch.Tensor) -> torch.Tensor:
     """
@@ -53,9 +54,10 @@ def cosine_similarity_attention(queries: torch.Tensor, keys: torch.Tensor) -> to
 
 
 class LearningPosition(nn.Module):
-    def __init__(self, steps, hidden_size):
+    def __init__(self, steps, hidden_size, device=None):
         super(LearningPosition, self).__init__()
-        self.P = nn.Parameter(torch.zeros((1, steps, hidden_size)), requires_grad=True)
+        self.device = use_device(device)
+        self.P = nn.Parameter(torch.zeros((1, steps, hidden_size), device=self.device), requires_grad=True)
 
     def forward(self, _input: torch.Tensor) -> torch.Tensor:
         return _input + self.P

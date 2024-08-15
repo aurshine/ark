@@ -44,26 +44,12 @@ class AttentionArk(Trainer):
 
         self.linear = nn.Linear(hidden_size, num_class, device=self.device)
 
-    def forward(self, X, valid_len=None, **kwargs):
+    def forward(self, x, valid_len=None, **kwargs):
         """
-        :param X: 形状为 (batch_size, num_channels, steps)
+        :param x: 形状为 (batch_size, num_channels, steps)
 
         :param valid_len: 形状为 (batch_size, )
 
         :return: (batch_size, num_class)
         """
-        X = X.to(self.device)
-        batch_size = X.shape[0]
-        if batch_size <= self.mini_batch_size:
-            X = X.to(self.device)
-
-            return self.linear(self.decoder(self.encoder(X, valid_len)))
-        else:
-            results = []
-            for i in range(0, batch_size, self.mini_batch_size):
-                x_batch = X[i: min(batch_size, i + self.mini_batch_size)].to(self.device)
-                valid_len_batch = valid_len[i: min(batch_size, i + self.mini_batch_size)] if valid_len is not None else None
-                results.append(self.linear(self.decoder(self.encoder(x_batch, valid_len_batch))))
-
-            return torch.cat(results, dim=0)
-
+        return self.linear(self.decoder(self.encoder(x, valid_len)))

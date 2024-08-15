@@ -20,7 +20,7 @@ class Decoder(nn.Module):
 class ArkDecoder(Decoder):
     def __init__(self, hidden_size, num_heads, num_layer, dropout=0, device=None):
         super(ArkDecoder, self).__init__(device)
-        self.transformer_layers = TransformerLayers(hidden_size, num_heads, num_layer, dropout=dropout, device=self.device)
+        self.transformer_layers = TransformerLayers(hidden_size, num_heads, num_layer, hidden_size=hidden_size, dropout=dropout, device=self.device)
         self.query = nn.Parameter(torch.empty(size=(1, 1, hidden_size), device=self.device))
         nn.init.xavier_normal_(self.query)
         self.fusion = TransformerLayer(hidden_size, num_heads, dropout=dropout, device=self.device)

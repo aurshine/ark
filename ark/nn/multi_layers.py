@@ -25,7 +25,7 @@ class MultiLinear(nn.Module):
 
         :param dropout: 抛弃层, 在每层的输出之前
 
-        :param norm: 归一化层, 可选 'batch_norm' 'layer_norm' 在每层的输出之后, 激活函数之前, 不与 dropout 同时使用
+        :param norm: 归一化层, 可选 'batch_norm' 'layer_norm' 在每层的输出之后, 激活函数之前
 
         :param num_input: 输入节点数, 选填, 默认为 None 时自动计算输入节点
 
@@ -43,12 +43,13 @@ class MultiLinear(nn.Module):
                           if num_input is None
                           else nn.Linear(num_input, num_output, device=self.device)
                           )
-            if dropout > 0:
-                layers.append(nn.Dropout(dropout))
-            elif norm == 'batch_norm':
+            if norm == 'batch_norm':
                 layers.append(nn.BatchNorm1d(num_output, device=self.device))
             elif norm == 'layer_norm':
                 layers.append(nn.LayerNorm(num_output, device=self.device))
+
+            if dropout > 0:
+                layers.append(nn.Dropout(dropout))
 
             layers.append(active)
             num_input = num_output
@@ -58,7 +59,7 @@ class MultiLinear(nn.Module):
         self.dense = nn.Sequential(*layers)
 
     def forward(self, x):
-        return self.dense(x.to(self.device))
+        return self.dense(x)
 
 
 class MultiConv2d(nn.Module):
@@ -118,8 +119,13 @@ class PositionWiseFFN(nn.Module):
     def __init__(self, input_size, hidden_size, output_size, dropout=0, device=None):
         super(PositionWiseFFN, self).__init__()
         self.device = use_device(device)
-        self.linear = MultiLinear([hidden_size, output_size], num_input=input_size, active=nn.LeakyReLU(),
-                                  dropout=dropout, device=self.device)
+        self.linear = MultiLinear([hidden_size, output_size],
+                                  num_input=input_size,
+                                  active=nn.LeakyReLU(),
+                                  norm='layer_norm',
+                                  dropout=dropout,
+                                  save_last_active=True,
+                                  device=self.device)
 
         if input_size == output_size:
             self.add_norm = AddNorm(output_size, dropout=dropout, device=self.device)
@@ -134,15 +140,16 @@ class PositionWiseFFN(nn.Module):
 
 
 class Attention(nn.Module):
-    def __init__(self, query_size: int, key_size: int, hidden_size: Optional[int] = None, device=None):
+    def __init__(self, query_size: int, key_size: int, value_size: int = None, hidden_size: Optional[int] = None, device=None):
         super(Attention, self).__init__()
-        self._qk2same_size = query_size == key_size
+        self.hidden_size = hidden_size
         self.device = use_device(device)
 
-        if not self._qk2same_size:
-            assert hidden_size is not None, "hidden_size can not be None"
+        value_size = value_size if value_size is not None else key_size
+        if self.hidden_size is not None:
             self.query2hidden = nn.Linear(query_size, hidden_size, device=self.device)
             self.key2hidden = nn.Linear(key_size, hidden_size, device=self.device)
+            self.value2hidden = nn.Linear(value_size, hidden_size, device=self.device)
 
     def forward(self,
                 queries: torch.Tensor,
@@ -160,10 +167,11 @@ class Attention(nn.Module):
 
         :return: (batch_size, query_steps, value_size)
         """
-        if not self._qk2same_size:
+        if self.hidden_size is not None:
             # (batch_size, query_steps, hidden_size)
             queries = self.query2hidden(queries)
             keys = self.key2hidden(keys)
+            values = self.value2hidden(values)
 
         # (batch_size, query_steps, kv_steps)
         weight = get_qk_weight(queries, keys)
@@ -321,7 +329,7 @@ class FusionChannel(nn.Module):
         self.c_weight = nn.Parameter(torch.randn(size=(steps, num_channel, 1), device=self.device), requires_grad=True)
         self.lin = MultiLinear([hidden_size, hidden_size],
                                dropout=dropout,
-                               active=nn.ReLU(),
+                               active=nn.LeakyReLU(),
                                num_input=hidden_size,
                                norm='layer_norm',
                                save_last_active=True,

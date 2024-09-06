@@ -43,7 +43,7 @@ def train(device=None):
     """
     device = use_device(device)
     # 读入数据
-    texts, labels = load.load('tie-ba.csv', device=device)
+    texts, labels = load.load(device=device)
 
     # 构建词典
     vocab = Vocab(VOCAB_PATH)

@@ -12,7 +12,7 @@ from ark.device import use_device
 CURRENT_FOLDER = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
 
 
-def load(file_path='tie-ba.csv',
+def load(file_path='train.csv',
          text_col='TEXT',
          label_col='label',
          sep=',',
@@ -64,7 +64,6 @@ def update_tie_ba(encoding='utf-8-sig'):
 
     if df2.shape[0]:
         comment = pd.concat([df2, comment])
-    # comment = pd.concat([df1, df2, comment])
     comment = comment.sort_values(by=['label'], ascending=False)
     comment.to_csv(TIE_BA_CSV_PATH, index=False, encoding=encoding)
     clear(BAD_TXT_PATH), clear(NOT_BAD_TXT_PATH)

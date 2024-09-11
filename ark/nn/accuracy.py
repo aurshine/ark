@@ -3,7 +3,7 @@ import numpy as np
 import torch
 from typing import Tuple, List, Optional
 import matplotlib.pyplot as plt
-from sklearn.metrics import ConfusionMatrixDisplay
+from sklearn.metrics import ConfusionMatrixDisplay, precision_score, recall_score, f1_score, accuracy_score, confusion_matrix
 
 
 def clac_accuracy(y_hat: torch.Tensor, y: torch.Tensor) -> float:

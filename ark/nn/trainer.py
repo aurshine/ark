@@ -133,12 +133,26 @@ class Trainer(nn.Module):
 
         # 训练结束验证
         if valid_loader is not None:
-            self.eval()
-            for valid_x, valid_y, *valid_args in valid_loader:
-                y_hat = self.forward(valid_x, *valid_args)
-                valid_accuracy += AccuracyCell(self.num_class, torch.argmax(y_hat, dim=-1), valid_y)
+            valid_accuracy(*self.validate(valid_loader))
 
         return epoch_loss, train_accuracy, valid_accuracy
+
+    def validate(self, valid_loader) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        验证函数
+
+        :param valid_loader: 验证集导入器 (valid_x, valid_y, *args)
+
+        :return: valid_y, true_y
+        """
+        self.eval()
+        true_y, valid_y = [], []
+        for valid_x, valid_y, *valid_args in valid_loader:
+            y_hat = self.predict(valid_x, *valid_args)
+            true_y.append(valid_y.cpu())
+            valid_y.append(y_hat.cpu())
+
+        return torch.cat(valid_y), torch.cat(true_y)
 
     def predict(self, x: torch.Tensor, *args, **kwargs) -> torch.Tensor:
         """

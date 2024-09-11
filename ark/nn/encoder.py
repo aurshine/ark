@@ -34,8 +34,9 @@ class ArkEncoder(Encoder):
         :param device: 模型训练的环境 (cpu/gpu)
         """
         super(ArkEncoder, self).__init__(device)
-        self.word_embedding = nn.Embedding(len(vocab), hidden_size, padding_idx=vocab.unk_index, device=self.device)
-        self.position_embedding = nn.Embedding(num_channel * steps, hidden_size, device=self.device)
+        self.word_embedding = nn.Embedding(len(vocab), hidden_size, device=self.device)
+        self.position_embedding = nn.Embedding(steps, hidden_size, device=self.device)
+        self.channel_embedding = nn.Embedding(num_channel, hidden_size, device=self.device)
 
         self.ln = nn.LayerNorm(hidden_size, device=self.device)
         self.dropout = nn.Dropout(dropout)
@@ -48,6 +49,8 @@ class ArkEncoder(Encoder):
 
     def _word_embedding(self, x):
         """
+        对词嵌入进行编码
+
         :param x: 形状为 (batch_size, steps, num_channels)
 
         :returns: (batch_size, steps, num_channels, hidden_size)
@@ -56,17 +59,33 @@ class ArkEncoder(Encoder):
 
     def _position_embedding(self, x):
         """
+        对位置信息进行编码
+
         :param x: 形状为 (batch_size, steps, num_channels)
 
-
-        :returns: (batch_size, steps, num_channels, hidden_size)
+        :returns: (steps, num_channels, hidden_size)
         """
         steps, num_channels = x.shape[1], x.shape[2]
-        # (steps * num_channels)
-        position = torch.arange(steps * num_channels, dtype=torch.long, device=self.device)
-        # (1, steps, num_channels)
-        position = position.reshape(1, steps, num_channels)
-        return self.position_embedding(position)
+        # (steps, 1)
+        position = torch.arange(steps, dtype=torch.long, device=self.device).unsqueeze(1)
+        # (steps, num_channels)
+        position = position.repeat(1, num_channels)
+        # (steps, num_channels, hidden_size)
+        position_embedding = self.position_embedding(position)
+        return position_embedding
+
+    def _channel_embedding(self, x):
+        """
+        对输入的通道信息进行编码，并融合到词嵌入中
+
+        :param x: 形状为 (batch_size, steps, num_channels)
+
+        :returns: (num_channels, hidden_size)
+        """
+        num_channels = x.shape[2]
+        channel = torch.arange(num_channels, dtype=torch.long, device=self.device)
+        channel_embedding = self.channel_embedding(channel)
+        return channel_embedding
 
     def forward(self, x: torch.Tensor, valid_len=None):
         """
@@ -79,7 +98,7 @@ class ArkEncoder(Encoder):
         # (batch_size, steps, num_channels)
         x = x.transpose(1, 2)
         # (batch_size, steps, num_channels, hidden_size)
-        x_embedding = self._word_embedding(x) + self._position_embedding(x)
+        x_embedding = self._word_embedding(x) + self._position_embedding(x) + self._channel_embedding(x)
         x_embedding = self.dropout(self.ln(x_embedding))
 
         # (batch_size, steps, hidden_size)

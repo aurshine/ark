@@ -4,7 +4,7 @@ from ark.data import load
 from ark.setting import VOCAB_PATH, MODEL_LIB
 from ark.device import use_device
 from ark.nn.text_process import Vocab, fusion_piny_letter
-from ark.nn.module import AttentionArk
+from ark.nn.module import Ark
 from ark.nn.valid import k_fold_valid
 from ark.nn.accuracy import save_fig
 
@@ -56,16 +56,18 @@ def train(device=None):
     train_x, valid_len = train_x.to(device), valid_len.to(device)
 
     # 构建模型
-    model = AttentionArk(vocab,
-                         steps=STEPS,
-                         hidden_size=HIDDEN_SIZE,
-                         in_channel=3,
-                         num_heads=NUM_HEADS,
-                         num_layer=NUM_LAYER,
-                         dropout=DROPOUT,
-                         num_class=2,
-                         device=device)
+    model = Ark(vocab,
+                steps=STEPS,
+                hidden_size=HIDDEN_SIZE,
+                in_channel=3,
+                num_heads=NUM_HEADS,
+                num_layer=NUM_LAYER,
+                dropout=DROPOUT,
+                num_class=2,
+                device=device)
     print(model)
+    print(f'模型参数量: {sum(p.numel() for p in model.parameters() if p.requires_grad)}')
+
     # 训练模型 k折交叉验证
     k_loss_list, k_train_acc, k_valid_acc, ark = k_fold_valid(K_FOLD, train_x, labels, valid_len,
                                                               model=model,
@@ -98,3 +100,9 @@ def train(device=None):
         path = os.path.join(MODEL_LIB,
                             f'ark-{int(sub_acc[-1].score * 100)}-{HIDDEN_SIZE}-{STEPS}-{NUM_HEADS}-{NUM_LAYER}-{2}.net')
         sub_ark.save_state_dict(path)
+
+
+def pre_train(device=None):
+    """
+    预训练模型
+    """

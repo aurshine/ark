@@ -1,6 +1,6 @@
 import random
 from collections import Counter
-from typing import Tuple, Union, List, Optional
+from typing import Tuple, Union, List, Optional, Sequence
 
 import torch
 from torch import nn, Tensor
@@ -280,3 +280,40 @@ def data_augment(texts: List[str], labels: List = None, choice_p: float = 0.2, m
     labels_ = [label for label in labels]
     return data_augment_(texts_, labels_, choice_p, mdf_p)
 
+
+def token_random_mask(token_list: List[str],
+                      pred_position: List[int],
+                      num_pred_position: int,
+                      all_tokens: Sequence[str],
+                      _mask_token: str = '<mask>'):
+    """
+    随机mask token, 并返回mask后的token_list, 以及对应的mask_position
+
+    :param token_list: token列表
+
+    :param pred_position: 预测位置列表
+
+    :param num_pred_position: 预测位置数量
+
+    :param all_tokens: 所有token列表
+
+    :param _mask_token: mask token, 默认为'<mask>'
+
+    :return: 返回mask后的token_list, mask_position, mask_position对应的原token
+    """
+    random.shuffle(pred_position)
+    mask_position, source_tokens = [], []
+
+    for pos in pred_position[:num_pred_position]:
+        if random.random() < 0.8:
+            mask_token = _mask_token
+        elif random.random() < 0.5:
+            mask_token = random.choice(all_tokens)
+        else:
+            mask_token = token_list[pos]
+
+        source_tokens.append(token_list[pos])
+        token_list[pos] = mask_token
+        mask_position.append(pos)
+
+    return token_list, mask_position, source_tokens

@@ -11,9 +11,8 @@ from ark.running import Timer
 
 
 class Trainer(nn.Module):
-    def __init__(self, num_class, mini_batch_size=128, device=None):
+    def __init__(self, num_class, device=None):
         super(Trainer, self).__init__()
-        self.mini_batch_size = mini_batch_size if mini_batch_size is not None and mini_batch_size > 0 else 128
         self.device = use_device(device)
         self.num_class = num_class
 

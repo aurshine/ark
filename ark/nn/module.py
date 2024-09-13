@@ -1,5 +1,3 @@
-import sys
-import torch
 from torch import nn
 from typing import List
 from ark.nn.trainer import Trainer
@@ -20,12 +18,12 @@ def analyse(model: Trainer, inputs, classes: List[str]):
     return [classes[index] for index in model.predict(inputs)]
 
 
-class AttentionArk(Trainer):
+class Ark(Trainer):
     """
     ark 注意力模型
     """
-    def __init__(self, vocab, steps, hidden_size, in_channel, num_heads, num_layer, num_class, dropout=0.5, mini_batch_size=None, device=None):
-        super(AttentionArk, self).__init__(num_class, mini_batch_size=mini_batch_size, device=device)
+    def __init__(self, vocab, steps, hidden_size, in_channel, num_heads, num_layer, num_class, dropout=0.5, device=None):
+        super(Ark, self).__init__(num_class, device=device)
         self.vocab = vocab
         self.encoder = ArkEncoder(vocab,
                                   hidden_size,
@@ -42,8 +40,6 @@ class AttentionArk(Trainer):
                                   device=self.device
                                   )
 
-        self.linear = nn.Linear(hidden_size, num_class, device=self.device)
-
     def forward(self, x, valid_len=None, **kwargs):
         """
         :param x: 形状为 (batch_size, num_channels, steps)
@@ -52,4 +48,4 @@ class AttentionArk(Trainer):
 
         :return: (batch_size, num_class)
         """
-        return self.linear(self.decoder(self.encoder(x, valid_len)))
+        return self.decoder(self.encoder(x, valid_len))

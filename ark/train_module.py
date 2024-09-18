@@ -1,5 +1,6 @@
 import os
 
+from ark.data.dataloader import get_ark_loader
 from ark.data import load
 from ark.setting import VOCAB_PATH, MODEL_LIB
 from ark.device import use_device
@@ -35,6 +36,17 @@ STOP_LOSS_VALUE = 0.1                                  # 最小停止损失值
 
 OPTIMIZER_PARAMS = {'lr': 1e-3, 'weight_decay': 1e-2}  # 优化器参数(学习率、权重衰减)
 #################################################################################
+
+
+def _train(device=None):
+    """
+    训练模型
+    """
+    device = use_device(device)
+    train_loader = get_ark_loader('train', sep=',', batch_size=BATCH_SIZE)
+    valid_loader = get_ark_loader('valid', sep=',', batch_size=BATCH_SIZE)
+
+
 
 
 def train(device=None):

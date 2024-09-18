@@ -2,7 +2,7 @@ import os
 from enum import Enum
 from typing import Union, List, Optional, Sequence
 
-from ark.nn.module import AttentionArk
+from ark.nn.module import Ark
 from ark.nn.text_process import Vocab, fusion_piny_letter
 from ark.setting import MODEL_LIB, VOCAB_PATH
 
@@ -17,14 +17,14 @@ def reload(vocab: Vocab, model_path: str):
     model_name = os.path.splitext(model_name)[0]
 
     accuracy, hidden_size, steps, num_heads, num_layer, num_class = model_name.split('-')
-    __ARK__ = AttentionArk(vocab,
-                           hidden_size=hidden_size,
-                           in_channel=3,
-                           num_heads=num_heads,
-                           steps=steps,
-                           num_layer=num_layer,
-                           dropout=0,
-                           num_class=num_class)
+    __ARK__ = Ark(vocab,
+                  hidden_size=hidden_size,
+                  in_channel=3,
+                  num_heads=num_heads,
+                  steps=steps,
+                  num_layer=num_layer,
+                  dropout=0,
+                  num_class=num_class)
     __ARK__.eval()
     __ARK__.load(model_path)
     return __ARK__

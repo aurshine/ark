@@ -35,7 +35,9 @@ def translate_piny(inputs, style=None):
     """文本翻译拼音
 
     :param inputs: 由列表存储的tokenize后的文本 或 一串字符串
+
     :param style: 拼音格式, 默认不带音标, Style.FIRST_LETTER 只得到首字母
+
     :return: 将文本转化为拼音返回
 
     >>> inputs = [['你好吗'], ['还行']]

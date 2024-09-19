@@ -230,7 +230,7 @@ class Attention(nn.Module):
                 keys: torch.Tensor,
                 values: torch.Tensor,
                 get_qk_weight: Callable[[torch.Tensor, torch.Tensor], torch.Tensor],
-                mask: Optional[torch.Tensor] = None):
+                masks: Optional[torch.Tensor] = None):
         """
         :param queries: (batch_size, query_steps, query_size)
 
@@ -240,7 +240,7 @@ class Attention(nn.Module):
 
         :param get_qk_weight: 传入query key， 得到每个key的权重，用于计算注意力
 
-        :param mask: (batch_size, query_steps)
+        :param masks: (batch_size, query_steps)
 
         :return: (batch_size, query_steps, value_size)
         """
@@ -253,8 +253,10 @@ class Attention(nn.Module):
 
         # (batch_size, query_steps, kv_steps)
         weight = get_qk_weight(queries, keys)
-        if mask is not None:
-            weight.masked_fill_(mask == 0, -1e9)
+        if masks is not None:
+            masks = masks.unsqueeze(2).expand_as(weight)
+
+            weight = weight.masked_fill(masks == 0, -1e9)
 
         # (batch_size, query_steps, value_size)
         output = torch.bmm(weight, values)
@@ -298,7 +300,7 @@ class MultiHeadAttention(nn.Module):
                 keys: torch.Tensor,
                 values: torch.Tensor,
                 get_qk_weight: Callable[[torch.Tensor, torch.Tensor], torch.Tensor],
-                mask: Optional[torch.Tensor] = None
+                masks: Optional[torch.Tensor] = None
                 ) -> torch.Tensor:
         """
         :param queries: (batch_size, query_steps, query_size)
@@ -309,7 +311,7 @@ class MultiHeadAttention(nn.Module):
 
         :param get_qk_weight: 传入query key， 得到每个key的权重，用于计算注意力
 
-        :param mask: (batch_size, query_steps)
+        :param masks: (batch_size, query_steps)
 
         :return: (batch_size, query_steps, value_size)
         """
@@ -317,11 +319,11 @@ class MultiHeadAttention(nn.Module):
         keys = separate_heads(keys, self.num_heads)
         values = separate_heads(values, self.num_heads)
 
-        if mask is not None:
-            mask = mask.repeat_interleave(self.num_heads, dim=0)
+        if masks is not None:
+            masks = masks.repeat_interleave(self.num_heads, dim=0)
 
         # (batch_size * num_heads, query_steps, value_size // num_heads)
-        heads = self.attention(queries, keys, values, get_qk_weight, mask)
+        heads = self.attention(queries, keys, values, get_qk_weight, masks=masks)
         # (batch_size, num_heads, query_steps, value_size // num_heads)
         heads = concat_heads(heads, self.num_heads)
 
@@ -374,6 +376,7 @@ class TransformerLayer(nn.Module):
                 q: torch.Tensor,
                 k: torch.Tensor = None,
                 v: torch.Tensor = None,
+                masks: torch.Tensor = None,
                 get_qk_weight: Callable[[torch.Tensor, torch.Tensor], torch.Tensor] = None):
         """
         计算 transformer 块的输出
@@ -383,6 +386,8 @@ class TransformerLayer(nn.Module):
         :param k: key
 
         :param v: value
+
+        :param masks: 掩码，形状为(batch_size, query_steps)
 
         :param get_qk_weight: 获取query key的权重，用于计算注意力，默认为cosine_similarity_attention
 
@@ -394,7 +399,7 @@ class TransformerLayer(nn.Module):
         k = q if k is None else k
         v = k if v is None else v
 
-        y1 = self.attention(q, k, v, get_qk_weight)
+        y1 = self.attention(q, k, v, get_qk_weight, masks=masks)
         y1 = self.add_norm1(q, y1)
         y2 = self.ffn(y1)
         y2 = self.add_norm2(y1, y2)
@@ -427,13 +432,14 @@ class TransformerLayers(nn.Module):
     def forward(self,
                 q: torch.Tensor,
                 k: torch.Tensor = None,
-                v: torch.Tensor = None):
+                v: torch.Tensor = None,
+                masks: torch.Tensor = None):
         """
         :return: 形状为(batch_size, steps, hidden_size)
         """
         y = q
         for block in self.transformer_blocks:
-            y = block(q, k, v)
+            y = block(q, k, v, masks=masks)
 
         return y
 

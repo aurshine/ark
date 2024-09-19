@@ -36,12 +36,8 @@ def log(message: str, file_path: str = None):
     message = f'[{datetime.datetime.now(): %Y-%m-%d %H:%M:%S}]\t{message}'
     print(message)
     if file_path is not None:
-        if not os.path.exists(file_path):
-            with open(file_path, 'w', encoding='utf-8') as f:
-                f.write(message)
-        else:
-            with open(file_path, 'a', encoding='utf-8') as f:
-                f.write(message)
+        with open(file_path, 'a', encoding='utf-8') as f:
+            f.write(message)
 
 
 class Trainer(nn.Module):
@@ -65,6 +61,7 @@ class Trainer(nn.Module):
             valid_loader=None):
         """
         训练函数
+
         :param train_loader: 训练集导入器
 
         :param log_file: 日志文件地址, 默认为 None, 即不保存日志文件
@@ -89,6 +86,7 @@ class Trainer(nn.Module):
 
         if log_file is not None and not os.path.exists(log_file):
             log_file = os.path.join(LOG_PATH, log_file)
+            open(log_file, 'w').close()
 
         if optimizer is None:
             if optim_params is None:
@@ -100,9 +98,13 @@ class Trainer(nn.Module):
 
         # 打印训练信息
         log(f'fit on {self.device}\n', log_file)
+        log(f'model architecture: {self}\n', log_file)
         log(f'optimizer: {optimizer}\n', log_file)
-        log(f'loss: {loss}\n', log_file)
-
+        log(f'loss_fn: {loss}\n', log_file)
+        log(f'num_class: {self.num_class}\n', log_file)
+        log(f'epochs: {epochs}\n', log_file)
+        log(f'stop_loss_value: {stop_loss_value}\n', log_file)
+        log(f'stop_min_epoch: {stop_min_epoch}\n\n', log_file)
         # 记录 每个 epoch 的 loss, 训练集准确率，验证集准确率
         loss_list, valid_results, valid_trues = [], [], []
         for epoch in range(epochs):
@@ -145,6 +147,7 @@ class Trainer(nn.Module):
                     multi_channel_masks.append(value['attention_mask'])
 
             y = data['label']
+
             y_hat = self.forward(multi_channel_tokens, multi_channel_masks)
             yield y_hat, y
 
@@ -202,7 +205,7 @@ class Trainer(nn.Module):
 
         # 训练结束验证
         if valid_loader is not None:
-            valid_true, valid_result = self.validate(valid_loader)[0]
+            valid_true, valid_result = self.validate(valid_loader)
 
         return epoch_loss, valid_true, valid_result
 
@@ -212,7 +215,7 @@ class Trainer(nn.Module):
 
         :param valid_loader: 验证集导入器
 
-        :return: valid_y, true_y
+        :return: true_y, valid_y
         """
         self.eval()
         true_y, valid_y = [], []

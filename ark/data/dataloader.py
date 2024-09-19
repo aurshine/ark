@@ -52,7 +52,7 @@ class ArkDataSet(Dataset):
     def __getitem__(self, index) -> Dict[str, torch.Tensor]:
         data, text = {}, self.df.iloc[index]['TEXT']
         piny = translate_piny(text)
-        letter = [p[0] for p in piny.split()]
+        letter = [p[0] for p in piny]
 
         kwargs = {
             'padding': 'max_length',
@@ -61,9 +61,8 @@ class ArkDataSet(Dataset):
             'return_tensors': 'pt',
             'return_token_type_ids': False,
             'return_attention_mask': True,
-            'return_length ': True,
+            'return_length': False,
         }
-
         data['source_tokens']: Dict[str, torch.Tensor] = self.tokenizer.encode_plus(text=text, **kwargs)
 
         data['pinyin_tokens']: Dict[str, torch.Tensor] = self.tokenizer.encode_plus(text=piny,
@@ -74,11 +73,7 @@ class ArkDataSet(Dataset):
                                                                                     is_split_into_words=True,
                                                                                     **kwargs)
 
-        data['label']: torch.Tensor = torch.LongTensor(self.df.iloc[index]['label'])
-
-        for key, value in data.items():
-            if isinstance(value, torch.Tensor):
-                data[key] = value.to(self.device)
+        data['label']: torch.Tensor = torch.tensor([self.df.iloc[index]['label']], dtype=torch.int64, device=self.device)
         return data
 
 
@@ -86,17 +81,32 @@ def ark_collate_fn(batch_datas: List[Dict[str, torch.Tensor]]) -> dict[str, torc
     """
     ArkDataSet的collate_fn函数，用于将batch数据处理成dict形式
 
-    :param batch_datas: 一个batch的数据
+    :param batch_datas: 一个batch的数据, 每个元素为
 
-    :return: {'source_tokens': tensor, 'pinyin_tokens': tensor, 'letter_tokens': tensor, 'label': tensor}
+    {source_tokens: {input_ids, attention_mask}, pinyin_tokens: {input_ids, attention_mask}, letter_tokens: {input_ids, attention_mask}, label: tensor}
+
+    :return: {source_tokens: {input_ids, attention_mask}, pinyin_tokens: {input_ids, attention_mask}, letter_tokens: {input_ids, attention_mask}, label: tensor}
+
     """
-    datas = {key: [] for key in batch_datas[0].keys()}
-    for data in batch_datas:
-        for key, value in data.items():
-            datas[key].append(value)
+    datas = {}
+    tokens_name, other_name = [], []
+    for key, value in batch_datas[0].items():
+        if 'tokens' in key:
+            datas[key] = {k: [] for k in value.keys()}
+            tokens_name.append(key)
+        else:
+            datas[key] = []
+            other_name.append(key)
 
-    for key, value in datas.items():
-        datas[key] = torch.stack(value)
+    for token_name in tokens_name:
+        for token_key in datas[token_name].keys():
+            for data in batch_datas:
+                datas[token_name][token_key].append(data[token_name][token_key])
+            datas[token_name][token_key] = torch.cat(datas[token_name][token_key])
+    for other_name in other_name:
+        for data in batch_datas:
+            datas[other_name].append(data[other_name])
+        datas[other_name] = torch.cat(datas[other_name])
 
     return datas
 
@@ -108,7 +118,7 @@ def get_ark_loader(csv_: Union[str, pd.DataFrame],
                    batch_size: int = 32,
                    shuffle=True,
                    drop_last=False,
-                   num_workers=2,
+                   num_workers=0,
                    device=None,
                    **kwargs):
     """得到一个ArkDataSet的DataLoader对象

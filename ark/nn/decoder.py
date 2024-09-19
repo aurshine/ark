@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 from ark.device import use_device
-from ark.nn.multi_layers import TransformerLayers, TransformerLayer
+from ark.nn.multi_layers import TransformerLayers
 
 
 class ArkDecoder(nn.Module):
@@ -19,7 +19,7 @@ class ArkDecoder(nn.Module):
         """
         :param x:  形状为 (batch_size, steps, hidden_size)
 
-        :param kwargs: MultiHeadAttention 的其它参数
+        :param kwargs: TransformerLayers 的其它参数
         """
         return self.transformer_layers(x, **kwargs)
 

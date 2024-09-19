@@ -35,7 +35,6 @@ def load(file_path='train.csv',
         file_path = os.path.join(DATASET_PATH, file_path)
 
     df = pd.read_csv(file_path, encoding='utf-8', sep=sep)
-    df = df.sample(frac=1, ignore_index=True)
 
     texts, labels = df[text_col].tolist(), torch.from_numpy(df[label_col].to_numpy(dtype=np_int64))
 

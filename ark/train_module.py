@@ -1,10 +1,11 @@
 import os
 
+import pandas as pd
 from transformers import AutoTokenizer
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 
 from ark.data.dataloader import get_ark_loader
-from ark.setting import PRETRAIN_TOKENIZER_PATH, LOG_PATH
+from ark.setting import PRETRAIN_TOKENIZER_PATH, LOG_PATH, DATASET_PATH
 from ark.device import use_device
 from ark.nn.module import Ark, ArkClassifier
 from ark.nn.accuracy import Plot
@@ -28,7 +29,7 @@ K_FOLD = 15                                            # 交叉验证折数
 
 NUM_VALID = 5                                          # 验证次数, -1表示全部验证
 
-BATCH_SIZE = 128                                       # 批量大小
+BATCH_SIZE = 64                                        # 批量大小
 
 TRAIN_EPOCHS = 200                                     # 最大训练轮数
 
@@ -40,8 +41,10 @@ OPTIMIZER_PARAMS = {'lr': 1e-3, 'weight_decay': 1e-2}  # 优化器参数(学习�
 #################################################################################
 
 
-def _train(device=None):
+def train(device=None):
     """
+    由于导入数据使用多进程，请确保train在 if __name__ == '__main__': 代码块中运行
+
     训练模型
     """
     device = use_device(device)
@@ -58,9 +61,12 @@ def _train(device=None):
         'device': device,
     }
 
+    datas = pd.read_csv(os.path.join(DATASET_PATH, 'train.csv'), sep=',', encoding='utf-8')
+    indices = list(range(len(datas)))
+
     # 构造数据加载器
-    train_loader = get_ark_loader('train', sep=',', **loader_kwargs)
-    valid_loader = get_ark_loader('valid', sep=',', **loader_kwargs)
+    train_loader = get_ark_loader(datas.iloc[:100], **loader_kwargs)
+    valid_loader = get_ark_loader(datas.iloc[100:110], **loader_kwargs)
 
     ark_classifier = ArkClassifier(hidden_size=HIDDEN_SIZE,
                                    num_classes=NUM_CLASS,

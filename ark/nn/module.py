@@ -64,7 +64,7 @@ class Ark(Trainer):
         super(Ark, self).__init__(num_class, device=device)
         self.tokenizer = tokenizer
 
-        self.encoder = ArkEncoder(vocab_size=self.tokenizer.vocab_size,
+        self.encoder = ArkEncoder(vocab_size=len(self.tokenizer.get_vocab()),
                                   hidden_size=hidden_size,
                                   num_channel=in_channel,
                                   steps=steps,
@@ -94,13 +94,13 @@ class Ark(Trainer):
         # masks (batch_size, steps)
         y, masks = self.encoder(x, masks)
         # y     (batch_size, steps, hidden_size)
-        y = self.decoder(y, masks)
+        y = self.decoder(y, masks=masks)
 
         if self.output_layer is not None:
             y = self.output_layer(y)
         return y
 
-    def decode(self, y: Union[List[int], List[List[int]], torch.Tensor]) -> List[str]:
+    def decode_ids(self, y: Union[List[int], List[List[int]], torch.Tensor]) -> List[str]:
         """
         将id序列解码为字符串序列
 

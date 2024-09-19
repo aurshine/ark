@@ -8,6 +8,59 @@ from ark.nn.addnorm import AddNorm
 from ark.nn.attention import cosine_similarity_attention
 
 
+def separate_heads(x: torch.Tensor, num_heads: int) -> torch.Tensor:
+    """
+    将输入的tensor分割成多个头，并转置
+
+    :param x: (batch_size, ..., feature_size)
+
+    :param num_heads: 头数
+
+    :return: (batch_size * num_heads, ..., feature_size // num_heads)
+    """
+    if x.shape[-1] % num_heads != 0:
+        raise ValueError("feature size should be divisible by num_heads")
+
+    # [...]
+    batch_size, other_dim = x.shape[0], x.shape[1: -1]
+
+    # (batch_size, 1, ..., num_heads, feature_size // num_heads)
+    y = x.reshape(batch_size, 1, *other_dim, num_heads, -1)
+
+    # (batch_size, num_heads, ...., feature_size // num_heads)
+    y = y.transpose(1, -2)
+
+    # (batch_size * num_heads, ..., feature_size // num_heads)
+    y = y.reshape(batch_size * num_heads, *other_dim, -1)
+
+    return y
+
+
+def concat_heads(x: torch.Tensor, num_heads: int) -> torch.Tensor:
+    """
+    将输入的tensor合并成多个头
+
+    :param x: (batch_size * num_heads, ..., feature_size // num_heads)
+
+    :param num_heads: 头数
+
+    :return: (batch_size, ..., feature_size)
+    """
+    if x.shape[0] % num_heads != 0:
+        raise ValueError("batch size should be divisible by num_heads")
+
+    feature_size, other_dim = x.shape[-1], x.shape[1:-1]
+
+    # (batch_size, num_heads, ..., 1, feature_size // num_heads)
+    x = x.reshape(-1, num_heads, *other_dim, 1, feature_size)
+    # (batch_size, 1, ... num_heads, feature_size // num_heads)
+    x = x.transpose(1, -2)
+
+    # (batch_size, ..., feature_size)
+    x = x.reshape(x.shape[0], *other_dim, -1)
+    return x
+
+
 class MultiLinear(nn.Module):
     def __init__(self,
                  num_outputs: List[int],
@@ -140,7 +193,25 @@ class PositionWiseFFN(nn.Module):
 
 
 class Attention(nn.Module):
-    def __init__(self, query_size: int, key_size: int, value_size: int = None, hidden_size: Optional[int] = None, device=None):
+    def __init__(self,
+                 query_size: int,
+                 key_size: int,
+                 value_size: int = None,
+                 hidden_size: Optional[int] = None,
+                 device=None):
+        """
+        注意力机制
+
+        :param query_size: query_size
+
+        :param key_size: key_size
+
+        :param value_size: 如果为None, 则不会改变value_size, 否则 hidden_size 也不为None时，会改变value_size
+
+        :param hidden_size: 如果不为None，则将query, key, value先通过线性变换映射到hidden_size维度，再进行注意力计算
+
+        :param device: device
+        """
         super(Attention, self).__init__()
         self.hidden_size = hidden_size
         self.device = use_device(device)
@@ -149,13 +220,17 @@ class Attention(nn.Module):
         if self.hidden_size is not None:
             self.query2hidden = nn.Linear(query_size, hidden_size, device=self.device)
             self.key2hidden = nn.Linear(key_size, hidden_size, device=self.device)
-            self.value2hidden = nn.Linear(value_size, hidden_size, device=self.device)
+            if value_size is not None:
+                self.value2hidden = nn.Linear(value_size, hidden_size, device=self.device)
+            else:
+                self.value2hidden = None
 
     def forward(self,
                 queries: torch.Tensor,
                 keys: torch.Tensor,
                 values: torch.Tensor,
-                get_qk_weight: Callable[[torch.Tensor, torch.Tensor], torch.Tensor]):
+                get_qk_weight: Callable[[torch.Tensor, torch.Tensor], torch.Tensor],
+                mask: Optional[torch.Tensor] = None):
         """
         :param queries: (batch_size, query_steps, query_size)
 
@@ -165,16 +240,21 @@ class Attention(nn.Module):
 
         :param get_qk_weight: 传入query key， 得到每个key的权重，用于计算注意力
 
+        :param mask: (batch_size, query_steps)
+
         :return: (batch_size, query_steps, value_size)
         """
         if self.hidden_size is not None:
             # (batch_size, query_steps, hidden_size)
             queries = self.query2hidden(queries)
             keys = self.key2hidden(keys)
-            values = self.value2hidden(values)
+            if values is not None:
+                values = self.value2hidden(values)
 
         # (batch_size, query_steps, kv_steps)
         weight = get_qk_weight(queries, keys)
+        if mask is not None:
+            weight.masked_fill_(mask == 0, -1e9)
 
         # (batch_size, query_steps, value_size)
         output = torch.bmm(weight, values)
@@ -183,8 +263,25 @@ class Attention(nn.Module):
 
 
 class MultiHeadAttention(nn.Module):
-    def __init__(self, query_size: int, key_size: int, num_heads: int, head_hidden_size: Optional[int] = None,
+    def __init__(self,
+                 query_size: int,
+                 key_size: int,
+                 num_heads: int,
+                 head_hidden_size: Optional[int] = None,
                  device=None):
+        """
+        多头注意力机制
+
+        :param query_size: query_size
+
+        :param key_size: key_size
+
+        :param num_heads: 注意力头数
+
+        :param head_hidden_size: 每个头的隐藏层大小，如果不为None，则将query, key, value先通过线性变换映射到head_hidden_size维度，再进行注意力计算
+
+        :param device: device
+        """
         super(MultiHeadAttention, self).__init__()
         self.num_heads = num_heads
         self.device = use_device(device)
@@ -196,58 +293,37 @@ class MultiHeadAttention(nn.Module):
                                    head_hidden_size,
                                    device=self.device)
 
-    def separate_heads(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        将输入的tensor分割成多个头，并转置
-
-        :param x: (batch_size, steps, feature_size)
-
-        :return: (batch_size * num_heads, steps, feature_size // num_heads)
-        """
-        if x.shape[-1] % self.num_heads != 0:
-            raise ValueError("feature size should be divisible by num_heads")
-
-        # (batch_size, steps, num_heads, feature_size // num_heads)
-        y = x.reshape(x.shape[0], x.shape[1], self.num_heads, -1)
-        # (batch_size, num_heads, steps, feature_size // num_heads)
-        y = y.transpose(1, 2)
-
-        return y.reshape(-1, y.shape[2], y.shape[3])
-
-    def concat_heads(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        将输入的tensor合并成多个头
-
-        :param x: (batch_size * num_heads, steps, feature_size // num_heads)
-        """
-        if x.shape[0] % self.num_heads != 0:
-            raise ValueError("batch size should be divisible by num_heads")
-
-        # (batch_size, num_heads, steps, feature_size // num_heads)
-        x = x.reshape(-1, self.num_heads, x.shape[1], x.shape[2])
-        # (batch_size, steps, num_heads, feature_size // num_heads)
-        x = x.transpose(1, 2)
-        # (batch_size, steps, feature_size)
-        x = x.reshape(x.shape[0], x.shape[1], -1)
-        return x
-
     def forward(self,
                 queries: torch.Tensor,
                 keys: torch.Tensor,
                 values: torch.Tensor,
-                get_qk_weight: Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
+                get_qk_weight: Callable[[torch.Tensor, torch.Tensor], torch.Tensor],
+                mask: Optional[torch.Tensor] = None
                 ) -> torch.Tensor:
         """
+        :param queries: (batch_size, query_steps, query_size)
+
+        :param keys: (batch_size, kv_steps, key_size)
+
+        :param values: (batch_size, kv_steps, value_size)
+
+        :param get_qk_weight: 传入query key， 得到每个key的权重，用于计算注意力
+
+        :param mask: (batch_size, query_steps)
+
         :return: (batch_size, query_steps, value_size)
         """
-        queries = self.separate_heads(queries)
-        keys = self.separate_heads(keys)
-        values = self.separate_heads(values)
+        queries = separate_heads(queries, self.num_heads)
+        keys = separate_heads(keys, self.num_heads)
+        values = separate_heads(values, self.num_heads)
+
+        if mask is not None:
+            mask = mask.repeat_interleave(self.num_heads, dim=0)
 
         # (batch_size * num_heads, query_steps, value_size // num_heads)
-        heads = self.attention(queries, keys, values, get_qk_weight)
+        heads = self.attention(queries, keys, values, get_qk_weight, mask)
         # (batch_size, num_heads, query_steps, value_size // num_heads)
-        heads = self.concat_heads(heads)
+        heads = concat_heads(heads, self.num_heads)
 
         return heads
 
@@ -259,8 +335,31 @@ class TransformerLayer(nn.Module):
     由 MultiheadAttention -> Addnorm -> PositionWiseFFN -> Addnorm 组成
     """
 
-    def __init__(self, query_size: int, num_heads: int, key_size: int = None, value_size: int = None,
-                 hidden_size: Optional[int] = None, dropout=0.5, device=None):
+    def __init__(self,
+                 query_size: int,
+                 num_heads: int,
+                 key_size: int = None,
+                 value_size: int = None,
+                 hidden_size: Optional[int] = None,
+                 dropout=0.5,
+                 device=None):
+        """
+        transformer 块
+
+        :param query_size: query_size
+
+        :param num_heads: 注意力头数
+
+        :param key_size: key_size, 如果为None则默认为 query_size
+
+        :param value_size: value_size, 如果为None则默认为 key_size
+
+        :param hidden_size: 如果不为None，则将query, key, value先通过线性变换映射到hidden_size维度，再进行注意力计算
+
+        :param dropout: dropout
+
+        :param device: device
+        """
         super(TransformerLayer, self).__init__()
         self.device = use_device(device)
         key_size = query_size if key_size is None else key_size
@@ -276,6 +375,19 @@ class TransformerLayer(nn.Module):
                 k: torch.Tensor = None,
                 v: torch.Tensor = None,
                 get_qk_weight: Callable[[torch.Tensor, torch.Tensor], torch.Tensor] = None):
+        """
+        计算 transformer 块的输出
+
+        :param q: query
+
+        :param k: key
+
+        :param v: value
+
+        :param get_qk_weight: 获取query key的权重，用于计算注意力，默认为cosine_similarity_attention
+
+        :return: 与value形状相同的输出
+        """
         if get_qk_weight is None:
             get_qk_weight = cosine_similarity_attention
 
@@ -297,7 +409,14 @@ class TransformerLayers(nn.Module):
     由多层的 TransformerLayer 组成
     """
 
-    def __init__(self, query_size, num_heads, num_layer, key_size=None, value_size=None, hidden_size=None, dropout=0.5,
+    def __init__(self,
+                 query_size: int,
+                 num_heads: int,
+                 num_layer: int,
+                 key_size: int = None,
+                 value_size: int = None,
+                 hidden_size: int = None,
+                 dropout: float = 0.5,
                  device=None):
         super(TransformerLayers, self).__init__()
         self.device = use_device(device)

@@ -37,6 +37,12 @@ TIE_BA_CSV_PATH = os.path.join(DATASET_PATH, 'tie-ba.csv')
 # 中文常见字地址
 COMMON_CHAR_PATH = os.path.join(DATASET_PATH, 'common_char.txt')
 
+# 日志文件夹地址
+LOG_PATH = os.path.join(SETTING_PATH, 'data/log')
+
+# pretrain tokenizer 地址
+PRETRAIN_TOKENIZER_PATH = os.path.join(SETTING_PATH, 'data/bert-base-chinese')
+
 # 训练好的模型的存放文件夹
 MODEL_LIB = os.path.join(SETTING_PATH, 'data/result-models')
 

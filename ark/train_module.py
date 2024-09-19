@@ -1,13 +1,13 @@
 import os
 
+from transformers import AutoTokenizer
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
+
 from ark.data.dataloader import get_ark_loader
-from ark.data import load
-from ark.setting import VOCAB_PATH, MODEL_LIB
+from ark.setting import PRETRAIN_TOKENIZER_PATH, LOG_PATH
 from ark.device import use_device
-from ark.nn.text_process import Vocab, fusion_piny_letter
-from ark.nn.module import Ark
-from ark.nn.valid import k_fold_valid
-from ark.nn.accuracy import save_fig
+from ark.nn.module import Ark, ArkClassifier
+from ark.nn.accuracy import Plot
 
 #################################################################################
 # 模型参数
@@ -20,6 +20,8 @@ NUM_LAYER = 8                                           # 解码器层数
 STEPS = 128                                            # 每个文本的步长
 
 DROPOUT = 0.5                                          # 随机失活率
+
+NUM_CLASS = 2                                          # 分类数
 #################################################################################
 # 训练参数
 K_FOLD = 15                                            # 交叉验证折数
@@ -43,76 +45,58 @@ def _train(device=None):
     训练模型
     """
     device = use_device(device)
-    train_loader = get_ark_loader('train', sep=',', batch_size=BATCH_SIZE)
-    valid_loader = get_ark_loader('valid', sep=',', batch_size=BATCH_SIZE)
 
+    # 加载预训练tokenizer
+    tokenizer = AutoTokenizer.from_pretrained(PRETRAIN_TOKENIZER_PATH)
 
+    # loader参数
+    loader_kwargs = {
+        'sep': ',',
+        'tokenizer': tokenizer,
+        'max_length': STEPS,
+        'batch_size': BATCH_SIZE,
+        'device': device,
+    }
 
+    # 构造数据加载器
+    train_loader = get_ark_loader('train', sep=',', **loader_kwargs)
+    valid_loader = get_ark_loader('valid', sep=',', **loader_kwargs)
 
+    ark_classifier = ArkClassifier(hidden_size=HIDDEN_SIZE,
+                                   num_classes=NUM_CLASS,
+                                   num_heads=NUM_HEADS,
+                                   dropout=DROPOUT,
+                                   device=device)
+    # 构造Ark模型
+    ark = Ark(tokenizer=tokenizer,
+              output_layer=ark_classifier,
+              steps=STEPS,
+              hidden_size=HIDDEN_SIZE,
+              in_channel=3,
+              num_heads=NUM_HEADS,
+              num_layer=NUM_LAYER,
+              dropout=DROPOUT,
+              num_class=NUM_CLASS,
+              device=device)
 
-def train(device=None):
-    """
-    训练模型
-    """
-    device = use_device(device)
-    # 读入数据
-    texts, labels = load.load(device=device)
+    loss_list, valid_trues, valid_results = ark.fit(log_file='train.log',
+                                                    train_loader=train_loader,
+                                                    valid_loader=valid_loader,
+                                                    epochs=TRAIN_EPOCHS,
+                                                    optim_params=OPTIMIZER_PARAMS,
+                                                    stop_min_epoch=STOP_MIN_EPOCH,
+                                                    stop_loss_value=STOP_LOSS_VALUE)
 
-    # 构建词典
-    vocab = Vocab(VOCAB_PATH)
+    plot = Plot(4)
+    for valid_true, valid_result in zip(valid_trues, valid_results):
 
-    # 文本处理层
-    text_layer = fusion_piny_letter
+        acc = accuracy_score(valid_true, valid_result)
+        f1 = f1_score(valid_true, valid_result)
+        precision = precision_score(valid_true, valid_result)
+        recall = recall_score(valid_true, valid_result)
+        plot.add(acc, f1, precision, recall)
 
-    # 数据预处理
-    train_x, valid_len = text_layer(texts, vocabs=vocab, steps=STEPS, front_pad=True)
-    train_x, valid_len = train_x.to(device), valid_len.to(device)
-
-    # 构建模型
-    model = Ark(vocab,
-                steps=STEPS,
-                hidden_size=HIDDEN_SIZE,
-                in_channel=3,
-                num_heads=NUM_HEADS,
-                num_layer=NUM_LAYER,
-                dropout=DROPOUT,
-                num_class=2,
-                device=device)
-    print(model)
-    print(f'模型参数量: {sum(p.numel() for p in model.parameters() if p.requires_grad)}')
-
-    # 训练模型 k折交叉验证
-    k_loss_list, k_train_acc, k_valid_acc, ark = k_fold_valid(K_FOLD, train_x, labels, valid_len,
-                                                              model=model,
-                                                              num_valid=NUM_VALID,
-                                                              batch_size=BATCH_SIZE,
-                                                              epochs=TRAIN_EPOCHS,
-                                                              stop_loss_value=STOP_LOSS_VALUE,
-                                                              stop_min_epoch=STOP_MIN_EPOCH,
-                                                              optim_params=OPTIMIZER_PARAMS,)
-
-    max_cell = None
-    # 平均准确率
-    avg_acc = 0
-    for i, valid_acc in enumerate(k_valid_acc):
-        if max_cell is None or valid_acc[-1].score > max_cell.score:
-            max_cell = valid_acc[-1]
-
-        avg_acc += valid_acc[-1].score / len(k_valid_acc)
-        valid_acc.plot('epochs', 'accuracy', [f'fold-{i}'], 'valid-k-fold-cross-valid', save=False)
-    save_fig('valid.png')
-
-    for i, train_acc in enumerate(k_train_acc):
-        train_acc.plot('epochs', 'accuracy', [f'fold-{i}'], 'train-k-fold-cross-valid', save=False)
-    save_fig('train.png')
-    max_cell.confusion_matrix()
-
-    print('avg acc:', avg_acc)
-
-    for sub_ark, sub_acc in zip(ark, k_valid_acc):
-        path = os.path.join(MODEL_LIB,
-                            f'ark-{int(sub_acc[-1].score * 100)}-{HIDDEN_SIZE}-{STEPS}-{NUM_HEADS}-{NUM_LAYER}-{2}.net')
-        sub_ark.save_state_dict(path)
+    plot.plot(labels=['accuracy', 'f1-score', 'precision', 'recall'], save_path=os.path.join(LOG_PATH, 'valid.png'))
 
 
 def pre_train(device=None):

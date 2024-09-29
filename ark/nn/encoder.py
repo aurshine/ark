@@ -49,8 +49,7 @@ class ArkEncoder(Encoder):
                                        num_channel=num_channel,
                                        steps=steps,
                                        dropout=dropout,
-                                       device=self.device
-                                       )
+                                       device=self.device)
 
     def _word_embedding(self, x):
         """

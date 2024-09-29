@@ -1,5 +1,5 @@
-[ 2024-09-19 18:48:58]	fit on cpu
-[ 2024-09-19 18:48:58]	model architecture: Ark(
+[ 2024-09-19 21:49:06]	fit on cpu
+[ 2024-09-19 21:49:06]	model architecture: Ark(
   (encoder): ArkEncoder(
     (word_embedding): Embedding(21458, 64)
     (position_embedding): Embedding(128, 64)
@@ -89,7 +89,7 @@
     (classifier): Linear(in_features=64, out_features=2, bias=True)
   )
 )
-[ 2024-09-19 18:48:58]	optimizer: AdamW (
+[ 2024-09-19 21:49:06]	optimizer: AdamW (
 Parameter Group 0
     amsgrad: False
     betas: (0.9, 0.999)
@@ -102,10 +102,15 @@ Parameter Group 0
     maximize: False
     weight_decay: 0.01
 )
-[ 2024-09-19 18:48:58]	loss_fn: CrossEntropyLoss()
-[ 2024-09-19 18:48:58]	num_class: 2
-[ 2024-09-19 18:48:58]	epochs: 200
-[ 2024-09-19 18:48:58]	stop_loss_value: 0.1
-[ 2024-09-19 18:48:58]	stop_min_epoch: 0
-[ 2024-09-19 18:49:00]	loss at epoch 2, loss: 0.06834367290139198
-[ 2024-09-19 18:49:00]	MetricsAtEpoch: 2	Accuracy: 1.0	Precision: 1.0	Recall: 1.0	F1-score: 1.0
+[ 2024-09-19 21:49:06]	loss_fn: CrossEntropyLoss()
+[ 2024-09-19 21:49:06]	num_class: 2
+[ 2024-09-19 21:49:06]	epochs: 200
+[ 2024-09-19 21:49:06]	stop_loss_value: 0.1
+[ 2024-09-19 21:49:06]	stop_min_epoch: 20
+
+[ 2024-09-19 21:52:23]	Epoch 10, valid loss: 0.009854739531874657
+[ 2024-09-19 21:52:23]	MetricsAtEpoch: 10	Accuracy:  1.000000	Precision:  1.000000	Recall:  1.000000	F1-score:  1.000000
+[ 2024-09-19 21:55:40]	Epoch 20, valid loss: 0.004948772024363279
+[ 2024-09-19 21:55:40]	MetricsAtEpoch: 20	Accuracy:  1.000000	Precision:  1.000000	Recall:  1.000000	F1-score:  1.000000
+[ 2024-09-19 21:56:00]	Epoch 21, valid loss: 0.004054091754369438
+[ 2024-09-19 21:56:00]	MetricsAtEpoch: 21	Accuracy:  1.000000	Precision:  1.000000	Recall:  1.000000	F1-score:  1.000000

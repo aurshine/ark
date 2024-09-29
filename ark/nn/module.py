@@ -90,6 +90,11 @@ class Ark(Trainer):
 
         :param masks: 每个tensor的mask形状为 (batch_size, steps), 如果masks为list表示多通道输入
         """
+        if x.device != self.device:
+            x = x.to(self.device)
+        if masks is not None and masks.device != self.device:
+            masks = masks.to(self.device)
+
         # y     (batch_size, steps, hidden_size)
         # masks (batch_size, steps)
         y, masks = self.encoder(x, masks)

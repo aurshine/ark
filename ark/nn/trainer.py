@@ -19,10 +19,10 @@ def get_metrics(epoch: int, y_true: np.ndarray, y_pred: np.ndarray) -> str:
     计算模型在指定 epoch 的指标, 并返回字符串格式的指标信息
     """
     return (f'MetricsAtEpoch: {epoch}\t'
-            f'Accuracy: {accuracy_score(y_true, y_pred)}\t'
-            f'Precision: {precision_score(y_true, y_pred, average="weighted")}\t'
-            f'Recall: {recall_score(y_true, y_pred, average="weighted")}\t'
-            f'F1-score: {f1_score(y_true, y_pred, average="weighted")}\n')
+            f'Accuracy: {accuracy_score(y_true, y_pred): 4f}\t'
+            f'Precision: {precision_score(y_true, y_pred, average="weighted"): 4f}\t'
+            f'Recall: {recall_score(y_true, y_pred, average="weighted"): 4f}\t'
+            f'F1-score: {f1_score(y_true, y_pred, average="weighted"): 4f}\n')
 
 
 def log(message: str, file_path: str = None):
@@ -117,11 +117,11 @@ class Trainer(nn.Module):
             valid_results.append(valid_result)
             valid_trues.append(valid_true)
 
-            is_stop = self._achieve_stop_condition(epoch, stop_min_epoch, epoch_loss, stop_loss_value)
+            is_stop = self._achieve_stop_condition(epoch + 1, stop_min_epoch, epoch_loss, stop_loss_value)
             if (epoch + 1) % 10 == 0 or is_stop:
-                log(f'loss at epoch {epoch}, loss: {epoch_loss}\n', log_file)
-                log(get_metrics(epoch, valid_result, valid_true), log_file)
-                self.save_state_dict(os.path.join(MODEL_LIB, f'epoch_{epoch}.pth'))
+                log(f'Epoch {epoch + 1}, valid loss: {epoch_loss}', log_file)
+                log(get_metrics(epoch + 1, valid_result, valid_true), log_file)
+                self.save_state_dict(os.path.join(MODEL_LIB, f'epoch_{epoch + 1}.pth'))
                 if is_stop:
                     break
 
@@ -201,7 +201,8 @@ class Trainer(nn.Module):
         train_result = torch.cat(train_result).numpy()
         train_true = torch.cat(train_true).numpy()
 
-        log(get_metrics(epoch, train_true, train_result))
+        log(f'Epoch {epoch + 1}, train_loss: {epoch_loss:.4f}')
+        log(get_metrics(epoch + 1, train_true, train_result))
 
         # 训练结束验证
         if valid_loader is not None:

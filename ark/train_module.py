@@ -33,7 +33,7 @@ BATCH_SIZE = 64                                        # 批量大小
 
 TRAIN_EPOCHS = 200                                     # 最大训练轮数
 
-STOP_MIN_EPOCH = 0                                     # 最小停止轮数
+STOP_MIN_EPOCH = 20                                     # 最小停止轮数
 
 STOP_LOSS_VALUE = 0.1                                  # 最小停止损失值
 

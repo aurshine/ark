@@ -73,7 +73,7 @@ class ArkDataSet(Dataset):
                                                                                     is_split_into_words=True,
                                                                                     **kwargs)
 
-        data['label']: torch.Tensor = torch.tensor([self.df.iloc[index]['label']], dtype=torch.int64, device=self.device)
+        data['label']: torch.Tensor = torch.tensor([self.df.iloc[index]['label']], dtype=torch.int64)
         return data
 
 
@@ -118,7 +118,6 @@ def get_ark_loader(csv_: Union[str, pd.DataFrame],
                    batch_size: int = 32,
                    shuffle=True,
                    drop_last=False,
-                   num_workers=0,
                    device=None,
                    **kwargs):
     """得到一个ArkDataSet的DataLoader对象
@@ -150,5 +149,4 @@ def get_ark_loader(csv_: Union[str, pd.DataFrame],
                       shuffle=shuffle,
                       drop_last=drop_last,
                       collate_fn=ark_collate_fn,
-                      num_workers=num_workers,
                       **kwargs)

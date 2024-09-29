@@ -1,17 +1,7 @@
 import os
 from typing import List, Union
 
-import torch
 import matplotlib.pyplot as plt
-
-
-def clac_accuracy(y_hat: torch.Tensor, y: torch.Tensor) -> float:
-    """
-    传入两个一维tensor, 计算准确率
-    """
-    assert len(y_hat.shape) == 1 and len(y.shape) == 1
-
-    return torch.sum(y_hat == y).item() / y_hat.shape[-1]
 
 
 def save_fig(path=None):
@@ -57,3 +47,7 @@ class Plot:
 
         if save_path is not None:
             save_fig(save_path)
+
+
+def statics_false():
+    pass

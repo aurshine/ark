@@ -90,10 +90,10 @@ class Ark(Trainer):
 
         :param masks: 每个tensor的mask形状为 (batch_size, steps), 如果masks为list表示多通道输入
         """
-        if x.device != self.device:
-            x = x.to(self.device)
-        if masks is not None and masks.device != self.device:
-            masks = masks.to(self.device)
+        x = self._to_device(x)
+
+        if masks is not None:
+            masks = self._to_device(masks)
 
         # y     (batch_size, steps, hidden_size)
         # masks (batch_size, steps)
@@ -115,6 +115,12 @@ class Ark(Trainer):
         """
         return self.tokenizer.decode(y, clean_up_tokenization_spaces=True)
 
+    def _to_device(self, ts: Union[torch.Tensor, List[torch.Tensor]]):
+        if isinstance(ts, list):
+            return [t.to(self.device) for t in ts]
+        else:
+            return ts.to(self.device)
+
 
 class ArkClassifier(nn.Module):
     def __init__(self, hidden_size, num_classes, num_heads, dropout=0, device=None):
@@ -124,7 +130,7 @@ class ArkClassifier(nn.Module):
         self.query = nn.Parameter(torch.empty(size=(1, 1, hidden_size), device=self.device))
         nn.init.xavier_normal_(self.query)
         self.fusion = TransformerLayer(hidden_size, num_heads, dropout=dropout, device=self.device)
-        self.classifier = nn.Linear(hidden_size, num_classes)
+        self.classifier = nn.Linear(hidden_size, num_classes, device=self.device)
 
     def forward(self, x, **kwargs):
         """

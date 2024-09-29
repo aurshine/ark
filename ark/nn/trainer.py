@@ -1,7 +1,8 @@
 import os
 import sys
 import datetime
-from typing import Dict, Optional, List, Tuple
+import logging
+from typing import Dict, Optional, List, Tuple, Generator
 
 import numpy as np
 import torch
@@ -45,6 +46,8 @@ class Trainer(nn.Module):
         super(Trainer, self).__init__()
         self.device = use_device(device)
         self.num_class = num_class
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.setLevel(logging.INFO)
 
     def forward(self, inputs, *args, **kwargs):
         raise NotImplementedError
@@ -84,9 +87,7 @@ class Trainer(nn.Module):
         """
         self.train()
 
-        if log_file is not None and not os.path.exists(log_file):
-            log_file = os.path.join(LOG_PATH, log_file)
-            open(log_file, 'w').close()
+        self._init_logger(log_file)
 
         if optimizer is None:
             if optim_params is None:
@@ -97,14 +98,14 @@ class Trainer(nn.Module):
             loss = nn.CrossEntropyLoss()
 
         # 打印训练信息
-        log(f'fit on {self.device}\n', log_file)
-        log(f'model architecture: {self}\n', log_file)
-        log(f'optimizer: {optimizer}\n', log_file)
-        log(f'loss_fn: {loss}\n', log_file)
-        log(f'num_class: {self.num_class}\n', log_file)
-        log(f'epochs: {epochs}\n', log_file)
-        log(f'stop_loss_value: {stop_loss_value}\n', log_file)
-        log(f'stop_min_epoch: {stop_min_epoch}\n\n', log_file)
+        self.logger.info(f'fit on {self.device}\n')
+        self.logger.info(f'model architecture: {self}\n')
+        self.logger.info(f'optimizer: {optimizer}\n')
+        self.logger.info(f'loss_fn: {loss}\n')
+        self.logger.info(f'num_class: {self.num_class}\n')
+        self.logger.info(f'epochs: {epochs}\n')
+        self.logger.info(f'stop_loss_value: {stop_loss_value}\n')
+        self.logger.info(f'stop_min_epoch: {stop_min_epoch}\n\n')
         # 记录 每个 epoch 的 loss, 训练集准确率，验证集准确率
         loss_list, valid_results, valid_trues = [], [], []
         for epoch in range(epochs):
@@ -119,15 +120,15 @@ class Trainer(nn.Module):
 
             is_stop = self._achieve_stop_condition(epoch + 1, stop_min_epoch, epoch_loss, stop_loss_value)
             if (epoch + 1) % 10 == 0 or is_stop:
-                log(f'Epoch {epoch + 1}, valid loss: {epoch_loss}', log_file)
-                log(get_metrics(epoch + 1, valid_result, valid_true), log_file)
+                self.logger.info(f'Epoch {epoch + 1}, valid loss: {epoch_loss}')
+                self.logger.info(get_metrics(epoch + 1, valid_result, valid_true))
                 self.save_state_dict(os.path.join(MODEL_LIB, f'epoch_{epoch + 1}.pth'))
                 if is_stop:
                     break
 
         return loss_list, valid_trues, valid_results
 
-    def _loader_forward(self, loader) -> Tuple[torch.Tensor, torch.Tensor]:
+    def _loader_forward(self, loader) -> Generator[Tuple[torch.Tensor, torch.Tensor], None, None]:
         """
         传入一个loader, 计算loader的预测结果
 
@@ -201,8 +202,8 @@ class Trainer(nn.Module):
         train_result = torch.cat(train_result).numpy()
         train_true = torch.cat(train_true).numpy()
 
-        log(f'Epoch {epoch + 1}, train_loss: {epoch_loss:.4f}')
-        log(get_metrics(epoch + 1, train_true, train_result))
+        self.logger.info(f'Epoch {epoch + 1}, train_loss: {epoch_loss:.4f}')
+        self.logger.info(get_metrics(epoch + 1, train_true, train_result))
 
         # 训练结束验证
         if valid_loader is not None:
@@ -300,3 +301,20 @@ class Trainer(nn.Module):
                 print(name, param)
                 print(e)
                 sys.exit()
+
+    def _init_logger(self, log_file: str = None):
+        """
+        初始化日志文件
+
+        :param log_file: log文件地址, 默认为 None, 即不保存日志文件
+        """
+        if log_file is not None:
+            file_handler = logging.FileHandler(log_file)
+            file_handler.setLevel(logging.INFO)
+            file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+            self.logger.addHandler(file_handler)
+
+        stream_handler = logging.StreamHandler()
+        stream_handler.setLevel(logging.INFO)
+        stream_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+        self.logger.addHandler(stream_handler)

@@ -73,11 +73,11 @@ class ArkDataSet(Dataset):
                                                                                     is_split_into_words=True,
                                                                                     **kwargs)
 
-        data['label']: torch.Tensor = torch.tensor([self.df.iloc[index]['label']], dtype=torch.int64)
+        data['label']: torch.Tensor = torch.tensor([self.df.iloc[index]['label']], dtype=torch.int64, device=self.device)
         return data
 
 
-def ark_collate_fn(batch_datas: List[Dict[str, torch.Tensor]]) -> dict[str, torch.Tensor]:
+def ark_collate_fn(batch_datas: List[Dict[str, torch.Tensor]]) -> Dict[str, torch.Tensor]:
     """
     ArkDataSet的collate_fn函数，用于将batch数据处理成dict形式
 

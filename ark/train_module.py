@@ -5,11 +5,13 @@ import pandas as pd
 from transformers import BertTokenizer
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 
-from ark.data.dataloader import get_ark_loader
+from ark.data.dataloader import get_ark_loader, get_ark_pretrain_loader
 from ark.setting import PRETRAIN_TOKENIZER_PATH, LOG_PATH, DATASET_PATH
 from ark.device import use_device
-from ark.nn.module import Ark, ArkClassifier
+from ark.nn.module import Ark, ArkClassifier, ArkBertPretrain
 from ark.nn.accuracy import Plot
+from ark.nn.pretrain_loss import InitialFinalLoss
+
 
 #################################################################################
 # 模型参数
@@ -91,7 +93,6 @@ def train(device=None):
 
     plot = Plot(4)
     for valid_true, valid_result in zip(valid_trues, valid_results):
-
         acc = accuracy_score(valid_true, valid_result)
         f1 = f1_score(valid_true, valid_result)
         precision = precision_score(valid_true, valid_result)
@@ -107,13 +108,28 @@ def pre_train(device=None):
     """
     device = use_device(device)
 
-    # loader参数
-    loader_kwargs = {
-        'sep': ',',
-        'tokenizer': TOKENIZER,
-        'max_length': STEPS,
-        'batch_size': BATCH_SIZE,
-        'device': device,
-    }
+    loader = get_ark_pretrain_loader(r'D:\Hbue\SRTP\ARK\ark\data\DATASET\pretrain.txt',
+                                     tokenizer=TOKENIZER,
+                                     num_pred_position=5,
+                                     max_length=STEPS,
+                                     device=device)
 
-    loader = get_ark_loader('', TOKENIZER, STEPS, sep=',', device=device)
+    ark = Ark(tokenizer=TOKENIZER,
+              output_layer=ArkBertPretrain(),
+              steps=STEPS,
+              hidden_size=HIDDEN_SIZE,
+              in_channel=3,
+              num_heads=NUM_HEADS,
+              num_layer=NUM_LAYER,
+              dropout=DROPOUT,
+              num_class=NUM_CLASS,
+              device=device)
+
+    ark.fit(train_loader=loader,
+            log_file='pretrain.log',
+            epochs=TRAIN_EPOCHS,
+            optim_params=OPTIMIZER_PARAMS,
+            stop_min_epoch=STOP_MIN_EPOCH,
+            stop_loss_value=STOP_LOSS_VALUE,
+            loss=InitialFinalLoss(),
+            )

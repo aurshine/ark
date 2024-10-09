@@ -127,6 +127,8 @@ class Trainer(nn.Module):
         """
         传入一个loader, 计算loader的预测结果
 
+        loader 迭代器返回的是一个字典, 除了包含 'tokens' 字段和 'label' 字段外, 其他字段会被传入到forward函数中
+
         每次yield一个batch的数据, 计算batch的预测结果, 并返回预测结果
 
         :param loader: 导入器
@@ -137,14 +139,20 @@ class Trainer(nn.Module):
             multi_channel_tokens: List[torch.Tensor] = []
             multi_channel_masks:  List[torch.Tensor] = []
 
+            kwargs = {}
             for key, value in data.items():
+                if key == 'label':
+                    continue
+
                 if 'tokens' in key:
                     multi_channel_tokens.append(value['input_ids'])
-                    multi_channel_masks.append(value['attention_mask'])
+                    multi_channel_masks = value['attention_mask']
+                else:
+                    kwargs[key] = value
 
             y = data['label']
 
-            y_hat = self.forward(multi_channel_tokens, multi_channel_masks)
+            y_hat = self.forward(multi_channel_tokens, multi_channel_masks, **kwargs)
             yield y_hat, y
 
     @staticmethod

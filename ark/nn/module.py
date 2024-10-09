@@ -97,12 +97,12 @@ class Ark(Trainer):
 
         # y     (batch_size, steps, hidden_size)
         # masks (batch_size, steps)
-        y, masks = self.encoder(x, masks)
+        y, masks = self.encoder(x, masks, **kwargs)
         # y     (batch_size, steps, hidden_size)
-        y = self.decoder(y, masks=masks)
+        y = self.decoder(y, masks=masks, **kwargs)
 
         if self.output_layer is not None:
-            y = self.output_layer(y)
+            y = self.output_layer(y, **kwargs)
         return y
 
     def decode_ids(self, y: Union[List[int], List[List[int]], torch.Tensor]) -> List[str]:
@@ -138,3 +138,23 @@ class ArkClassifier(nn.Module):
         query = self.query.repeat(x.shape[0], 1, 1)
         x = self.fusion(query, x, x, **kwargs).squeeze(1)
         return self.classifier(x)
+
+
+class ArkBertPretrain(nn.Module):
+    def __init__(self):
+        super(ArkBertPretrain, self).__init__()
+
+    def forward(self, x, masked_position: torch.Tensor, **kwargs):
+        """
+        ArkBERT 预训练模型
+
+        截取 masked_position 位置的 token 进行预训练
+
+        :param x: 形状为 (batch_size, steps, hidden_size)
+
+        :param masked_position: 形状为(batch_size, num_masked_position)
+
+        :return: 形状为 (batch_size, num_masked_position, hidden_size)
+        """
+        index = masked_position.unsqueeze(-1).expand(-1, -1, x.shape[-1])
+        return torch.gather(x, dim=1, index=index)

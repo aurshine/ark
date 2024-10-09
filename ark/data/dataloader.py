@@ -219,3 +219,38 @@ def get_ark_loader(csv_: Union[str, pd.DataFrame],
                       drop_last=drop_last,
                       collate_fn=collate_dict,
                       **kwargs)
+
+
+def get_ark_pretrain_loader(file_path_or_texts: Union[str, List[str]],
+                            tokenizer,
+                            num_pred_position: int,
+                            max_length: int,
+                            batch_size: int = 32,
+                            shuffle=True,
+                            drop_last=False,
+                            device=None):
+    """得到一个ArkPretrainDataSet的DataLoader对象
+
+    loader 返回的data的类型为dict
+
+    :param file_path_or_texts: 文本文件路径或文本列表
+
+    :param tokenizer: 用于分词的Tokenizer对象
+
+    :param num_pred_position: 需要mask的位置数量
+
+    :param max_length: 词元的最大长度
+
+    :param batch_size: 批量大小
+
+    :param shuffle: 是否打乱
+
+    :param drop_last: 对最后不足batch_size大小的批次选择丢弃或保留
+
+    :param device: 加载数据的设备
+    """
+    return DataLoader(ArkPretrainDataSet(file_path_or_texts, tokenizer, num_pred_position, max_length, device),
+                      batch_size=batch_size,
+                      shuffle=shuffle,
+                      drop_last=drop_last,
+                      collate_fn=collate_dict)

@@ -91,11 +91,11 @@ class ArkEncoder(Encoder):
         channel_embedding = self.channel_embedding(channel)
         return channel_embedding
 
-    def forward(self, x: Union[Tensor, List[Tensor]], masks: Union[Tensor, List[Tensor]] = None):
+    def forward(self, x: Union[Tensor, List[Tensor]], masks: Tensor = None, **kwargs):
         """
         :param x: 每个tensor的形状为 (batch_size, steps), 如果x为list表示多通道输入
 
-        :param masks: 每个tensor的mask形状为 (batch_size, steps)
+        :param masks: mask形状为 (batch_size, steps)
 
         :return: 形状为 (batch_size, steps, hidden_size)
         """
@@ -105,13 +105,6 @@ class ArkEncoder(Encoder):
                 raise ValueError(f"{len(x)} != {self.channel_embedding.embedding_dim}, "
                                  f"The number of input channels should be equal to the number of channel embeddings.")
             x = torch.stack(x, dim=2)
-
-        # (batch_size, steps)
-        if isinstance(masks, (list, tuple)):
-            if len(masks) != self.channel_embedding.num_embeddings:
-                raise ValueError(f"{len(masks)} != {self.channel_embedding.embedding_dim}, "
-                                 f"The number of masks channels should be equal to the number of channel embeddings.")
-            masks = masks[0]
 
         # (batch_size, steps, num_channels, hidden_size)
         x_embedding = self._word_embedding(x) + self._position_embedding(x) + self._channel_embedding(x)

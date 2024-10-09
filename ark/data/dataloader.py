@@ -3,6 +3,7 @@ from typing import List, Dict, Union
 import torch
 import pandas as pd
 from torch.utils.data import DataLoader, Dataset
+from transformers.tokenization_utils_base import BatchEncoding
 
 from ark.device import use_device
 from ark.nn.pinyin import translate_piny
@@ -10,7 +11,9 @@ from ark.nn.pinyin import translate_piny
 
 def collate_dict(batch_datas: List[Dict[str, Union[dict, torch.Tensor]]]) -> Dict[str, Union[dict, torch.Tensor]]:
     """
-    将dict形式的batch数据合并, 并将tensor stack到一起
+    将dict形式的batch数据合并, 并将tensor stack或cat到一起
+
+    如果tensor的第一维是1，则cat，否则stack
     """
     datas = {k: [] for k in batch_datas[0].keys()}
 
@@ -19,9 +22,14 @@ def collate_dict(batch_datas: List[Dict[str, Union[dict, torch.Tensor]]]) -> Dic
             datas[k].append(data[k])
 
         if isinstance(datas[k][0], torch.Tensor):
-            datas[k] = torch.stack(datas[k])
-        elif isinstance(datas[k][0], dict):
+            if datas[k][0].shape[0] == 1:
+                datas[k] = torch.cat(datas[k])
+            else:
+                datas[k] = torch.stack(datas[k])
+        elif isinstance(datas[k][0], (dict, BatchEncoding)):
             datas[k] = collate_dict(datas[k])
+        else:
+            raise TypeError(f"Unsupported type {type(datas[k][0])} in collate_dict")
 
     return datas
 
@@ -57,10 +65,10 @@ class ArkDataSet(Dataset):
         返回一个batch的数据
 
         :return: {
-                source_tokens: {input_ids: tensor, attention_mask: tensor},
-                pinyin_tokens: {input_ids: tensor, attention_mask: tensor},
-                letter_tokens: {input_ids: tensor, attention_mask: tensor},
-                label: tensor
+                source_tokens: {input_ids: tensor(1, max_length), attention_mask: tensor(1, max_length),},
+                pinyin_tokens: {input_ids: tensor(1, max_length),, attention_mask: tensor(1, max_length),},
+                letter_tokens: {input_ids: tensor(1, max_length),, attention_mask: tensor(1, max_length),},
+                label: tensor(1)
             }
         """
         data, text = {}, self.df.iloc[index]['TEXT']
@@ -76,6 +84,7 @@ class ArkDataSet(Dataset):
             'return_attention_mask': True,
             'return_length': False,
         }
+
         data['source_tokens']: Dict[str, torch.Tensor] = self.tokenizer.encode_plus(text=text, **kwargs)
 
         data['pinyin_tokens']: Dict[str, torch.Tensor] = self.tokenizer.encode_plus(text=piny,
@@ -85,8 +94,8 @@ class ArkDataSet(Dataset):
         data['letter_tokens']: Dict[str, torch.Tensor] = self.tokenizer.encode_plus(text=letter,
                                                                                     is_split_into_words=True,
                                                                                     **kwargs)
-
-        data['label']: torch.Tensor = torch.tensor([self.df.iloc[index]['label']], dtype=torch.int64, device=self.device)
+        data['label']: torch.Tensor = torch.tensor([self.df.iloc[index]['label']], dtype=torch.int64,
+                                                   device=self.device)
         return data
 
 
@@ -99,7 +108,7 @@ class ArkPretrainDataSet(Dataset):
 
     def __getitem__(self, index):
         pass
-    
+
 
 def get_ark_loader(csv_: Union[str, pd.DataFrame],
                    tokenizer,

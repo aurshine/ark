@@ -1,12 +1,8 @@
 import random
 from typing import Tuple, List, Union, Optional, Sequence
 
-import torch
-from torch import nn, Tensor
 
-from ark.spider.classify import get_lines, write_lines
-from ark.setting import VOCAB_PATH
-from ark.nn.pinyin import translate_piny, translate_into_other_piny
+from ark.nn.pinyin import translate_into_other_piny
 
 
 def data_augment_(texts: List[str], labels: List = None, choice_p: float = 0.2, mdf_p: float = 0.1) -> Tuple[List[str], Optional[List]]:

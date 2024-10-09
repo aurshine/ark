@@ -13,7 +13,7 @@ from ark.nn.accuracy import Plot
 
 #################################################################################
 # 模型参数
-HIDDEN_SIZE = 64                                       # 隐藏层大小
+HIDDEN_SIZE = 128                                       # 隐藏层大小
 
 NUM_HEADS = 4                                          # 多头注意力头数
 
@@ -26,15 +26,15 @@ DROPOUT = 0.5                                          # 随机失活率
 NUM_CLASS = 2                                          # 分类数
 #################################################################################
 # 训练参数
-BATCH_SIZE = 64                                        # 批量大小
+BATCH_SIZE = 128                                        # 批量大小
 
-TRAIN_EPOCHS = 200                                     # 最大训练轮数
+TRAIN_EPOCHS = 20                                     # 最大训练轮数
 
 STOP_MIN_EPOCH = 20                                     # 最小停止轮数
 
 STOP_LOSS_VALUE = 0.1                                  # 最小停止损失值
 
-OPTIMIZER_PARAMS = {'lr': 1e-3, 'weight_decay': 1e-2}  # 优化器参数(学习率、权重衰减)
+OPTIMIZER_PARAMS = {'lr': 1e-4, 'weight_decay': 1e-2}  # 优化器参数(学习率、权重衰减)
 
 TOKENIZER = AutoTokenizer.from_pretrained(PRETRAIN_TOKENIZER_PATH)  # 预训练tokenizer
 #################################################################################

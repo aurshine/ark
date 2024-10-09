@@ -106,6 +106,7 @@ class ArkEncoder(Encoder):
                                  f"The number of input channels should be equal to the number of channel embeddings.")
             x = torch.stack(x, dim=2)
 
+        # (batch_size, steps)
         if isinstance(masks, (list, tuple)):
             if len(masks) != self.channel_embedding.num_embeddings:
                 raise ValueError(f"{len(masks)} != {self.channel_embedding.embedding_dim}, "

@@ -114,8 +114,8 @@ class Trainer(nn.Module):
 
             is_stop = self._achieve_stop_condition(epoch + 1, stop_min_epoch, epoch_loss, stop_loss_value)
             if (epoch + 1) % 10 == 0 or is_stop:
-                self.logger.info(f'Epoch {epoch + 1}, valid loss: {epoch_loss}')
-                self.logger.info(get_metrics(epoch + 1, valid_result, valid_true))
+                self.logger.warning(f'Epoch {epoch + 1}, valid loss: {epoch_loss}')
+                self.logger.warning(get_metrics(epoch + 1, valid_result, valid_true))
                 self.save_state_dict(os.path.join(MODEL_LIB, f'epoch_{epoch + 1}.pth'))
                 if is_stop:
                     break
@@ -309,12 +309,12 @@ class Trainer(nn.Module):
 
             file_handler = logging.FileHandler(log_file)
             file_handler.setLevel(logging.INFO)
-            file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+            file_handler.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(message)s'))
             self.logger.addHandler(file_handler)
 
         stream_handler = logging.StreamHandler()
         stream_handler.setLevel(logging.INFO)
-        stream_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+        stream_handler.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(message)s'))
         self.logger.addHandler(stream_handler)
 
     def _to_device(self, ts: Union[torch.Tensor, List[torch.Tensor]]):

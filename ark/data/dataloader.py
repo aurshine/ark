@@ -2,25 +2,28 @@ from typing import List, Dict, Union
 
 import torch
 import pandas as pd
-from torch.utils.data import DataLoader, TensorDataset, Dataset
+from torch.utils.data import DataLoader, Dataset
 
 from ark.device import use_device
 from ark.nn.pinyin import translate_piny
 
 
-def get_tensor_loader(*datas, batch_size, shuffle=True, drop_last=False, **kwargs):
-    """得到一个简单的DataLoader对象
-
-    :param datas: tensor组成的 list 或 tuple
-
-    :param batch_size: 批量大小
-
-    :param shuffle: 是否打乱
-
-    :param drop_last: 对最后不足batch_size大小的批次选择丢弃或保留
+def collate_dict(batch_datas: List[Dict[str, Union[dict, torch.Tensor]]]) -> Dict[str, Union[dict, torch.Tensor]]:
     """
-    dset = TensorDataset(*datas)
-    return DataLoader(dset, batch_size=batch_size, shuffle=shuffle, drop_last=drop_last, **kwargs)
+    将dict形式的batch数据合并, 并将tensor stack到一起
+    """
+    datas = {k: [] for k in batch_datas[0].keys()}
+
+    for k in datas.keys():
+        for data in batch_datas:
+            datas[k].append(data[k])
+
+        if isinstance(datas[k][0], torch.Tensor):
+            datas[k] = torch.stack(datas[k])
+        elif isinstance(datas[k][0], dict):
+            datas[k] = collate_dict(datas[k])
+
+    return datas
 
 
 class ArkDataSet(Dataset):
@@ -49,7 +52,17 @@ class ArkDataSet(Dataset):
     def __len__(self):
         return len(self.df)
 
-    def __getitem__(self, index) -> Dict[str, torch.Tensor]:
+    def __getitem__(self, index) -> Dict[str, Union[Dict[str, torch.Tensor], torch.Tensor]]:
+        """
+        返回一个batch的数据
+
+        :return: {
+                source_tokens: {input_ids: tensor, attention_mask: tensor},
+                pinyin_tokens: {input_ids: tensor, attention_mask: tensor},
+                letter_tokens: {input_ids: tensor, attention_mask: tensor},
+                label: tensor
+            }
+        """
         data, text = {}, self.df.iloc[index]['TEXT']
         piny = translate_piny(text)
         letter = [p[0] for p in piny]
@@ -77,39 +90,16 @@ class ArkDataSet(Dataset):
         return data
 
 
-def ark_collate_fn(batch_datas: List[Dict[str, torch.Tensor]]) -> Dict[str, torch.Tensor]:
-    """
-    ArkDataSet的collate_fn函数，用于将batch数据处理成dict形式
+class ArkPretrainDataSet(Dataset):
+    def __init__(self, csv_: Union[str, pd.DataFrame], tokenizer, max_length=128, device=None, **kwargs):
+        pass
 
-    :param batch_datas: 一个batch的数据, 每个元素为
+    def __len__(self):
+        pass
 
-    {source_tokens: {input_ids, attention_mask}, pinyin_tokens: {input_ids, attention_mask}, letter_tokens: {input_ids, attention_mask}, label: tensor}
-
-    :return: {source_tokens: {input_ids, attention_mask}, pinyin_tokens: {input_ids, attention_mask}, letter_tokens: {input_ids, attention_mask}, label: tensor}
-
-    """
-    datas = {}
-    tokens_name, other_name = [], []
-    for key, value in batch_datas[0].items():
-        if 'tokens' in key:
-            datas[key] = {k: [] for k in value.keys()}
-            tokens_name.append(key)
-        else:
-            datas[key] = []
-            other_name.append(key)
-
-    for token_name in tokens_name:
-        for token_key in datas[token_name].keys():
-            for data in batch_datas:
-                datas[token_name][token_key].append(data[token_name][token_key])
-            datas[token_name][token_key] = torch.cat(datas[token_name][token_key])
-    for other_name in other_name:
-        for data in batch_datas:
-            datas[other_name].append(data[other_name])
-        datas[other_name] = torch.cat(datas[other_name])
-
-    return datas
-
+    def __getitem__(self, index):
+        pass
+    
 
 def get_ark_loader(csv_: Union[str, pd.DataFrame],
                    tokenizer,
@@ -136,8 +126,6 @@ def get_ark_loader(csv_: Union[str, pd.DataFrame],
 
     :param shuffle: 是否打乱
 
-    :param num_workers: 多线程加载数据
-
     :param drop_last: 对最后不足batch_size大小的批次选择丢弃或保留
 
     :param device: 加载数据的设备
@@ -148,5 +136,5 @@ def get_ark_loader(csv_: Union[str, pd.DataFrame],
                       batch_size=batch_size,
                       shuffle=shuffle,
                       drop_last=drop_last,
-                      collate_fn=ark_collate_fn,
+                      collate_fn=collate_dict,
                       **kwargs)

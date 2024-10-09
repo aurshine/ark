@@ -2,13 +2,13 @@ import os
 import sys
 import datetime
 import logging
-from typing import Dict, Optional, List, Tuple, Generator
+from typing import Dict, Union, Optional, List, Tuple, Generator
 
 import numpy as np
 import torch
 from torch import nn
 from torch.nn import init
-from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
+from sklearn.metrics import confusion_matrix
 
 from ark.device import use_device
 from ark.running import Timer
@@ -19,26 +19,19 @@ def get_metrics(epoch: int, y_true: np.ndarray, y_pred: np.ndarray) -> str:
     """
     计算模型在指定 epoch 的指标, 并返回字符串格式的指标信息
     """
-    return (f'MetricsAtEpoch: {epoch}\t'
-            f'Accuracy: {accuracy_score(y_true, y_pred): 4f}\t'
-            f'Precision: {precision_score(y_true, y_pred, average="weighted"): 4f}\t'
-            f'Recall: {recall_score(y_true, y_pred, average="weighted"): 4f}\t'
-            f'F1-score: {f1_score(y_true, y_pred, average="weighted"): 4f}\n')
+    tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
+    accuracy = (tp + tn) / (tp + tn + fp + fn)
+    precision = tp / (tp + fp)
+    recall = tp / (tp + fn)
+    fpr = fp / (fp + tn)
+    f1 = 2 * precision * recall / (precision + recall)
 
-
-def log(message: str, file_path: str = None):
-    """
-    打印日志信息到控制台, 并可选择保存到文件
-
-    :param message: 日志信息
-
-    :param file_path: 文件路径, 默认为 None, 即打印到控制台
-    """
-    message = f'[{datetime.datetime.now(): %Y-%m-%d %H:%M:%S}]\t{message}'
-    print(message)
-    if file_path is not None:
-        with open(file_path, 'a', encoding='utf-8') as f:
-            f.write(message)
+    return (f'Epoch: {epoch}\t'
+            f'Accuracy: {accuracy: 4f}\t'
+            f'Precision: {precision: 4f}\t'
+            f'Recall: {recall: 4f}\t'
+            f'FPR: {fpr: 4f}\t'
+            f'F1-score: {f1: 4f}\n')
 
 
 class Trainer(nn.Module):
@@ -85,8 +78,7 @@ class Trainer(nn.Module):
 
         :return: 每轮训练的loss构成的列表, 验证集的真实标签, 每轮训练验证集的预测结果
         """
-        self.train()
-
+        # 初始化日志文件
         self._init_logger(log_file)
 
         if optimizer is None:
@@ -98,16 +90,18 @@ class Trainer(nn.Module):
             loss = nn.CrossEntropyLoss()
 
         # 打印训练信息
-        self.logger.info(f'fit on {self.device}\n')
-        self.logger.info(f'model architecture: {self}\n')
-        self.logger.info(f'optimizer: {optimizer}\n')
-        self.logger.info(f'loss_fn: {loss}\n')
-        self.logger.info(f'num_class: {self.num_class}\n')
-        self.logger.info(f'epochs: {epochs}\n')
-        self.logger.info(f'stop_loss_value: {stop_loss_value}\n')
-        self.logger.info(f'stop_min_epoch: {stop_min_epoch}\n\n')
+        self.logger.info(f'fit on {self.device}')
+        self.logger.info(f'model architecture: {self}')
+        self.logger.info(f'optimizer: {optimizer}')
+        self.logger.info(f'loss_fn: {loss}')
+        self.logger.info(f'num_class: {self.num_class}')
+        self.logger.info(f'epochs: {epochs}')
+        self.logger.info(f'stop_loss_value: {stop_loss_value}')
+        self.logger.info(f'stop_min_epoch: {stop_min_epoch}\n')
         # 记录 每个 epoch 的 loss, 训练集准确率，验证集准确率
         loss_list, valid_results, valid_trues = [], [], []
+
+        self.train()
         for epoch in range(epochs):
             epoch_loss, valid_true, valid_result = self.fit_epoch(epoch=epoch,
                                                                   train_loader=train_loader,
@@ -309,6 +303,10 @@ class Trainer(nn.Module):
         :param log_file: log文件地址, 默认为 None, 即不保存日志文件
         """
         if log_file is not None:
+            if not os.path.exists(log_file):
+                log_file = os.path.join(LOG_PATH, log_file)
+                os.makedirs(os.path.dirname(log_file), exist_ok=True)
+
             file_handler = logging.FileHandler(log_file)
             file_handler.setLevel(logging.INFO)
             file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
@@ -318,3 +316,9 @@ class Trainer(nn.Module):
         stream_handler.setLevel(logging.INFO)
         stream_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
         self.logger.addHandler(stream_handler)
+
+    def _to_device(self, ts: Union[torch.Tensor, List[torch.Tensor]]):
+        if isinstance(ts, list):
+            return [t.to(self.device) for t in ts]
+        else:
+            return ts.to(self.device)

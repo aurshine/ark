@@ -1,4 +1,5 @@
 import os
+import random
 
 import pandas as pd
 from transformers import AutoTokenizer
@@ -25,10 +26,6 @@ DROPOUT = 0.5                                          # 随机失活率
 NUM_CLASS = 2                                          # 分类数
 #################################################################################
 # 训练参数
-K_FOLD = 15                                            # 交叉验证折数
-
-NUM_VALID = 5                                          # 验证次数, -1表示全部验证
-
 BATCH_SIZE = 64                                        # 批量大小
 
 TRAIN_EPOCHS = 200                                     # 最大训练轮数
@@ -38,6 +35,8 @@ STOP_MIN_EPOCH = 20                                     # 最小停止轮数
 STOP_LOSS_VALUE = 0.1                                  # 最小停止损失值
 
 OPTIMIZER_PARAMS = {'lr': 1e-3, 'weight_decay': 1e-2}  # 优化器参数(学习率、权重衰减)
+
+TOKENIZER = AutoTokenizer.from_pretrained(PRETRAIN_TOKENIZER_PATH)  # 预训练tokenizer
 #################################################################################
 
 
@@ -49,24 +48,21 @@ def train(device=None):
     """
     device = use_device(device)
 
-    # 加载预训练tokenizer
-    tokenizer = AutoTokenizer.from_pretrained(PRETRAIN_TOKENIZER_PATH)
-
     # loader参数
     loader_kwargs = {
         'sep': ',',
-        'tokenizer': tokenizer,
+        'tokenizer': TOKENIZER,
         'max_length': STEPS,
         'batch_size': BATCH_SIZE,
         'device': device,
     }
 
     datas = pd.read_csv(os.path.join(DATASET_PATH, 'train.csv'), sep=',', encoding='utf-8')
-    indices = list(range(len(datas)))
+    indices, num_datas = random.sample(range(len(datas)), len(datas)), len(datas)
 
     # 构造数据加载器
-    train_loader = get_ark_loader(datas.iloc[:100], **loader_kwargs)
-    valid_loader = get_ark_loader(datas.iloc[100:110], **loader_kwargs)
+    train_loader = get_ark_loader(datas.iloc[indices[:num_datas * 9 // 10]], **loader_kwargs)
+    valid_loader = get_ark_loader(datas.iloc[indices[num_datas * 9 // 10:]], **loader_kwargs)
 
     ark_classifier = ArkClassifier(hidden_size=HIDDEN_SIZE,
                                    num_classes=NUM_CLASS,
@@ -74,7 +70,7 @@ def train(device=None):
                                    dropout=DROPOUT,
                                    device=device)
     # 构造Ark模型
-    ark = Ark(tokenizer=tokenizer,
+    ark = Ark(tokenizer=TOKENIZER,
               output_layer=ark_classifier,
               steps=STEPS,
               hidden_size=HIDDEN_SIZE,
@@ -109,3 +105,15 @@ def pre_train(device=None):
     """
     预训练模型
     """
+    device = use_device(device)
+
+    # loader参数
+    loader_kwargs = {
+        'sep': ',',
+        'tokenizer': TOKENIZER,
+        'max_length': STEPS,
+        'batch_size': BATCH_SIZE,
+        'device': device,
+    }
+
+    datas = pd.read_csv('', sep=',', encoding='utf-8')

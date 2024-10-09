@@ -115,12 +115,6 @@ class Ark(Trainer):
         """
         return self.tokenizer.decode(y, clean_up_tokenization_spaces=True)
 
-    def _to_device(self, ts: Union[torch.Tensor, List[torch.Tensor]]):
-        if isinstance(ts, list):
-            return [t.to(self.device) for t in ts]
-        else:
-            return ts.to(self.device)
-
 
 class ArkClassifier(nn.Module):
     def __init__(self, hidden_size, num_classes, num_heads, dropout=0, device=None):

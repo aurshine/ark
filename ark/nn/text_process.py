@@ -57,7 +57,7 @@ def token_random_mask(token_list: Union[str, List[str]],
                       all_tokens: Sequence[str],
                       _mask_token: str = '<mask>'):
     """
-    随机mask token, 并返回mask后的token_list, 以及对应的mask_position
+    随机mask token, 并返回mask后的token_list, 以及对应的 mask_position
 
     :param token_list: 文本或token列表
 

@@ -4,10 +4,11 @@ import torch
 import pandas as pd
 from torch.utils.data import DataLoader, Dataset
 from transformers.tokenization_utils_base import BatchEncoding
-from pypinyin import Style
+from transformers import BertTokenizer
 
 from ark.device import use_device
-from ark.nn.pinyin import translate_piny
+from ark.nn.pinyin import translate_piny, Style
+from ark.nn.text_process import token_random_mask
 
 
 def collate_dict(batch_datas: List[Dict[str, Union[dict, torch.Tensor]]]) -> Dict[str, Union[dict, torch.Tensor]]:
@@ -36,7 +37,7 @@ def collate_dict(batch_datas: List[Dict[str, Union[dict, torch.Tensor]]]) -> Dic
 
 
 class ArkDataSet(Dataset):
-    def __init__(self, csv_: Union[str, pd.DataFrame], tokenizer, max_length=128, device=None, **kwargs):
+    def __init__(self, csv_: Union[str, pd.DataFrame], tokenizer: BertTokenizer, max_length=128, device=None, **kwargs):
         """
         ArkDataSet 类用于处理文本数据集，包括数据集的读取、预处理、tokenizing等。
 
@@ -72,7 +73,6 @@ class ArkDataSet(Dataset):
                 label: tensor(1)
             }
         """
-        data = {}
         # 文本
         text = self.df.iloc[index]['TEXT']
         # 声母
@@ -90,37 +90,96 @@ class ArkDataSet(Dataset):
             'return_length': False,
         }
 
-        data['source_tokens']: Dict[str, torch.Tensor] = self.tokenizer.encode_plus(text=text, **kwargs)
+        item = {
+            'source_tokens': self.tokenizer.encode_plus(text=text, **kwargs),
+            'initial_tokens': self.tokenizer.encode_plus(text=initial, is_split_into_words=True, **kwargs),
+            'final_tokens': self.tokenizer.encode_plus(text=final, is_split_into_words=True, **kwargs),
+            'label': torch.tensor([self.df.iloc[index]['label']], dtype=torch.int64, device=self.device)
+        }
 
-        data['initial_tokens']: Dict[str, torch.Tensor] = self.tokenizer.encode_plus(text=initial,
-                                                                                     is_split_into_words=True,
-                                                                                     **kwargs)
-
-        data['final_tokens']: Dict[str, torch.Tensor] = self.tokenizer.encode_plus(text=final,
-                                                                                   is_split_into_words=True,
-                                                                                   **kwargs)
-        data['label']: torch.Tensor = torch.tensor([self.df.iloc[index]['label']], dtype=torch.int64,
-                                                   device=self.device)
-
-        print(text)
-        print(self.tokenizer.decode(data['source_tokens']['input_ids'][0], skip_special_tokens=True))
-        print(initial)
-        print(self.tokenizer.decode(data['initial_tokens']['input_ids'][0], skip_special_tokens=True))
-        print(final)
-        print(self.tokenizer.decode(data['final_tokens']['input_ids'][0], skip_special_tokens=True))
-        exit(0)
-        return data
+        return item
 
 
 class ArkPretrainDataSet(Dataset):
-    def __init__(self, csv_: Union[str, pd.DataFrame], tokenizer, max_length=128, device=None, **kwargs):
-        pass
+    def __init__(self,
+                 file_path_or_texts: Union[str, List[str]],
+                 tokenizer: BertTokenizer,
+                 num_pred_position=5,
+                 max_length=128,
+                 device=None):
+        """
+        ark 使用bert预训练模型进行训练的dataset类
+
+        :param file_path_or_texts: 文本文件路径或文本列表
+
+        :param tokenizer: 用于分词的Tokenizer对象
+
+        :param num_pred_position: 需要mask的位置数量
+
+        :param max_length: 词元的最大长度
+
+        :param device: 加载数据的设备
+        """
+        if isinstance(file_path_or_texts, str):
+            with open(file_path_or_texts, 'r', encoding='utf-8') as f:
+                self.texts = [line.strip() for line in f]
+        else:
+            self.texts = file_path_or_texts
+
+        self.tokenizer = tokenizer
+        self.num_pred_position = num_pred_position
+        self.max_length = max_length
+        self.device = use_device(device)
 
     def __len__(self):
-        pass
+        return len(self.texts)
 
     def __getitem__(self, index):
-        pass
+        this_num_pred_position = min(self.num_pred_position, len(self.texts[index]) // 5)
+        # 文本
+        token_list, masked_position, masked_token = token_random_mask(self.texts[index],
+                                                                      pred_position=len(self.texts[index]),
+                                                                      num_pred_position=this_num_pred_position,
+                                                                      all_tokens=list(self.tokenizer.vocab.keys()),
+                                                                      _mask_token='*',
+                                                                      )
+        # 文本
+        text = ''.join(token_list)
+        # 声母
+        initial = translate_piny(text, Style.INITIALS)
+        # 韵母
+        final = translate_piny(text, Style.FINALS)
+        #  将 * 替换为 [MASK]
+        for i in masked_position:
+            initial[i] = final[i] = self.tokenizer.mask_token
+
+        # tokenizer后,首位词元被[BOS]填充
+        for i in range(len(masked_position)):
+            masked_position[i] = masked_position[i] + 1
+        if self.num_pred_position > this_num_pred_position:
+            masked_position.extend([0] * (self.num_pred_position - this_num_pred_position))
+
+        kwargs = {
+            'padding': 'max_length',
+            'truncation': True,
+            'max_length': self.max_length,
+            'return_tensors': 'pt',
+            'return_token_type_ids': False,
+            'return_attention_mask': True,
+            'return_length': False,
+        }
+
+        item = {
+            'source_tokens': self.tokenizer.encode_plus(text=text, **kwargs),
+            'initial_tokens': self.tokenizer.encode_plus(text=initial, is_split_into_words=True, **kwargs),
+            'final_tokens': self.tokenizer.encode_plus(text=final, is_split_into_words=True, **kwargs),
+            'masked_position': torch.tensor(masked_position, dtype=torch.int64, device=self.device),
+        }
+
+        # 只提出被mask的token的label
+        item['label'] = item['source_tokens']['input_ids'][0, masked_position]
+
+        return item
 
 
 def get_ark_loader(csv_: Union[str, pd.DataFrame],

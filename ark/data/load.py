@@ -13,7 +13,7 @@ CURRENT_FOLDER = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
 
 
 def load(file_path='train.csv',
-         text_col='TEXT',
+         text_col='text',
          label_col='label',
          sep=',',
          device=None) -> Tuple[List[str], torch.Tensor]:

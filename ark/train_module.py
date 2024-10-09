@@ -116,4 +116,4 @@ def pre_train(device=None):
         'device': device,
     }
 
-    datas = pd.read_csv('', sep=',', encoding='utf-8')
+    loader = get_ark_loader('', TOKENIZER, STEPS, sep=',', device=device)

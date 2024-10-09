@@ -35,10 +35,11 @@ def get_metrics(epoch: int, y_true: np.ndarray, y_pred: np.ndarray) -> str:
 
 
 class Trainer(nn.Module):
-    def __init__(self, num_class, device=None):
+    def __init__(self, num_class, device=None, prefix_name=''):
         super(Trainer, self).__init__()
         self.device = use_device(device)
         self.num_class = num_class
+        self.prefix_name = prefix_name
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.setLevel(logging.INFO)
 
@@ -117,7 +118,7 @@ class Trainer(nn.Module):
             if (epoch + 1) % 10 == 0 or is_stop:
                 self.logger.warning(f'Epoch: {epoch + 1}, valid loss: {epoch_loss}')
                 self.logger.warning(get_metrics(epoch + 1, valid_result, valid_true))
-                self.save_state_dict(os.path.join(MODEL_LIB, f'epoch_{epoch + 1}.pth'))
+                self.save_state_dict(os.path.join(MODEL_LIB, f'{self.prefix_name}_epoch{epoch + 1}.pth'))
                 if is_stop:
                     break
 

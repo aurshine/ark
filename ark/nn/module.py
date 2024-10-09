@@ -37,7 +37,8 @@ class Ark(Trainer):
                  num_class: int,
                  dropout: float = 0.5,
                  output_layer=None,
-                 device: Union[str, torch.device, None] = None):
+                 device: Union[str, torch.device, None] = None,
+                 **kwargs):
         """
         初始化
 
@@ -61,7 +62,7 @@ class Ark(Trainer):
 
         :param device: 设备
         """
-        super(Ark, self).__init__(num_class, device=device)
+        super(Ark, self).__init__(num_class, device=device, **kwargs)
         self.tokenizer = tokenizer
 
         self.encoder = ArkEncoder(vocab_size=len(self.tokenizer.get_vocab()),

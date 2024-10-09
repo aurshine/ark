@@ -81,7 +81,8 @@ def train(device=None):
               num_layer=NUM_LAYER,
               dropout=DROPOUT,
               num_class=NUM_CLASS,
-              device=device)
+              device=device,
+              prefix_name='ark')
 
     loss_list, valid_trues, valid_results = ark.fit(log_file='train.log',
                                                     train_loader=train_loader,
@@ -123,7 +124,8 @@ def pre_train(device=None):
               num_layer=NUM_LAYER,
               dropout=DROPOUT,
               num_class=NUM_CLASS,
-              device=device)
+              device=device,
+              prefix_name='ark_pretrain')
 
     ark.fit(train_loader=loader,
             log_file='pretrain.log',

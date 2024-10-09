@@ -131,5 +131,5 @@ def pre_train(device=None):
             optim_params=OPTIMIZER_PARAMS,
             stop_min_epoch=STOP_MIN_EPOCH,
             stop_loss_value=STOP_LOSS_VALUE,
-            loss=InitialFinalLoss(),
+            loss=InitialFinalLoss(tokenizer=TOKENIZER, reduction='mean'),
             )

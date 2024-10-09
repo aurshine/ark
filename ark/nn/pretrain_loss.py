@@ -6,9 +6,11 @@ from ark.nn.pinyin import translate_piny, Style
 
 
 class InitialFinalLoss(nn.CrossEntropyLoss):
-    def __init__(self, tokenizer: BertTokenizer, reduction='mean', **kwargs):
+    def __init__(self, tokenizer: BertTokenizer, initial_weight=0.25, final_weight=0.25, reduction='mean', **kwargs):
         super(InitialFinalLoss, self).__init__(reduction=reduction, **kwargs)
         self.tokenizer = tokenizer
+        self.initial_weight = initial_weight
+        self.final_weight = final_weight
 
     def forward(self, y_hat, y):
         """
@@ -31,11 +33,12 @@ class InitialFinalLoss(nn.CrossEntropyLoss):
                     token_similarities[i, j] = 1
 
                 if len(y_hat_token) == len(y_token):
+                    # 声母相同
                     if translate_piny(y_hat_token, Style.INITIALS) == translate_piny(y_token, Style.INITIALS):
-                        token_similarities[i, j] += 0.25
-
+                        token_similarities[i, j] += self.initial_weight
+                    # 韵母相同
                     if translate_piny(y_hat_token, Style.FINALS) == translate_piny(y_token, Style.FINALS):
-                        token_similarities[i, j] += 0.25
+                        token_similarities[i, j] += self.final_weight
 
         pred_score, indices = torch.max(y_hat, dim=-1)
         loss2 = -torch.log(pred_score) * token_similarities

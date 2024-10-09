@@ -90,6 +90,7 @@ class Trainer(nn.Module):
             loss = nn.CrossEntropyLoss()
 
         # 打印训练信息
+        self.logger.info(f'num_params: {sum(p.numel() for p in self.parameters() if p.requires_grad)}')
         self.logger.info(f'fit on {self.device}')
         self.logger.info(f'model architecture: {self}')
         self.logger.info(f'optimizer: {optimizer}')
@@ -114,7 +115,7 @@ class Trainer(nn.Module):
 
             is_stop = self._achieve_stop_condition(epoch + 1, stop_min_epoch, epoch_loss, stop_loss_value)
             if (epoch + 1) % 10 == 0 or is_stop:
-                self.logger.warning(f'Epoch {epoch + 1}, valid loss: {epoch_loss}')
+                self.logger.warning(f'Epoch: {epoch + 1}, valid loss: {epoch_loss}')
                 self.logger.warning(get_metrics(epoch + 1, valid_result, valid_true))
                 self.save_state_dict(os.path.join(MODEL_LIB, f'epoch_{epoch + 1}.pth'))
                 if is_stop:

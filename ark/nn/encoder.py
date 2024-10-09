@@ -118,6 +118,6 @@ class ArkEncoder(Encoder):
         x_embedding = self.dropout(self.ln(x_embedding))
 
         # (batch_size, steps, hidden_size)
-        x = self.fusion_ch(x_embedding)
+        x = torch.sum(x_embedding, dim=-2)  # self.fusion_ch(x_embedding)
 
         return x, masks

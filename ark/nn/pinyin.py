@@ -1,37 +1,29 @@
 import random
+from typing import Sequence, List, Union
+
+from pypinyin import lazy_pinyin, Style, load_phrases_dict
 
 from ark.setting import COMMON_CHAR_PATH
 from ark.spider.classify import get_lines
-from pypinyin import lazy_pinyin, Style
+
 
 EXTEND_PINY = {
-    '0': 'ling',
-    '1': 'yi',
-    '2': 'er',
-    '3': 'san',
-    '4': 'si',
-    '5': 'wu',
-    '6': 'liu',
-    '7': 'qi',
-    '8': 'ba',
-    '9': 'jiu'
+    '0': [['ling']],
+    '1': [['yi']],
+    '2': [['er']],
+    '3': [['san']],
+    '4': [['si']],
+    '5': [['wu']],
+    '6': [['liu']],
+    '7': [['qi']],
+    '8': [['ba']],
+    '9': [['jiu']]
 }
 
-EXTEND_LETTER = {
-    '0': 'l',
-    '1': 'y',
-    '2': 'e',
-    '3': 's',
-    '4': 's',
-    '5': 'w',
-    '6': 'l',
-    '7': 'q',
-    '8': 'b',
-    '9': 'j'
-}
+load_phrases_dict(EXTEND_PINY)
 
 
-def translate_piny(inputs, style=None):
+def translate_piny(inputs: Union[str, Sequence[str]], style=None) -> Union[List[str], List[List[str]]]:
     """文本翻译拼音
 
     :param inputs: 由列表存储的tokenize后的文本 或 一串字符串
@@ -46,14 +38,9 @@ def translate_piny(inputs, style=None):
     """
     if style is None:
         style = Style.NORMAL
-    else:
-        assert style == Style.NORMAL or style == Style.FIRST_LETTER
 
     if isinstance(inputs, str):
-        if style == Style.NORMAL:
-            return [EXTEND_PINY.get(piny, piny) for piny in lazy_pinyin(inputs, style=style, v_to_u=False)]
-        else:
-            return [EXTEND_LETTER.get(piny, piny) for piny in lazy_pinyin(inputs, style=style, v_to_u=False)]
+        return lazy_pinyin(inputs, style=style, errors='default', strict=False)
     else:
         return [translate_piny(_input, style) for _input in inputs]
 

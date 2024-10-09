@@ -4,6 +4,7 @@ import torch
 import pandas as pd
 from torch.utils.data import DataLoader, Dataset
 from transformers.tokenization_utils_base import BatchEncoding
+from pypinyin import Style
 
 from ark.device import use_device
 from ark.nn.pinyin import translate_piny
@@ -66,14 +67,18 @@ class ArkDataSet(Dataset):
 
         :return: {
                 source_tokens: {input_ids: tensor(1, max_length), attention_mask: tensor(1, max_length),},
-                pinyin_tokens: {input_ids: tensor(1, max_length),, attention_mask: tensor(1, max_length),},
-                letter_tokens: {input_ids: tensor(1, max_length),, attention_mask: tensor(1, max_length),},
+                initial_tokens: {input_ids: tensor(1, max_length),, attention_mask: tensor(1, max_length),},
+                final_tokens: {input_ids: tensor(1, max_length),, attention_mask: tensor(1, max_length),},
                 label: tensor(1)
             }
         """
-        data, text = {}, self.df.iloc[index]['TEXT']
-        piny = translate_piny(text)
-        letter = [p[0] for p in piny]
+        data = {}
+        # 文本
+        text = self.df.iloc[index]['TEXT']
+        # 声母
+        initial = translate_piny(text, Style.INITIALS)
+        # 韵母
+        final = translate_piny(text, Style.FINALS)
 
         kwargs = {
             'padding': 'max_length',
@@ -87,15 +92,23 @@ class ArkDataSet(Dataset):
 
         data['source_tokens']: Dict[str, torch.Tensor] = self.tokenizer.encode_plus(text=text, **kwargs)
 
-        data['pinyin_tokens']: Dict[str, torch.Tensor] = self.tokenizer.encode_plus(text=piny,
-                                                                                    is_split_into_words=True,
-                                                                                    **kwargs)
+        data['initial_tokens']: Dict[str, torch.Tensor] = self.tokenizer.encode_plus(text=initial,
+                                                                                     is_split_into_words=True,
+                                                                                     **kwargs)
 
-        data['letter_tokens']: Dict[str, torch.Tensor] = self.tokenizer.encode_plus(text=letter,
-                                                                                    is_split_into_words=True,
-                                                                                    **kwargs)
+        data['final_tokens']: Dict[str, torch.Tensor] = self.tokenizer.encode_plus(text=final,
+                                                                                   is_split_into_words=True,
+                                                                                   **kwargs)
         data['label']: torch.Tensor = torch.tensor([self.df.iloc[index]['label']], dtype=torch.int64,
                                                    device=self.device)
+
+        print(text)
+        print(self.tokenizer.decode(data['source_tokens']['input_ids'][0], skip_special_tokens=True))
+        print(initial)
+        print(self.tokenizer.decode(data['initial_tokens']['input_ids'][0], skip_special_tokens=True))
+        print(final)
+        print(self.tokenizer.decode(data['final_tokens']['input_ids'][0], skip_special_tokens=True))
+        exit(0)
         return data
 
 

@@ -20,6 +20,7 @@ pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
 
 # 使用 analyse 分析恶意语句
 
+下列代码暂时废弃
 ```python
 from ark.analyse import analyse
 

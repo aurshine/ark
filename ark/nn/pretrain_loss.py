@@ -1,12 +1,22 @@
 import torch
 from torch import nn
+from torch.nn import functional as F
 from transformers import BertTokenizer
 
 from ark.nn.pinyin import translate_piny, Style
 
 
 class InitialFinalLoss(nn.CrossEntropyLoss):
-    def __init__(self, tokenizer: BertTokenizer, initial_weight=0.25, final_weight=0.25, reduction='mean', **kwargs):
+    """
+    声母韵母相似度损失的计算方法为:
+
+    1. 相似度 = 1 if token相同 else (self.initial_weight * 声母相同 + self.final_weight * 韵母相同)
+
+    2. pred_score = max(softmax(y))
+
+    3. 声母韵母相似度损失 = cross_entropy(y) - log(pred_score) * (1 - 相似度)
+    """
+    def __init__(self, tokenizer: BertTokenizer, initial_weight=0.35, final_weight=0.35, reduction='mean', **kwargs):
         super(InitialFinalLoss, self).__init__(reduction=reduction, **kwargs)
         self.tokenizer = tokenizer
         self.initial_weight = initial_weight
@@ -40,12 +50,12 @@ class InitialFinalLoss(nn.CrossEntropyLoss):
                     if translate_piny(y_hat_token, Style.FINALS) == translate_piny(y_token, Style.FINALS):
                         token_similarities[i, j] += self.final_weight
 
-        pred_score, indices = torch.max(y_hat, dim=-1)
-        loss2 = -torch.log(pred_score) * token_similarities
+        pred_score, indices = torch.max(F.softmax(y_hat, dim=-1), dim=-1)
+        loss2 = torch.log(pred_score) * (1 - token_similarities)
 
         if self.reduction == 'mean':
             loss2 = loss2.mean()
         elif self.reduction == 'sum':
             loss2 = loss2.sum()
 
-        return loss1 + loss2
+        return loss1 - loss2

@@ -1,9 +1,10 @@
 import os
 import sys
-import datetime
 import logging
+import datetime
 from typing import Dict, Union, Optional, List, Tuple, Generator
 
+from tqdm import tqdm
 import numpy as np
 import torch
 from torch import nn
@@ -34,12 +35,32 @@ def get_metrics(epoch: int, y_true: np.ndarray, y_pred: np.ndarray) -> str:
             f'F1-score: {f1: 4f}\n')
 
 
+def date_prefix_filename(filename: str) -> str:
+    """
+    为文件名添加日期前缀
+
+    :param filename: 文件名
+    """
+    # 获取当前时间并格式化为字符串
+    current_time = datetime.datetime.now().strftime('%Y%m%d%H%M')
+
+    # 分离目录和文件名
+    dir_path, file_name = os.path.split(filename)
+
+    # 修改文件名，在前面加上当前时间
+    new_file_name = current_time + file_name
+
+    # 重新组合成新的路径
+    new_file_path = os.path.join(dir_path, new_file_name)
+    return new_file_path
+
+
 class Trainer(nn.Module):
-    def __init__(self, num_class, device=None, prefix_name=''):
+    def __init__(self, num_class, device=None, prefix_name='trainer'):
         super(Trainer, self).__init__()
         self.device = use_device(device)
         self.num_class = num_class
-        self.prefix_name = prefix_name
+        self.prefix_name = date_prefix_filename(prefix_name)
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.setLevel(logging.INFO)
 
@@ -81,32 +102,22 @@ class Trainer(nn.Module):
         """
         # 初始化日志文件
         self._init_logger(log_file)
+        # 初始化优化器
+        optimizer = self._init_optimizer(optimizer, optim_params)
+        # 初始化损失函数
+        loss = self._init_loss(loss)
+        # 记录训练前的配置信息
+        self._log_train_config(optimizer, loss, epochs, stop_loss_value, stop_min_epoch)
 
-        if optimizer is None:
-            if optim_params is None:
-                optim_params = {'lr': 2e-3, 'weight_decay': 0.1}
-            optimizer = torch.optim.AdamW(self.parameters(), **optim_params)
-
-        if loss is None:
-            loss = nn.CrossEntropyLoss()
-
-        # 打印训练信息
-        self.logger.info(f'num_params: {sum(p.numel() for p in self.parameters() if p.requires_grad)}')
-        self.logger.info(f'fit on {self.device}')
-        self.logger.info(f'model architecture: {self}')
-        self.logger.info(f'optimizer: {optimizer}')
-        self.logger.info(f'loss_fn: {loss}')
-        self.logger.info(f'num_class: {self.num_class}')
-        self.logger.info(f'epochs: {epochs}')
-        self.logger.info(f'stop_loss_value: {stop_loss_value}')
-        self.logger.info(f'stop_min_epoch: {stop_min_epoch}\n')
         # 记录 每个 epoch 的 loss, 训练集准确率，验证集准确率
         loss_list, valid_results, valid_trues = [], [], []
 
         self.train()
+        num_batches = len(train_loader)
         for epoch in range(epochs):
             epoch_loss, valid_true, valid_result = self.fit_epoch(epoch=epoch,
                                                                   train_loader=train_loader,
+                                                                  num_batches=num_batches,
                                                                   optimizer=optimizer,
                                                                   loss_fn=loss,
                                                                   valid_loader=valid_loader)
@@ -116,13 +127,102 @@ class Trainer(nn.Module):
 
             is_stop = self._achieve_stop_condition(epoch + 1, stop_min_epoch, epoch_loss, stop_loss_value)
             if (epoch + 1) % 10 == 0 or is_stop:
-                self.logger.warning(f'Epoch: {epoch + 1}, valid loss: {epoch_loss}')
+                self.logger.warning(f'Epoch: {epoch + 1}, ValidMetrics:')
                 self.logger.warning(get_metrics(epoch + 1, valid_result, valid_true))
                 self.save_state_dict(os.path.join(MODEL_LIB, f'{self.prefix_name}_epoch{epoch + 1}.pth'))
                 if is_stop:
                     break
 
         return loss_list, valid_trues, valid_results
+
+    def fit_pretrain(self,
+                     train_loader,
+                     log_file: str = None,
+                     epochs=20,
+                     stop_loss_value=1,
+                     stop_min_epoch=5,
+                     optimizer=None,
+                     optim_params: Optional[Dict] = None,
+                     loss=None,
+                     ):
+        pretrain_identifier = date_prefix_filename('pretrain')
+
+        # 初始化日志文件
+        self._init_logger(log_file)
+        # 初始化优化器
+        optimizer = self._init_optimizer(optimizer, optim_params)
+        # 初始化损失函数
+        loss = self._init_loss(loss)
+        # 记录训练前的配置信息
+        self._log_train_config(optimizer, loss, epochs, stop_loss_value, stop_min_epoch)
+
+        self.train()
+        num_batches = len(train_loader)
+        for epoch in range(epochs):
+            epoch_loss, _, _ = self.fit_epoch(epoch=epoch,
+                                              train_loader=train_loader,
+                                              num_batches=num_batches,
+                                              optimizer=optimizer,
+                                              loss_fn=loss)
+            self.save_state_dict(os.path.join(MODEL_LIB, f'{pretrain_identifier}_epoch{epoch + 1}.pth'))
+            if self._achieve_stop_condition(epoch + 1, stop_min_epoch, epoch_loss, stop_loss_value):
+                break
+
+    def fit_epoch(self,
+                  epoch: int,
+                  train_loader,
+                  num_batches,
+                  optimizer,
+                  loss_fn,
+                  valid_loader=None
+                  ) -> Tuple[float, np.ndarray, np.ndarray]:
+        """
+        训练一个 epoch 的操作
+
+        :param epoch: 当前训练轮数
+
+        :param train_loader: 训练集导入器,
+
+        :param num_batches: 训练集的batch数
+
+        :param optimizer: 优化器
+
+        :param loss_fn: 计算损失的函数
+
+        :param valid_loader: 验证集导入器
+
+        :return: 训练集的平均损失, 验证集的真实标签, 验证集的预测结果
+        """
+        self.train()
+        epoch_loss = 0
+        train_result, train_true, valid_result, valid_true = [], [], [], []
+
+        for i, (y_hat, y) in enumerate(self._loader_forward(train_loader)):
+            batch_loss = loss_fn(y_hat, y)
+            epoch_loss += batch_loss.item() / len(train_loader)
+
+            # 梯度计算
+            batch_loss.backward()
+            optimizer.step()
+            optimizer.zero_grad()
+
+            # 记录训练集的预测结果
+            train_result.append(y_hat.argmax(dim=-1).cpu())
+            train_true.append(y.cpu())
+            self.logger.info(f'Epoch {epoch + 1}, Batch ({i + 1}/{num_batches}), Loss: {batch_loss.item():.4f}')
+
+        # 记录训练集的预测结果
+        train_result = torch.cat(train_result).numpy()
+        train_true = torch.cat(train_true).numpy()
+
+        self.logger.info(f'Epoch {epoch + 1}, Train A Epoch Average Loss: {epoch_loss:.4f}')
+        self.logger.info(get_metrics(epoch + 1, train_true, train_result))
+
+        # 训练结束验证
+        if valid_loader is not None:
+            valid_true, valid_result = self.validate(valid_loader)
+
+        return epoch_loss, valid_true, valid_result
 
     def _loader_forward(self, loader) -> Generator[Tuple[torch.Tensor, torch.Tensor], None, None]:
         """
@@ -140,10 +240,10 @@ class Trainer(nn.Module):
             multi_channel_tokens: List[torch.Tensor] = []
             multi_channel_masks:  List[torch.Tensor] = []
 
-            kwargs = {}
+            y, kwargs = None, {}
             for key, value in data.items():
                 if key == 'label':
-                    continue
+                    y = value
 
                 if 'tokens' in key:
                     multi_channel_tokens.append(value['input_ids'])
@@ -151,7 +251,8 @@ class Trainer(nn.Module):
                 else:
                     kwargs[key] = value
 
-            y = data['label']
+            if y is None:
+                raise ValueError('label not found in data')
 
             y_hat = self.forward(multi_channel_tokens, multi_channel_masks, **kwargs)
             yield y_hat, y
@@ -162,58 +263,6 @@ class Trainer(nn.Module):
         达到停止条件时返回 True, 否则返回 False
         """
         return epoch >= stop_min_epoch and loss <= stop_max_loss
-
-    def fit_epoch(self,
-                  epoch: int,
-                  train_loader,
-                  optimizer,
-                  loss_fn,
-                  valid_loader=None
-                  ) -> Tuple[float, np.ndarray, np.ndarray]:
-        """
-        训练一个 epoch 的操作
-
-        :param epoch: 当前训练轮数
-
-        :param train_loader: 训练集导入器,
-
-        :param optimizer: 优化器
-
-        :param loss_fn: 计算损失的函数
-
-        :param valid_loader: 验证集导入器
-
-        :return: 训练集的平均损失, 验证集的真实标签, 验证集的预测结果
-        """
-        self.train()
-        epoch_loss = 0
-        train_result, train_true, valid_result, valid_true = [], [], [], []
-
-        for y_hat, y in self._loader_forward(train_loader):
-            batch_loss = loss_fn(y_hat, y)
-            epoch_loss += batch_loss.item() / len(train_loader)
-
-            # 梯度计算
-            batch_loss.backward()
-            optimizer.step()
-            optimizer.zero_grad()
-
-            # 记录训练集的预测结果
-            train_result.append(y_hat.argmax(dim=-1).cpu())
-            train_true.append(y.cpu())
-
-        # 记录训练集的预测结果
-        train_result = torch.cat(train_result).numpy()
-        train_true = torch.cat(train_true).numpy()
-
-        self.logger.info(f'Epoch {epoch + 1}, train_loss: {epoch_loss:.4f}')
-        self.logger.info(get_metrics(epoch + 1, train_true, train_result))
-
-        # 训练结束验证
-        if valid_loader is not None:
-            valid_true, valid_result = self.validate(valid_loader)
-
-        return epoch_loss, valid_true, valid_result
 
     def validate(self, valid_loader) -> Tuple[np.ndarray, np.ndarray]:
         """
@@ -262,23 +311,13 @@ class Trainer(nn.Module):
         """
         return [classes[y] for y in self.predict(x, **kwargs)]
 
-    def save_state_dict(self, path: str, cover=True):
+    def save_state_dict(self, path: str):
         """
         保存模型
 
         :param path: 保存文件地址
-
-        :param cover: 是否覆盖源文件地址的文件, 默认覆盖
         """
-        if not cover and os.path.exists(path):
-            point_idx = path.find('.')
-            path_name, path_suffix = path[: point_idx], path[point_idx:]
-
-            idx = 0
-            while os.path.exists(path):
-                idx += 1
-                path = f'{path_name}({idx}){path_suffix}'
-
+        path = date_prefix_filename(path)
         torch.save(self.state_dict(), path)
 
     def load(self, path: str):
@@ -312,7 +351,9 @@ class Trainer(nn.Module):
 
         :param log_file: log文件地址, 默认为 None, 即不保存日志文件
         """
+        self.logger.handlers.clear()
         if log_file is not None:
+            log_file = date_prefix_filename(log_file)
             if not os.path.exists(log_file):
                 log_file = os.path.join(LOG_PATH, log_file)
                 os.makedirs(os.path.dirname(log_file), exist_ok=True)
@@ -332,3 +373,27 @@ class Trainer(nn.Module):
             return [t.to(self.device) for t in ts]
         else:
             return ts.to(self.device)
+
+    def _init_optimizer(self, optimizer, optim_params):
+        if optimizer is None:
+            if optim_params is None:
+                optim_params = {'lr': 2e-3, 'weight_decay': 0.1}
+            optimizer = torch.optim.AdamW(self.parameters(), **optim_params)
+        return optimizer
+
+    def _init_loss(self, loss):
+        if loss is None:
+            loss = nn.CrossEntropyLoss()
+        return loss
+
+    def _log_train_config(self, optimizer, loss, epochs, stop_loss_value, stop_min_epoch):
+        # 打印训练信息
+        self.logger.info(f'num_params: {sum(p.numel() for p in self.parameters() if p.requires_grad)}')
+        self.logger.info(f'fit on {self.device}')
+        self.logger.info(f'model architecture: {self}')
+        self.logger.info(f'optimizer: {optimizer}')
+        self.logger.info(f'loss_fn: {loss}')
+        self.logger.info(f'num_class: {self.num_class}')
+        self.logger.info(f'epochs: {epochs}')
+        self.logger.info(f'stop_loss_value: {stop_loss_value}')
+        self.logger.info(f'stop_min_epoch: {stop_min_epoch}\n')

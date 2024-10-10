@@ -190,8 +190,8 @@ class ArkPretrainDataSet(Dataset):
             'source_tokens': self.tokenizer.encode_plus(text=masked_tokens, **kwargs),
             'initial_tokens': self.tokenizer.encode_plus(text=initials, **kwargs),
             'final_tokens': self.tokenizer.encode_plus(text=finals, **kwargs),
-            'masked_position': torch.Tensor(masked_position, dtype=torch.int32, device=self.device),
-            'label': torch.LongTensor(self.tokenizer.convert_tokens_to_ids(real_tokens), device=self.device)
+            'masked_position': torch.tensor(masked_position, dtype=torch.int64, device=self.device),
+            'label': torch.tensor(self.tokenizer.convert_tokens_to_ids(real_tokens), dtype=torch.int64, device=self.device)
         }
         return item
 

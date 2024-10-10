@@ -29,7 +29,7 @@ DROPOUT = 0.5                                          # 随机失活率
 NUM_CLASS = 2                                          # 分类数
 #################################################################################
 # 训练参数
-BATCH_SIZE = 128                                        # 批量大小
+BATCH_SIZE = 720                                        # 批量大小
 
 TRAIN_EPOCHS = 200                                      # 最大训练轮数
 
@@ -129,10 +129,10 @@ def pre_train(device=None):
 
     ark.fit(train_loader=loader,
             log_file='pretrain.log',
-            epochs=TRAIN_EPOCHS,
+            epochs=20,
             optim_params=OPTIMIZER_PARAMS,
-            stop_min_epoch=STOP_MIN_EPOCH,
-            stop_loss_value=STOP_LOSS_VALUE,
+            stop_min_epoch=5,
+            stop_loss_value=2,
             loss=InitialFinalLoss(tokenizer=TOKENIZER, reduction='mean'),
             )
 

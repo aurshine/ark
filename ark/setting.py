@@ -37,6 +37,9 @@ TIE_BA_CSV_PATH = os.path.join(DATASET_PATH, 'tie-ba.csv')
 # 中文常见字地址
 COMMON_CHAR_PATH = os.path.join(DATASET_PATH, 'common_char.txt')
 
+# 预训练数据集
+PRETRAIN_DATASET_PATH = os.path.join(DATASET_PATH, 'pretrain.txt')
+
 # 日志文件夹地址
 LOG_PATH = os.path.join(ARK_PATH, 'data/log')
 

@@ -4,8 +4,6 @@ import logging
 import datetime
 from typing import Dict, Union, Optional, List, Tuple, Generator
 
-from tqdm import tqdm
-import numpy as np
 import torch
 from torch import nn
 from torch.nn import init
@@ -16,7 +14,7 @@ from ark.running import Timer
 from ark.setting import LOG_PATH, MODEL_LIB
 
 
-def get_metrics(epoch: int, y_true: np.ndarray, y_pred: np.ndarray) -> str:
+def get_metrics(epoch: int, y_true: torch.Tensor, y_pred: torch.Tensor) -> str:
     """
     计算模型在指定 epoch 的指标, 并返回字符串格式的指标信息
     """
@@ -175,7 +173,7 @@ class Trainer(nn.Module):
                   optimizer,
                   loss_fn,
                   valid_loader=None
-                  ) -> Tuple[float, np.ndarray, np.ndarray]:
+                  ) -> Tuple[float, torch.Tensor, torch.Tensor]:
         """
         训练一个 epoch 的操作
 
@@ -264,7 +262,7 @@ class Trainer(nn.Module):
         """
         return epoch >= stop_min_epoch and loss <= stop_max_loss
 
-    def validate(self, valid_loader) -> Tuple[np.ndarray, np.ndarray]:
+    def validate(self, valid_loader) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         验证函数
 
@@ -278,7 +276,7 @@ class Trainer(nn.Module):
             valid_y.append(y_hat.argmax(dim=-1).cpu())
             true_y.append(y.cpu())
 
-        return torch.cat(true_y).numpy(), torch.cat(valid_y).numpy()
+        return torch.cat(true_y), torch.cat(valid_y)
 
     def predict(self, x: torch.Tensor, *args, **kwargs) -> torch.Tensor:
         """

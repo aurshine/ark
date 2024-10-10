@@ -142,8 +142,10 @@ class ArkClassifier(nn.Module):
 
 
 class ArkBertPretrain(nn.Module):
-    def __init__(self):
+    def __init__(self, hidden_size, num_class, device=None):
         super(ArkBertPretrain, self).__init__()
+        device = use_device(device)
+        self.cls = nn.Linear(hidden_size, num_class, device=device)
 
     def forward(self, x, masked_position: torch.Tensor, **kwargs):
         """
@@ -155,7 +157,8 @@ class ArkBertPretrain(nn.Module):
 
         :param masked_position: 形状为(batch_size, num_masked_position)
 
-        :return: 形状为 (batch_size, num_masked_position, hidden_size)
+        :return: 形状为 (batch_size, num_masked_position, num_class)
         """
-        index = masked_position.unsqueeze(-1).expand(-1, -1, x.shape[-1])
-        return torch.gather(x, dim=1, index=index)
+        y = self.cls(x)
+        index = masked_position.unsqueeze(-1).expand(-1, -1, y.shape[-1])
+        return torch.gather(y, dim=1, index=index)

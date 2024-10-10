@@ -40,7 +40,7 @@ def translate_piny(inputs: Union[str, Sequence[str]], style=None) -> Union[List[
         style = Style.NORMAL
 
     if isinstance(inputs, str):
-        return lazy_pinyin(inputs, style=style, errors='default', strict=False)
+        return [lazy_pinyin(s, style=style, errors='default', strict=False)[0] for s in inputs]
     else:
         return [translate_piny(_input, style) for _input in inputs]
 

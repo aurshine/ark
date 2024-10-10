@@ -7,7 +7,7 @@ from transformers import BertTokenizer
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 
 from ark.data.dataloader import get_ark_loader, get_ark_pretrain_loader
-from ark.setting import PRETRAIN_TOKENIZER_PATH, LOG_PATH, DATASET_PATH
+from ark.setting import PRETRAIN_TOKENIZER_PATH, LOG_PATH, DATASET_PATH, PRETRAIN_DATASET_PATH
 from ark.device import use_device
 from ark.nn.module import Ark, ArkClassifier, ArkBertPretrain
 from ark.nn.accuracy import Plot
@@ -22,16 +22,16 @@ NUM_HEADS = 8                                          # 多头注意力头数
 
 NUM_LAYER = 8                                           # 解码器层数
 
-STEPS = 96                                            # 每个文本的步长
+STEPS = 128                                            # 每个文本的步长
 
 DROPOUT = 0.5                                          # 随机失活率
 
 NUM_CLASS = 2                                          # 分类数
 #################################################################################
 # 训练参数
-BATCH_SIZE = 256                                        # 批量大小
+BATCH_SIZE = 320                                        # 批量大小
 
-TRAIN_EPOCHS = 20                                      # 最大训练轮数
+TRAIN_EPOCHS = 200                                      # 最大训练轮数
 
 STOP_MIN_EPOCH = 20                                     # 最小停止轮数
 
@@ -110,14 +110,14 @@ def pre_train(device=None):
     """
     device = use_device(device)
 
-    loader = get_ark_pretrain_loader(r'D:\Hbue\SRTP\ARK\ark\data\DATASET\pretrain.txt',
+    loader = get_ark_pretrain_loader(PRETRAIN_DATASET_PATH,
                                      tokenizer=TOKENIZER,
                                      num_pred_position=5,
                                      max_length=STEPS,
                                      device=device)
 
     ark = Ark(tokenizer=TOKENIZER,
-              output_layer=ArkBertPretrain(),
+              output_layer=ArkBertPretrain(HIDDEN_SIZE, num_class=len(TOKENIZER), device=device),
               steps=STEPS,
               hidden_size=HIDDEN_SIZE,
               in_channel=3,

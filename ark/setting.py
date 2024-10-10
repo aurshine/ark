@@ -2,10 +2,10 @@ import os
 
 
 # setting.py 所在的文件夹地址
-SETTING_PATH = os.path.abspath(os.path.dirname(__file__))
+ARK_PATH = os.path.abspath(os.path.dirname(__file__))
 
 # cache文件夹地址
-CACHE_PATH = os.path.join(SETTING_PATH, 'spider/cache')
+CACHE_PATH = os.path.join(ARK_PATH, 'spider/cache')
 
 # 未分类文件的存储地址
 UN_CLASSIFY_PATH = os.path.join(CACHE_PATH, 'un_classify.txt')
@@ -20,7 +20,7 @@ NOT_BAD_TXT_PATH = os.path.join(CACHE_PATH, 'notBad.txt')
 HAS_URLS_PATH = os.path.join(CACHE_PATH, 'hasUrls')
 
 # DATASET 文件夹地址
-DATASET_PATH = os.path.join(SETTING_PATH, 'data/DATASET')
+DATASET_PATH = os.path.join(ARK_PATH, 'data/DATASET')
 
 # 词表存储地址
 VOCAB_PATH = os.path.join(DATASET_PATH, 'vocab.txt')
@@ -29,7 +29,7 @@ VOCAB_PATH = os.path.join(DATASET_PATH, 'vocab.txt')
 PINYIN_VOCAB_PATH = os.path.join(DATASET_PATH, 'pinyin.txt')
 
 # 首字母表存储地址
-LETTER_VOCAB_PATH = os.path.join(SETTING_PATH, 'letter.txt')
+LETTER_VOCAB_PATH = os.path.join(ARK_PATH, 'letter.txt')
 
 # 贴吧数据集地址
 TIE_BA_CSV_PATH = os.path.join(DATASET_PATH, 'tie-ba.csv')
@@ -38,13 +38,13 @@ TIE_BA_CSV_PATH = os.path.join(DATASET_PATH, 'tie-ba.csv')
 COMMON_CHAR_PATH = os.path.join(DATASET_PATH, 'common_char.txt')
 
 # 日志文件夹地址
-LOG_PATH = os.path.join(SETTING_PATH, 'data/log')
+LOG_PATH = os.path.join(ARK_PATH, 'data/log')
 
 # pretrain tokenizer 地址
-PRETRAIN_TOKENIZER_PATH = os.path.join(SETTING_PATH, 'data/bert-base-chinese')
+PRETRAIN_TOKENIZER_PATH = os.path.join(ARK_PATH, 'data/bert-base-chinese')
 
 # 训练好的模型的存放文件夹
-MODEL_LIB = os.path.join(SETTING_PATH, 'data/result-models')
+MODEL_LIB = os.path.join(ARK_PATH, 'data/result-models')
 
 for dir_name in [CACHE_PATH, DATASET_PATH, MODEL_LIB]:
     if not os.path.exists(dir_name):

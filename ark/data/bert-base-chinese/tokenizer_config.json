@@ -248,6 +248,14 @@
       "single_word": false,
       "special": false
     },
+    "4691": {
+      "content": "眉",
+      "lstrip": false,
+      "normalized": true,
+      "rstrip": false,
+      "single_word": false,
+      "special": false
+    },
     "8217": {
       "content": "in",
       "lstrip": false,
@@ -280,8 +288,40 @@
       "single_word": false,
       "special": false
     },
+    "8881": {
+      "content": "hong",
+      "lstrip": false,
+      "normalized": true,
+      "rstrip": false,
+      "single_word": false,
+      "special": false
+    },
+    "8885": {
+      "content": "ng",
+      "lstrip": false,
+      "normalized": true,
+      "rstrip": false,
+      "single_word": false,
+      "special": false
+    },
+    "8913": {
+      "content": "hi",
+      "lstrip": false,
+      "normalized": true,
+      "rstrip": false,
+      "single_word": false,
+      "special": false
+    },
     "9064": {
       "content": "an",
+      "lstrip": false,
+      "normalized": true,
+      "rstrip": false,
+      "single_word": false,
+      "special": false
+    },
+    "9245": {
+      "content": "he",
       "lstrip": false,
       "normalized": true,
       "rstrip": false,
@@ -328,8 +368,48 @@
       "single_word": false,
       "special": false
     },
+    "10788": {
+      "content": "huang",
+      "lstrip": false,
+      "normalized": true,
+      "rstrip": false,
+      "single_word": false,
+      "special": false
+    },
+    "11107": {
+      "content": "ua",
+      "lstrip": false,
+      "normalized": true,
+      "rstrip": false,
+      "single_word": false,
+      "special": false
+    },
     "11167": {
       "content": "sh",
+      "lstrip": false,
+      "normalized": true,
+      "rstrip": false,
+      "single_word": false,
+      "special": false
+    },
+    "11643": {
+      "content": "ha",
+      "lstrip": false,
+      "normalized": true,
+      "rstrip": false,
+      "single_word": false,
+      "special": false
+    },
+    "12126": {
+      "content": "han",
+      "lstrip": false,
+      "normalized": true,
+      "rstrip": false,
+      "single_word": false,
+      "special": false
+    },
+    "12199": {
+      "content": "hu",
       "lstrip": false,
       "normalized": true,
       "rstrip": false,
@@ -346,6 +426,14 @@
     },
     "13172": {
       "content": "iu",
+      "lstrip": false,
+      "normalized": true,
+      "rstrip": false,
+      "single_word": false,
+      "special": false
+    },
+    "13268": {
+      "content": "ian",
       "lstrip": false,
       "normalized": true,
       "rstrip": false,
@@ -3058,6 +3146,70 @@
     },
     "21466": {
       "content": "iong",
+      "lstrip": false,
+      "normalized": true,
+      "rstrip": false,
+      "single_word": false,
+      "special": false
+    },
+    "21467": {
+      "content": "bos]",
+      "lstrip": false,
+      "normalized": true,
+      "rstrip": false,
+      "single_word": false,
+      "special": false
+    },
+    "21468": {
+      "content": "eos]",
+      "lstrip": false,
+      "normalized": true,
+      "rstrip": false,
+      "single_word": false,
+      "special": false
+    },
+    "21469": {
+      "content": "iao",
+      "lstrip": false,
+      "normalized": true,
+      "rstrip": false,
+      "single_word": false,
+      "special": false
+    },
+    "21470": {
+      "content": "uan",
+      "lstrip": false,
+      "normalized": true,
+      "rstrip": false,
+      "single_word": false,
+      "special": false
+    },
+    "21471": {
+      "content": "uai",
+      "lstrip": false,
+      "normalized": true,
+      "rstrip": false,
+      "single_word": false,
+      "special": false
+    },
+    "21472": {
+      "content": "ia",
+      "lstrip": false,
+      "normalized": true,
+      "rstrip": false,
+      "single_word": false,
+      "special": false
+    },
+    "21473": {
+      "content": "ue",
+      "lstrip": false,
+      "normalized": true,
+      "rstrip": false,
+      "single_word": false,
+      "special": false
+    },
+    "21474": {
+      "content": "眉e",
       "lstrip": false,
       "normalized": true,
       "rstrip": false,

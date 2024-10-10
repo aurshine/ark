@@ -1,5 +1,6 @@
 import os
 import random
+from typing import List
 
 import pandas as pd
 from transformers import BertTokenizer
@@ -135,3 +136,8 @@ def pre_train(device=None):
             stop_loss_value=STOP_LOSS_VALUE,
             loss=InitialFinalLoss(tokenizer=TOKENIZER, reduction='mean'),
             )
+
+
+def add_tokens(tokens: List[str]):
+    TOKENIZER.add_tokens(tokens)
+    TOKENIZER.save_pretrained(PRETRAIN_TOKENIZER_PATH)

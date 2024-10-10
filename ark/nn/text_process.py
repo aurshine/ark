@@ -1,6 +1,6 @@
-import random
 from typing import Tuple, List, Union, Optional, Sequence
 
+import numpy as np
 
 from ark.nn.pinyin import translate_into_other_piny
 
@@ -52,7 +52,7 @@ def data_augment(texts: List[str], labels: List = None, choice_p: float = 0.2, m
 
 
 def token_random_mask(token_list: Union[str, List[str]],
-                      pred_position: Union[int, List[int]],
+                      pred_position: Union[int, List[int], np.ndarray],
                       num_pred_position: int,
                       all_tokens: Sequence[str],
                       _mask_token: str = '<mask>'):
@@ -73,17 +73,13 @@ def token_random_mask(token_list: Union[str, List[str]],
     """
     if isinstance(token_list, str):
         token_list = list(token_list)
-    if isinstance(pred_position, int):
-        pred_position = list(range(pred_position))
 
-    random.shuffle(pred_position)
     mask_position, source_tokens = [], []
-
-    for pos in pred_position[:num_pred_position]:
-        if random.random() < 0.8:  # 80%的概率被mask
+    for pos in np.random.choice(pred_position, num_pred_position, replace=False):
+        if np.random.rand() < 0.8:  # 80%的概率被mask
             mask_token = _mask_token
-        elif random.random() < 0.5:  # 10%的概率随机替换
-            mask_token = random.choice(all_tokens)
+        elif np.random.rand() < 0.5:  # 10%的概率随机替换
+            mask_token = np.random.choice(all_tokens)
         else:  # 10%的概率保持不变
             mask_token = token_list[pos]
 

@@ -130,34 +130,46 @@ class ArkPretrainDataSet(Dataset):
         self.num_pred_position = num_pred_position
         self.max_length = max_length
         self.device = use_device(device)
+        self.all_tokens = [k for k in self.tokenizer.vocab.keys() if len(k) == 1]
 
     def __len__(self):
         return len(self.texts)
 
     def __getitem__(self, index):
+        text_length = len(self.texts[index])
         this_num_pred_position = min(self.num_pred_position, len(self.texts[index]) // 5)
         # 文本
-        token_list, masked_position, masked_token = token_random_mask(self.texts[index],
-                                                                      pred_position=len(self.texts[index]),
-                                                                      num_pred_position=this_num_pred_position,
-                                                                      all_tokens=list(self.tokenizer.vocab.keys()),
-                                                                      _mask_token='*',
-                                                                      )
+        tokens, masked_position, masked_token = token_random_mask(self.texts[index],
+                                                                  pred_position=text_length,
+                                                                  num_pred_position=this_num_pred_position,
+                                                                  all_tokens=self.all_tokens,
+                                                                  _mask_token='*',
+                                                                  )
         # 文本
-        text = ''.join(token_list)
+        text = ''.join(tokens)
         # 声母
         initial = translate_piny(text, Style.INITIALS)
         # 韵母
         final = translate_piny(text, Style.FINALS)
+
+        for i in range(text_length):
+            if len(initial[i]) == 0:
+                # 没有声母的位置用pad_token填充
+                initial[i] = self.tokenizer.pad_token
+            if len(final[i]) == 0:
+                # 没有韵母的位置用pad_token填充
+                final[i] = self.tokenizer.pad_token
+
         #  将 * 替换为 [MASK]
         for i in masked_position:
-            initial[i] = final[i] = self.tokenizer.mask_token
-
-        # tokenizer后,首位词元被[BOS]填充
+            tokens[i] = initial[i] = final[i] = self.tokenizer.mask_token
+        print(tokens)
+        # tokenizer后,首位词元被[CLS]填充
         for i in range(len(masked_position)):
             masked_position[i] = masked_position[i] + 1
         if self.num_pred_position > this_num_pred_position:
             masked_position.extend([0] * (self.num_pred_position - this_num_pred_position))
+            masked_token.extend([self.tokenizer.cls_token] * (self.num_pred_position - this_num_pred_position))
 
         kwargs = {
             'padding': 'max_length',
@@ -170,14 +182,12 @@ class ArkPretrainDataSet(Dataset):
         }
 
         item = {
-            'source_tokens': self.tokenizer.encode_plus(text=text, **kwargs),
+            'source_tokens': self.tokenizer.encode_plus(text=tokens, is_split_into_words=True, **kwargs),
             'initial_tokens': self.tokenizer.encode_plus(text=initial, is_split_into_words=True, **kwargs),
             'final_tokens': self.tokenizer.encode_plus(text=final, is_split_into_words=True, **kwargs),
             'masked_position': torch.tensor(masked_position, dtype=torch.int64, device=self.device),
+            'label': self.tokenizer.encode(masked_token, add_special_tokens=False, is_split_into_words=True, return_tensors='pt')[0]
         }
-
-        # 只提出被mask的token的label
-        item['label'] = item['source_tokens']['input_ids'][0, masked_position]
 
         return item
 

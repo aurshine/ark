@@ -6,7 +6,7 @@ from numpy import int64 as np_int64
 
 from ark.setting import *
 from ark.spider.classify import get_lines, write_lines, clear
-from ark.device import use_device
+from ark.utils import use_device
 
 
 CURRENT_FOLDER = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))

@@ -8,7 +8,7 @@ from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_sc
 
 from ark.data.dataloader import get_ark_loader, get_ark_pretrain_loader
 from ark.setting import PRETRAIN_TOKENIZER_PATH, LOG_PATH, DATASET_PATH, PRETRAIN_DATASET_PATH
-from ark.device import use_device
+from ark.utils import use_device
 from ark.nn.module import Ark, ArkClassifier, ArkBertPretrain
 from ark.nn.accuracy import Plot
 from ark.nn.pretrain_loss import InitialFinalLoss

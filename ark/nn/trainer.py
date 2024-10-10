@@ -1,56 +1,14 @@
 import os
 import sys
 import logging
-import datetime
 from typing import Dict, Union, Optional, List, Tuple, Generator
 
 import torch
 from torch import nn
 from torch.nn import init
-from sklearn.metrics import confusion_matrix
 
-from ark.device import use_device
-from ark.running import Timer
+from ark.utils import date_prefix_filename, use_device, get_metrics
 from ark.setting import LOG_PATH, MODEL_LIB
-
-
-def get_metrics(epoch: int, y_true: torch.Tensor, y_pred: torch.Tensor) -> str:
-    """
-    计算模型在指定 epoch 的指标, 并返回字符串格式的指标信息
-    """
-    tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
-    accuracy = (tp + tn) / (tp + tn + fp + fn)
-    precision = tp / (tp + fp)
-    recall = tp / (tp + fn)
-    fpr = fp / (fp + tn)
-    f1 = 2 * precision * recall / (precision + recall)
-
-    return (f'Epoch: {epoch}\t'
-            f'Accuracy: {accuracy: 4f}\t'
-            f'Precision: {precision: 4f}\t'
-            f'Recall: {recall: 4f}\t'
-            f'FPR: {fpr: 4f}\t'
-            f'F1-score: {f1: 4f}\n')
-
-
-def date_prefix_filename(filename: str) -> str:
-    """
-    为文件名添加日期前缀
-
-    :param filename: 文件名
-    """
-    # 获取当前时间并格式化为字符串
-    current_time = datetime.datetime.now().strftime('%Y%m%d%H%M')
-
-    # 分离目录和文件名
-    dir_path, file_name = os.path.split(filename)
-
-    # 修改文件名，在前面加上当前时间
-    new_file_name = current_time + file_name
-
-    # 重新组合成新的路径
-    new_file_path = os.path.join(dir_path, new_file_name)
-    return new_file_path
 
 
 class Trainer(nn.Module):
@@ -298,7 +256,6 @@ class Trainer(nn.Module):
             y = y[:, :self.num_class]
         return torch.argmax(y, dim=-1)
 
-    @Timer()
     def analyse(self, x: torch.Tensor, classes: list, **kwargs) -> list:
         """
         :param x: 形状与forward函数的输入相同

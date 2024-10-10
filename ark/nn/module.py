@@ -3,11 +3,11 @@ from typing import List, Union
 import torch
 from torch import nn
 
+from ark.utils import use_device
 from ark.nn.trainer import Trainer
 from ark.nn.encoder import ArkEncoder
 from ark.nn.decoder import ArkDecoder
 from ark.nn.multi_layers import TransformerLayer
-from ark.device import use_device
 
 
 def analyse(model: Trainer, inputs, classes: List[str]):

@@ -3,7 +3,7 @@ from typing import Union, List, Tuple, Optional, Callable
 import torch
 from torch import nn
 
-from ark.device import use_device
+from ark.utils import use_device
 from ark.nn.addnorm import AddNorm
 from ark.nn.attention import cosine_similarity_attention
 

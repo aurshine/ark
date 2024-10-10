@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader, Dataset
 from transformers.tokenization_utils_base import BatchEncoding
 from transformers import BertTokenizer
 
-from ark.device import use_device
+from ark.utils import use_device
 from ark.nn.pinyin import translate_piny, translate_char, Style
 from ark.nn.text_process import token_random_mask
 

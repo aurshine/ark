@@ -47,7 +47,3 @@ class Plot:
 
         if save_path is not None:
             save_fig(save_path)
-
-
-def statics_false():
-    pass

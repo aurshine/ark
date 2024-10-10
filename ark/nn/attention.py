@@ -3,7 +3,7 @@ import math
 import torch
 from torch import nn
 
-from ark.device import use_device
+from ark.utils import use_device
 
 
 def scaled_dot_product_attention(queries: torch.Tensor, keys: torch.Tensor) -> torch.Tensor:

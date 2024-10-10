@@ -22,15 +22,15 @@ pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
 
 下列代码暂时废弃
 ```python
-from ark.analyse import analyse
-
-comments = ['你就是歌姬吧，你记住你什么都不是',
-            '杀马特团长你等着我，我和你没完，你等着！！',
-            '小亮给他整个活',
-            'python是世界上最好的语言',
-            '鸡你太美',
-            '原神启动']
-print(analyse(comments))
+# from ark.analyse import analyse
+# 
+# comments = ['你就是歌姬吧，你记住你什么都不是',
+#             '杀马特团长你等着我，我和你没完，你等着！！',
+#             '小亮给他整个活',
+#             'python是世界上最好的语言',
+#             '鸡你太美',
+#             '原神启动']
+# print(analyse(comments))
 ```
 
 # 自调参训练模型

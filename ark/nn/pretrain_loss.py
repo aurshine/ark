@@ -14,7 +14,7 @@ class InitialFinalLoss(nn.CrossEntropyLoss):
 
     2. pred_score = max(softmax(y))
 
-    3. 声母韵母相似度损失 = cross_entropy(y) - log(pred_score) * (1 - 相似度)
+    3. 声母韵母相似度损失 = cross_entropy(y) - LOG(pred_score) * (1 - 相似度)
     """
     def __init__(self, tokenizer: BertTokenizer, initial_weight=0.35, final_weight=0.35, reduction='mean', **kwargs):
         super(InitialFinalLoss, self).__init__(reduction=reduction, **kwargs)

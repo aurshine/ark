@@ -19,35 +19,23 @@ NOT_BAD_TXT_PATH = os.path.join(CACHE_PATH, 'notBad.txt')
 # 爬取过的url的存储地址
 HAS_URLS_PATH = os.path.join(CACHE_PATH, 'hasUrls')
 
+# pretrain tokenizer 地址
+PRETRAIN_TOKENIZER_PATH = os.path.join(ARK_PATH, 'data/bert-base-chinese')
+
 # DATASET 文件夹地址
 DATASET_PATH = os.path.join(ARK_PATH, 'data/DATASET')
 
-# 词表存储地址
-VOCAB_PATH = os.path.join(DATASET_PATH, 'vocab.txt')
+# 日志文件夹地址
+LOG_PATH = os.path.join(ARK_PATH, 'data/LOG')
 
-# 拼音表储存地址
-PINYIN_VOCAB_PATH = os.path.join(DATASET_PATH, 'pinyin.txt')
-
-# 首字母表存储地址
-LETTER_VOCAB_PATH = os.path.join(ARK_PATH, 'letter.txt')
-
-# 贴吧数据集地址
-TIE_BA_CSV_PATH = os.path.join(DATASET_PATH, 'tie-ba.csv')
+# 训练好的模型的存放文件夹
+MODEL_LIB = os.path.join(ARK_PATH, 'data/MODELS')
 
 # 中文常见字地址
 COMMON_CHAR_PATH = os.path.join(DATASET_PATH, 'common_char.txt')
 
 # 预训练数据集
 PRETRAIN_DATASET_PATH = os.path.join(DATASET_PATH, 'pretrain.txt')
-
-# 日志文件夹地址
-LOG_PATH = os.path.join(ARK_PATH, 'data/log')
-
-# pretrain tokenizer 地址
-PRETRAIN_TOKENIZER_PATH = os.path.join(ARK_PATH, 'data/bert-base-chinese')
-
-# 训练好的模型的存放文件夹
-MODEL_LIB = os.path.join(ARK_PATH, 'data/result-models')
 
 for dir_name in [CACHE_PATH, DATASET_PATH, MODEL_LIB]:
     if not os.path.exists(dir_name):

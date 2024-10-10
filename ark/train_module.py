@@ -6,13 +6,12 @@ import pandas as pd
 from transformers import BertTokenizer
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 
-from ark.data.dataloader import get_ark_loader, get_ark_pretrain_loader
+from ark.utils import use_device, date_prefix_filename
 from ark.setting import PRETRAIN_TOKENIZER_PATH, LOG_PATH, DATASET_PATH, PRETRAIN_DATASET_PATH
-from ark.utils import use_device
-from ark.nn.module import Ark, ArkClassifier, ArkBertPretrain
+from ark.data.dataloader import get_ark_loader, get_ark_pretrain_loader
 from ark.nn.accuracy import Plot
 from ark.nn.pretrain_loss import InitialFinalLoss
-
+from ark.nn.module import Ark, ArkClassifier, ArkBertPretrain
 
 #################################################################################
 # 模型参数
@@ -83,7 +82,7 @@ def train(device=None):
               device=device,
               prefix_name='ark')
 
-    loss_list, valid_trues, valid_results = ark.fit(log_file='train.log',
+    loss_list, valid_trues, valid_results = ark.fit(log_file='train.LOG',
                                                     train_loader=train_loader,
                                                     valid_loader=valid_loader,
                                                     epochs=TRAIN_EPOCHS,
@@ -99,7 +98,9 @@ def train(device=None):
         recall = recall_score(valid_true, valid_result)
         plot.add(acc, f1, precision, recall)
 
-    plot.plot(labels=['accuracy', 'f1-score', 'precision', 'recall'], save_path=os.path.join(LOG_PATH, 'valid.png'))
+    plot.plot(labels=['accuracy', 'f1-score', 'precision', 'recall'],
+              save_path=os.path.join(LOG_PATH, date_prefix_filename('valid.png'))
+              )
 
 
 def pre_train(device=None):
@@ -128,7 +129,7 @@ def pre_train(device=None):
               prefix_name='ark_pretrain')
 
     ark.fit(train_loader=loader,
-            log_file='pretrain.log',
+            log_file='pretrain.LOG',
             epochs=20,
             optim_params=OPTIMIZER_PARAMS,
             stop_min_epoch=5,

@@ -1,4 +1,4 @@
-from typing import Tuple, List, Union, Optional, Sequence
+from typing import Tuple, List, Union, Optional, Sequence, TypeVar
 
 import numpy as np
 
@@ -23,7 +23,7 @@ def data_augment_(texts: List[str], labels: List = None, choice_p: float = 0.2, 
     for i in range(len_texts):
         text, label = texts[i], (labels[i] if labels else None)
 
-        u_choice = random.uniform(0, 1)
+        u_choice = np.random.uniform(0, 1)
         if u_choice < choice_p:
             texts.append(translate_into_other_piny(text, mdf_p))
             if labels is not None:
@@ -51,11 +51,14 @@ def data_augment(texts: List[str], labels: List = None, choice_p: float = 0.2, m
     return data_augment_(texts_, labels_, choice_p, mdf_p)
 
 
-def token_random_mask(token_list: Union[str, List[str]],
+T = TypeVar('T')
+
+
+def token_random_mask(token_list: Union[T, List[T]],
                       pred_position: Union[int, List[int], np.ndarray],
                       num_pred_position: int,
-                      all_tokens: Sequence[str],
-                      _mask_token: str = '<mask>'):
+                      all_tokens: Sequence[T],
+                      _mask_token: T = '<mask>') -> Tuple[List[T], List[int], List[T]]:
     """
     随机mask token, 并返回mask后的token_list, 以及对应的 mask_position
 
@@ -72,19 +75,22 @@ def token_random_mask(token_list: Union[str, List[str]],
     :return: 返回mask后的token_list, mask_position, mask_position对应的原token
     """
     if isinstance(token_list, str):
-        token_list = list(token_list)
+        masked_tokens = list(token_list)
+    else:
+        masked_tokens = token_list
 
-    mask_position, source_tokens = [], []
+    mask_position, real_tokens = [], []
     for pos in np.random.choice(pred_position, num_pred_position, replace=False):
-        if np.random.rand() < 0.8:  # 80%的概率被mask
+        rd = np.random.rand()
+        if rd < 0.8:  # 80%的概率被mask
             mask_token = _mask_token
-        elif np.random.rand() < 0.5:  # 10%的概率随机替换
+        elif rd < 0.9:  # 10%的概率随机替换
             mask_token = np.random.choice(all_tokens)
         else:  # 10%的概率保持不变
             mask_token = token_list[pos]
 
-        source_tokens.append(token_list[pos])
-        token_list[pos] = mask_token
+        real_tokens.append(token_list[pos])
+        masked_tokens[pos] = mask_token
         mask_position.append(pos)
 
-    return token_list, mask_position, source_tokens
+    return masked_tokens, mask_position, real_tokens

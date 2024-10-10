@@ -7,7 +7,7 @@ from transformers.tokenization_utils_base import BatchEncoding
 from transformers import BertTokenizer
 
 from ark.device import use_device
-from ark.nn.pinyin import translate_piny, Style
+from ark.nn.pinyin import translate_piny, translate_char, Style
 from ark.nn.text_process import token_random_mask
 
 
@@ -122,7 +122,7 @@ class ArkPretrainDataSet(Dataset):
         """
         if isinstance(file_path_or_texts, str):
             with open(file_path_or_texts, 'r', encoding='utf-8') as f:
-                self.texts = [line.strip() for line in f]
+                self.texts = f.readlines()
         else:
             self.texts = file_path_or_texts
 
@@ -137,41 +137,43 @@ class ArkPretrainDataSet(Dataset):
 
     def __getitem__(self, index):
         text_length = len(self.texts[index])
+        # 限制预测位置数量, 最多为文本长度的 1/5
         this_num_pred_position = min(self.num_pred_position, text_length // 5)
         # 文本
-        tokens, masked_position, masked_token = token_random_mask(self.texts[index],
-                                                                  # 需要填充[CLS]和[SEP]，所以max_length - 1
-                                                                  pred_position=min(text_length, self.max_length - 1),
-                                                                  num_pred_position=this_num_pred_position,
-                                                                  all_tokens=self.all_tokens,
-                                                                  _mask_token='啊',
-                                                                  )
-        # 文本
-        text = ''.join(tokens)
-        # 声母
-        initial = translate_piny(text, Style.INITIALS)
-        # 韵母
-        final = translate_piny(text, Style.FINALS)
+        masked_tokens, masked_position, real_tokens = token_random_mask(self.texts[index],
+                                                                        # 需要填充[CLS][SEP], 所以max_length - 2
+                                                                        pred_position=min(text_length,
+                                                                                          self.max_length - 2),
+                                                                        num_pred_position=this_num_pred_position,
+                                                                        all_tokens=self.all_tokens,
+                                                                        _mask_token=self.tokenizer.mask_token,
+                                                                        )
+        # 声母 韵母
+        initials, finals = [], []
+        for token in masked_tokens:
+            if token == self.tokenizer.mask_token:
+                token_initial = token_final = self.tokenizer.mask_token
+            else:
+                token_initial = translate_char(token, Style.INITIALS)
+                token_final = translate_char(token, Style.FINALS)
+                # 没有声母或韵母用[PAD]代替
+                if len(token_initial) == 0:
+                    token_initial = self.tokenizer.pad_token
+                if len(token_final) == 0:
+                    token_final = self.tokenizer.pad_token
+            initials.append(token_initial)
+            finals.append(token_final)
 
-        for i in range(text_length):
-            if len(initial[i]) == 0:
-                # 没有声母的位置用pad_token填充
-                initial[i] = self.tokenizer.pad_token
-            if len(final[i]) == 0:
-                # 没有韵母的位置用pad_token填充
-                final[i] = self.tokenizer.pad_token
-
-        #  将 * 替换为 [MASK]
-        for i in masked_position:
-            tokens[i] = initial[i] = final[i] = self.tokenizer.mask_token
-
-        # tokenizer后,首位词元被[CLS]填充
+        # tokenizer后,首位词元被[CLS]填充, 所有位置需要右移一位
         for i in range(len(masked_position)):
             masked_position[i] = masked_position[i] + 1
 
+        # 期望预测的数量 > 实际预测的数量, 则补齐
+        # 全部预测[CLS]
         if self.num_pred_position > this_num_pred_position:
-            masked_position.extend([0] * (self.num_pred_position - this_num_pred_position))
-            masked_token.extend([self.tokenizer.cls_token] * (self.num_pred_position - this_num_pred_position))
+            num_extend = self.num_pred_position - this_num_pred_position
+            masked_position.extend([0] * num_extend)
+            real_tokens.extend([self.tokenizer.cls_token] * num_extend)
 
         kwargs = {
             'padding': 'max_length',
@@ -181,21 +183,20 @@ class ArkPretrainDataSet(Dataset):
             'return_token_type_ids': False,
             'return_attention_mask': True,
             'return_length': False,
+            'is_split_into_words': True
         }
 
         item = {
-            'source_tokens': self.tokenizer.encode_plus(text=tokens, is_split_into_words=True, **kwargs),
-            'initial_tokens': self.tokenizer.encode_plus(text=initial, is_split_into_words=True, **kwargs),
-            'final_tokens': self.tokenizer.encode_plus(text=final, is_split_into_words=True, **kwargs),
-            'masked_position': torch.tensor(masked_position, dtype=torch.int64, device=self.device),
-            'label': self.tokenizer.encode(masked_token, add_special_tokens=False, is_split_into_words=False,
-                                           return_tensors='pt')[0].to(self.device)
+            'source_tokens': self.tokenizer.encode_plus(text=masked_tokens, **kwargs),
+            'initial_tokens': self.tokenizer.encode_plus(text=initials, **kwargs),
+            'final_tokens': self.tokenizer.encode_plus(text=finals, **kwargs),
+            'masked_position': torch.Tensor(masked_position, dtype=torch.int32, device=self.device),
+            'label': torch.LongTensor(self.tokenizer.convert_tokens_to_ids(real_tokens), device=self.device)
         }
-
         return item
 
 
-def get_ark_loader(csv_: Union[str, pd.DataFrame],
+def get_ark_loader(file_path_or_df: Union[str, pd.DataFrame],
                    tokenizer,
                    max_length: int,
                    sep: str = ',',
@@ -208,7 +209,7 @@ def get_ark_loader(csv_: Union[str, pd.DataFrame],
 
     loader 返回的data的类型为pandas.DataFrame
 
-    :param csv_: csv文件路径或DataFrame对象
+    :param file_path_or_df: csv文件路径或DataFrame对象
 
     :param tokenizer: 用于分词的Tokenizer对象
 
@@ -226,7 +227,7 @@ def get_ark_loader(csv_: Union[str, pd.DataFrame],
 
     :param kwargs: DataLoader的其他参数
     """
-    return DataLoader(ArkDataSet(csv_, sep=sep, tokenizer=tokenizer, max_length=max_length, device=device),
+    return DataLoader(ArkDataSet(file_path_or_df, sep=sep, tokenizer=tokenizer, max_length=max_length, device=device),
                       batch_size=batch_size,
                       shuffle=shuffle,
                       drop_last=drop_last,

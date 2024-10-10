@@ -49,11 +49,10 @@ def translate_char(c: str, style=None):
     """
     单字符转化拼音
     """
+    assert len(c) == 1, f'c = {c} c.len = {len(c)}'
+
     if style is None:
         style = Style.NORMAL
-    else:
-        assert style == Style.NORMAL or style == Style.FIRST_LETTER
-    assert len(c) == 1, f'c = {c} c.len = {len(c)}'
 
     return lazy_pinyin(c, style=style, v_to_u=False)[0]
 

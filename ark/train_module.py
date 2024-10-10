@@ -45,8 +45,6 @@ TOKENIZER = BertTokenizer.from_pretrained(PRETRAIN_TOKENIZER_PATH)  # 预训练t
 
 def train(device=None):
     """
-    由于导入数据使用多进程，请确保train在 if __name__ == '__main__': 代码块中运行
-
     训练模型
     """
     device = use_device(device)

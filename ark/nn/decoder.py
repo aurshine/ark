@@ -21,6 +21,6 @@ class ArkDecoder(nn.Module):
 
         :param kwargs: TransformerLayers 的其它参数
         """
-        return self.transformer_layers(x, **kwargs)
+        return self.transformer_layers(x)
 
 

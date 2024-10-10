@@ -140,7 +140,8 @@ class ArkPretrainDataSet(Dataset):
         this_num_pred_position = min(self.num_pred_position, len(self.texts[index]) // 5)
         # 文本
         tokens, masked_position, masked_token = token_random_mask(self.texts[index],
-                                                                  pred_position=text_length,
+                                                                  # 需要填充[CLS]和[SEP]，所以max_length - 2
+                                                                  pred_position=min(text_length, self.max_length - 2),
                                                                   num_pred_position=this_num_pred_position,
                                                                   all_tokens=self.all_tokens,
                                                                   _mask_token='*',
@@ -163,10 +164,11 @@ class ArkPretrainDataSet(Dataset):
         #  将 * 替换为 [MASK]
         for i in masked_position:
             tokens[i] = initial[i] = final[i] = self.tokenizer.mask_token
-        print(tokens)
+
         # tokenizer后,首位词元被[CLS]填充
         for i in range(len(masked_position)):
             masked_position[i] = masked_position[i] + 1
+
         if self.num_pred_position > this_num_pred_position:
             masked_position.extend([0] * (self.num_pred_position - this_num_pred_position))
             masked_token.extend([self.tokenizer.cls_token] * (self.num_pred_position - this_num_pred_position))
@@ -186,9 +188,11 @@ class ArkPretrainDataSet(Dataset):
             'initial_tokens': self.tokenizer.encode_plus(text=initial, is_split_into_words=True, **kwargs),
             'final_tokens': self.tokenizer.encode_plus(text=final, is_split_into_words=True, **kwargs),
             'masked_position': torch.tensor(masked_position, dtype=torch.int64, device=self.device),
-            'label': self.tokenizer.encode(masked_token, add_special_tokens=False, is_split_into_words=True, return_tensors='pt')[0]
+            'label': self.tokenizer.encode(masked_token, add_special_tokens=False, is_split_into_words=True,
+                                           return_tensors='pt')[0]
         }
 
+        assert item['label'].shape[0] == len(masked_token)
         return item
 
 

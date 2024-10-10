@@ -1,0 +1,1760 @@
+2024-10-10 12:03:35,864 [INFO] num_params: 6729504
+2024-10-10 12:03:35,864 [INFO] fit on cpu
+2024-10-10 12:03:35,865 [INFO] model architecture: Ark(
+  (encoder): ArkEncoder(
+    (word_embedding): Embedding(21475, 256)
+    (position_embedding): Embedding(96, 256)
+    (channel_embedding): Embedding(3, 256)
+    (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+    (dropout): Dropout(p=0.5, inplace=False)
+    (fusion_ch): FusionChannel(
+      (lin): MultiLinear(
+        (dense): Sequential(
+          (0): Linear(in_features=256, out_features=256, bias=True)
+          (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (2): Dropout(p=0.5, inplace=False)
+          (3): LeakyReLU(negative_slope=0.01)
+          (4): Linear(in_features=256, out_features=256, bias=True)
+          (5): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (6): Dropout(p=0.5, inplace=False)
+          (7): LeakyReLU(negative_slope=0.01)
+        )
+      )
+    )
+  )
+  (decoder): ArkDecoder(
+    (transformer_layers): TransformerLayers(
+      (transformer_blocks): ModuleList(
+        (0-7): 8 x TransformerLayer(
+          (attention): MultiHeadAttention(
+            (attention): Attention()
+          )
+          (ffn): PositionWiseFFN(
+            (linear): MultiLinear(
+              (dense): Sequential(
+                (0): Linear(in_features=256, out_features=256, bias=True)
+                (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (2): LeakyReLU(negative_slope=0.01)
+                (3): Linear(in_features=256, out_features=256, bias=True)
+                (4): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (5): LeakyReLU(negative_slope=0.01)
+              )
+            )
+            (add_norm): AddNorm(
+              (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+              (dropout): Dropout(p=0, inplace=False)
+            )
+          )
+          (add_norm1): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+          (add_norm2): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+        )
+      )
+    )
+  )
+  (output_layer): ArkBertPretrain()
+)
+2024-10-10 12:03:35,865 [INFO] optimizer: AdamW (
+Parameter Group 0
+    amsgrad: False
+    betas: (0.9, 0.999)
+    capturable: False
+    differentiable: False
+    eps: 1e-08
+    foreach: None
+    fused: None
+    lr: 0.0001
+    maximize: False
+    weight_decay: 0.01
+)
+2024-10-10 12:03:35,865 [INFO] loss_fn: InitialFinalLoss()
+2024-10-10 12:03:35,865 [INFO] num_class: 2
+2024-10-10 12:03:35,865 [INFO] epochs: 20
+2024-10-10 12:03:35,865 [INFO] stop_loss_value: 0.1
+2024-10-10 12:03:35,865 [INFO] stop_min_epoch: 20
+
+2024-10-10 12:11:37,615 [INFO] num_params: 6729504
+2024-10-10 12:11:37,615 [INFO] fit on cpu
+2024-10-10 12:11:37,616 [INFO] model architecture: Ark(
+  (encoder): ArkEncoder(
+    (word_embedding): Embedding(21475, 256)
+    (position_embedding): Embedding(96, 256)
+    (channel_embedding): Embedding(3, 256)
+    (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+    (dropout): Dropout(p=0.5, inplace=False)
+    (fusion_ch): FusionChannel(
+      (lin): MultiLinear(
+        (dense): Sequential(
+          (0): Linear(in_features=256, out_features=256, bias=True)
+          (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (2): Dropout(p=0.5, inplace=False)
+          (3): LeakyReLU(negative_slope=0.01)
+          (4): Linear(in_features=256, out_features=256, bias=True)
+          (5): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (6): Dropout(p=0.5, inplace=False)
+          (7): LeakyReLU(negative_slope=0.01)
+        )
+      )
+    )
+  )
+  (decoder): ArkDecoder(
+    (transformer_layers): TransformerLayers(
+      (transformer_blocks): ModuleList(
+        (0-7): 8 x TransformerLayer(
+          (attention): MultiHeadAttention(
+            (attention): Attention()
+          )
+          (ffn): PositionWiseFFN(
+            (linear): MultiLinear(
+              (dense): Sequential(
+                (0): Linear(in_features=256, out_features=256, bias=True)
+                (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (2): LeakyReLU(negative_slope=0.01)
+                (3): Linear(in_features=256, out_features=256, bias=True)
+                (4): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (5): LeakyReLU(negative_slope=0.01)
+              )
+            )
+            (add_norm): AddNorm(
+              (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+              (dropout): Dropout(p=0, inplace=False)
+            )
+          )
+          (add_norm1): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+          (add_norm2): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+        )
+      )
+    )
+  )
+  (output_layer): ArkBertPretrain()
+)
+2024-10-10 12:11:37,616 [INFO] optimizer: AdamW (
+Parameter Group 0
+    amsgrad: False
+    betas: (0.9, 0.999)
+    capturable: False
+    differentiable: False
+    eps: 1e-08
+    foreach: None
+    fused: None
+    lr: 0.0001
+    maximize: False
+    weight_decay: 0.01
+)
+2024-10-10 12:11:37,616 [INFO] loss_fn: InitialFinalLoss()
+2024-10-10 12:11:37,616 [INFO] num_class: 2
+2024-10-10 12:11:37,616 [INFO] epochs: 20
+2024-10-10 12:11:37,616 [INFO] stop_loss_value: 0.1
+2024-10-10 12:11:37,616 [INFO] stop_min_epoch: 20
+
+2024-10-10 12:16:27,579 [INFO] num_params: 6729504
+2024-10-10 12:16:27,580 [INFO] fit on cpu
+2024-10-10 12:16:27,580 [INFO] model architecture: Ark(
+  (encoder): ArkEncoder(
+    (word_embedding): Embedding(21475, 256)
+    (position_embedding): Embedding(96, 256)
+    (channel_embedding): Embedding(3, 256)
+    (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+    (dropout): Dropout(p=0.5, inplace=False)
+    (fusion_ch): FusionChannel(
+      (lin): MultiLinear(
+        (dense): Sequential(
+          (0): Linear(in_features=256, out_features=256, bias=True)
+          (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (2): Dropout(p=0.5, inplace=False)
+          (3): LeakyReLU(negative_slope=0.01)
+          (4): Linear(in_features=256, out_features=256, bias=True)
+          (5): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (6): Dropout(p=0.5, inplace=False)
+          (7): LeakyReLU(negative_slope=0.01)
+        )
+      )
+    )
+  )
+  (decoder): ArkDecoder(
+    (transformer_layers): TransformerLayers(
+      (transformer_blocks): ModuleList(
+        (0-7): 8 x TransformerLayer(
+          (attention): MultiHeadAttention(
+            (attention): Attention()
+          )
+          (ffn): PositionWiseFFN(
+            (linear): MultiLinear(
+              (dense): Sequential(
+                (0): Linear(in_features=256, out_features=256, bias=True)
+                (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (2): LeakyReLU(negative_slope=0.01)
+                (3): Linear(in_features=256, out_features=256, bias=True)
+                (4): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (5): LeakyReLU(negative_slope=0.01)
+              )
+            )
+            (add_norm): AddNorm(
+              (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+              (dropout): Dropout(p=0, inplace=False)
+            )
+          )
+          (add_norm1): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+          (add_norm2): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+        )
+      )
+    )
+  )
+  (output_layer): ArkBertPretrain()
+)
+2024-10-10 12:16:27,581 [INFO] optimizer: AdamW (
+Parameter Group 0
+    amsgrad: False
+    betas: (0.9, 0.999)
+    capturable: False
+    differentiable: False
+    eps: 1e-08
+    foreach: None
+    fused: None
+    lr: 0.0001
+    maximize: False
+    weight_decay: 0.01
+)
+2024-10-10 12:16:27,581 [INFO] loss_fn: InitialFinalLoss()
+2024-10-10 12:16:27,581 [INFO] num_class: 2
+2024-10-10 12:16:27,581 [INFO] epochs: 20
+2024-10-10 12:16:27,581 [INFO] stop_loss_value: 0.1
+2024-10-10 12:16:27,581 [INFO] stop_min_epoch: 20
+
+2024-10-10 12:21:02,101 [INFO] num_params: 6729504
+2024-10-10 12:21:02,101 [INFO] fit on cpu
+2024-10-10 12:21:02,102 [INFO] model architecture: Ark(
+  (encoder): ArkEncoder(
+    (word_embedding): Embedding(21475, 256)
+    (position_embedding): Embedding(96, 256)
+    (channel_embedding): Embedding(3, 256)
+    (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+    (dropout): Dropout(p=0.5, inplace=False)
+    (fusion_ch): FusionChannel(
+      (lin): MultiLinear(
+        (dense): Sequential(
+          (0): Linear(in_features=256, out_features=256, bias=True)
+          (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (2): Dropout(p=0.5, inplace=False)
+          (3): LeakyReLU(negative_slope=0.01)
+          (4): Linear(in_features=256, out_features=256, bias=True)
+          (5): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (6): Dropout(p=0.5, inplace=False)
+          (7): LeakyReLU(negative_slope=0.01)
+        )
+      )
+    )
+  )
+  (decoder): ArkDecoder(
+    (transformer_layers): TransformerLayers(
+      (transformer_blocks): ModuleList(
+        (0-7): 8 x TransformerLayer(
+          (attention): MultiHeadAttention(
+            (attention): Attention()
+          )
+          (ffn): PositionWiseFFN(
+            (linear): MultiLinear(
+              (dense): Sequential(
+                (0): Linear(in_features=256, out_features=256, bias=True)
+                (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (2): LeakyReLU(negative_slope=0.01)
+                (3): Linear(in_features=256, out_features=256, bias=True)
+                (4): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (5): LeakyReLU(negative_slope=0.01)
+              )
+            )
+            (add_norm): AddNorm(
+              (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+              (dropout): Dropout(p=0, inplace=False)
+            )
+          )
+          (add_norm1): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+          (add_norm2): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+        )
+      )
+    )
+  )
+  (output_layer): ArkBertPretrain()
+)
+2024-10-10 12:21:02,102 [INFO] optimizer: AdamW (
+Parameter Group 0
+    amsgrad: False
+    betas: (0.9, 0.999)
+    capturable: False
+    differentiable: False
+    eps: 1e-08
+    foreach: None
+    fused: None
+    lr: 0.0001
+    maximize: False
+    weight_decay: 0.01
+)
+2024-10-10 12:21:02,102 [INFO] loss_fn: InitialFinalLoss()
+2024-10-10 12:21:02,102 [INFO] num_class: 2
+2024-10-10 12:21:02,102 [INFO] epochs: 20
+2024-10-10 12:21:02,102 [INFO] stop_loss_value: 0.1
+2024-10-10 12:21:02,102 [INFO] stop_min_epoch: 20
+
+2024-10-10 12:24:15,211 [INFO] num_params: 6729504
+2024-10-10 12:24:15,211 [INFO] fit on cpu
+2024-10-10 12:24:15,212 [INFO] model architecture: Ark(
+  (encoder): ArkEncoder(
+    (word_embedding): Embedding(21475, 256)
+    (position_embedding): Embedding(96, 256)
+    (channel_embedding): Embedding(3, 256)
+    (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+    (dropout): Dropout(p=0.5, inplace=False)
+    (fusion_ch): FusionChannel(
+      (lin): MultiLinear(
+        (dense): Sequential(
+          (0): Linear(in_features=256, out_features=256, bias=True)
+          (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (2): Dropout(p=0.5, inplace=False)
+          (3): LeakyReLU(negative_slope=0.01)
+          (4): Linear(in_features=256, out_features=256, bias=True)
+          (5): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (6): Dropout(p=0.5, inplace=False)
+          (7): LeakyReLU(negative_slope=0.01)
+        )
+      )
+    )
+  )
+  (decoder): ArkDecoder(
+    (transformer_layers): TransformerLayers(
+      (transformer_blocks): ModuleList(
+        (0-7): 8 x TransformerLayer(
+          (attention): MultiHeadAttention(
+            (attention): Attention()
+          )
+          (ffn): PositionWiseFFN(
+            (linear): MultiLinear(
+              (dense): Sequential(
+                (0): Linear(in_features=256, out_features=256, bias=True)
+                (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (2): LeakyReLU(negative_slope=0.01)
+                (3): Linear(in_features=256, out_features=256, bias=True)
+                (4): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (5): LeakyReLU(negative_slope=0.01)
+              )
+            )
+            (add_norm): AddNorm(
+              (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+              (dropout): Dropout(p=0, inplace=False)
+            )
+          )
+          (add_norm1): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+          (add_norm2): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+        )
+      )
+    )
+  )
+  (output_layer): ArkBertPretrain()
+)
+2024-10-10 12:24:15,212 [INFO] optimizer: AdamW (
+Parameter Group 0
+    amsgrad: False
+    betas: (0.9, 0.999)
+    capturable: False
+    differentiable: False
+    eps: 1e-08
+    foreach: None
+    fused: None
+    lr: 0.0001
+    maximize: False
+    weight_decay: 0.01
+)
+2024-10-10 12:24:15,212 [INFO] loss_fn: InitialFinalLoss()
+2024-10-10 12:24:15,213 [INFO] num_class: 2
+2024-10-10 12:24:15,213 [INFO] epochs: 20
+2024-10-10 12:24:15,213 [INFO] stop_loss_value: 0.1
+2024-10-10 12:24:15,213 [INFO] stop_min_epoch: 20
+
+2024-10-10 12:24:37,115 [INFO] num_params: 6729504
+2024-10-10 12:24:37,115 [INFO] fit on cpu
+2024-10-10 12:24:37,116 [INFO] model architecture: Ark(
+  (encoder): ArkEncoder(
+    (word_embedding): Embedding(21475, 256)
+    (position_embedding): Embedding(96, 256)
+    (channel_embedding): Embedding(3, 256)
+    (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+    (dropout): Dropout(p=0.5, inplace=False)
+    (fusion_ch): FusionChannel(
+      (lin): MultiLinear(
+        (dense): Sequential(
+          (0): Linear(in_features=256, out_features=256, bias=True)
+          (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (2): Dropout(p=0.5, inplace=False)
+          (3): LeakyReLU(negative_slope=0.01)
+          (4): Linear(in_features=256, out_features=256, bias=True)
+          (5): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (6): Dropout(p=0.5, inplace=False)
+          (7): LeakyReLU(negative_slope=0.01)
+        )
+      )
+    )
+  )
+  (decoder): ArkDecoder(
+    (transformer_layers): TransformerLayers(
+      (transformer_blocks): ModuleList(
+        (0-7): 8 x TransformerLayer(
+          (attention): MultiHeadAttention(
+            (attention): Attention()
+          )
+          (ffn): PositionWiseFFN(
+            (linear): MultiLinear(
+              (dense): Sequential(
+                (0): Linear(in_features=256, out_features=256, bias=True)
+                (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (2): LeakyReLU(negative_slope=0.01)
+                (3): Linear(in_features=256, out_features=256, bias=True)
+                (4): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (5): LeakyReLU(negative_slope=0.01)
+              )
+            )
+            (add_norm): AddNorm(
+              (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+              (dropout): Dropout(p=0, inplace=False)
+            )
+          )
+          (add_norm1): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+          (add_norm2): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+        )
+      )
+    )
+  )
+  (output_layer): ArkBertPretrain()
+)
+2024-10-10 12:24:37,116 [INFO] optimizer: AdamW (
+Parameter Group 0
+    amsgrad: False
+    betas: (0.9, 0.999)
+    capturable: False
+    differentiable: False
+    eps: 1e-08
+    foreach: None
+    fused: None
+    lr: 0.0001
+    maximize: False
+    weight_decay: 0.01
+)
+2024-10-10 12:24:37,116 [INFO] loss_fn: InitialFinalLoss()
+2024-10-10 12:24:37,116 [INFO] num_class: 2
+2024-10-10 12:24:37,116 [INFO] epochs: 20
+2024-10-10 12:24:37,116 [INFO] stop_loss_value: 0.1
+2024-10-10 12:24:37,117 [INFO] stop_min_epoch: 20
+
+2024-10-10 12:24:46,832 [INFO] num_params: 6729504
+2024-10-10 12:24:46,832 [INFO] fit on cpu
+2024-10-10 12:24:46,833 [INFO] model architecture: Ark(
+  (encoder): ArkEncoder(
+    (word_embedding): Embedding(21475, 256)
+    (position_embedding): Embedding(96, 256)
+    (channel_embedding): Embedding(3, 256)
+    (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+    (dropout): Dropout(p=0.5, inplace=False)
+    (fusion_ch): FusionChannel(
+      (lin): MultiLinear(
+        (dense): Sequential(
+          (0): Linear(in_features=256, out_features=256, bias=True)
+          (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (2): Dropout(p=0.5, inplace=False)
+          (3): LeakyReLU(negative_slope=0.01)
+          (4): Linear(in_features=256, out_features=256, bias=True)
+          (5): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (6): Dropout(p=0.5, inplace=False)
+          (7): LeakyReLU(negative_slope=0.01)
+        )
+      )
+    )
+  )
+  (decoder): ArkDecoder(
+    (transformer_layers): TransformerLayers(
+      (transformer_blocks): ModuleList(
+        (0-7): 8 x TransformerLayer(
+          (attention): MultiHeadAttention(
+            (attention): Attention()
+          )
+          (ffn): PositionWiseFFN(
+            (linear): MultiLinear(
+              (dense): Sequential(
+                (0): Linear(in_features=256, out_features=256, bias=True)
+                (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (2): LeakyReLU(negative_slope=0.01)
+                (3): Linear(in_features=256, out_features=256, bias=True)
+                (4): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (5): LeakyReLU(negative_slope=0.01)
+              )
+            )
+            (add_norm): AddNorm(
+              (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+              (dropout): Dropout(p=0, inplace=False)
+            )
+          )
+          (add_norm1): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+          (add_norm2): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+        )
+      )
+    )
+  )
+  (output_layer): ArkBertPretrain()
+)
+2024-10-10 12:24:46,833 [INFO] optimizer: AdamW (
+Parameter Group 0
+    amsgrad: False
+    betas: (0.9, 0.999)
+    capturable: False
+    differentiable: False
+    eps: 1e-08
+    foreach: None
+    fused: None
+    lr: 0.0001
+    maximize: False
+    weight_decay: 0.01
+)
+2024-10-10 12:24:46,833 [INFO] loss_fn: InitialFinalLoss()
+2024-10-10 12:24:46,833 [INFO] num_class: 2
+2024-10-10 12:24:46,833 [INFO] epochs: 20
+2024-10-10 12:24:46,833 [INFO] stop_loss_value: 0.1
+2024-10-10 12:24:46,834 [INFO] stop_min_epoch: 20
+
+2024-10-10 12:25:36,901 [INFO] num_params: 6729504
+2024-10-10 12:25:36,901 [INFO] fit on cpu
+2024-10-10 12:25:36,902 [INFO] model architecture: Ark(
+  (encoder): ArkEncoder(
+    (word_embedding): Embedding(21475, 256)
+    (position_embedding): Embedding(96, 256)
+    (channel_embedding): Embedding(3, 256)
+    (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+    (dropout): Dropout(p=0.5, inplace=False)
+    (fusion_ch): FusionChannel(
+      (lin): MultiLinear(
+        (dense): Sequential(
+          (0): Linear(in_features=256, out_features=256, bias=True)
+          (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (2): Dropout(p=0.5, inplace=False)
+          (3): LeakyReLU(negative_slope=0.01)
+          (4): Linear(in_features=256, out_features=256, bias=True)
+          (5): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (6): Dropout(p=0.5, inplace=False)
+          (7): LeakyReLU(negative_slope=0.01)
+        )
+      )
+    )
+  )
+  (decoder): ArkDecoder(
+    (transformer_layers): TransformerLayers(
+      (transformer_blocks): ModuleList(
+        (0-7): 8 x TransformerLayer(
+          (attention): MultiHeadAttention(
+            (attention): Attention()
+          )
+          (ffn): PositionWiseFFN(
+            (linear): MultiLinear(
+              (dense): Sequential(
+                (0): Linear(in_features=256, out_features=256, bias=True)
+                (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (2): LeakyReLU(negative_slope=0.01)
+                (3): Linear(in_features=256, out_features=256, bias=True)
+                (4): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (5): LeakyReLU(negative_slope=0.01)
+              )
+            )
+            (add_norm): AddNorm(
+              (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+              (dropout): Dropout(p=0, inplace=False)
+            )
+          )
+          (add_norm1): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+          (add_norm2): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+        )
+      )
+    )
+  )
+  (output_layer): ArkBertPretrain()
+)
+2024-10-10 12:25:36,902 [INFO] optimizer: AdamW (
+Parameter Group 0
+    amsgrad: False
+    betas: (0.9, 0.999)
+    capturable: False
+    differentiable: False
+    eps: 1e-08
+    foreach: None
+    fused: None
+    lr: 0.0001
+    maximize: False
+    weight_decay: 0.01
+)
+2024-10-10 12:25:36,902 [INFO] loss_fn: InitialFinalLoss()
+2024-10-10 12:25:36,902 [INFO] num_class: 2
+2024-10-10 12:25:36,902 [INFO] epochs: 20
+2024-10-10 12:25:36,902 [INFO] stop_loss_value: 0.1
+2024-10-10 12:25:36,902 [INFO] stop_min_epoch: 20
+
+2024-10-10 12:26:50,824 [INFO] num_params: 6729504
+2024-10-10 12:26:50,824 [INFO] fit on cpu
+2024-10-10 12:26:50,825 [INFO] model architecture: Ark(
+  (encoder): ArkEncoder(
+    (word_embedding): Embedding(21475, 256)
+    (position_embedding): Embedding(96, 256)
+    (channel_embedding): Embedding(3, 256)
+    (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+    (dropout): Dropout(p=0.5, inplace=False)
+    (fusion_ch): FusionChannel(
+      (lin): MultiLinear(
+        (dense): Sequential(
+          (0): Linear(in_features=256, out_features=256, bias=True)
+          (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (2): Dropout(p=0.5, inplace=False)
+          (3): LeakyReLU(negative_slope=0.01)
+          (4): Linear(in_features=256, out_features=256, bias=True)
+          (5): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (6): Dropout(p=0.5, inplace=False)
+          (7): LeakyReLU(negative_slope=0.01)
+        )
+      )
+    )
+  )
+  (decoder): ArkDecoder(
+    (transformer_layers): TransformerLayers(
+      (transformer_blocks): ModuleList(
+        (0-7): 8 x TransformerLayer(
+          (attention): MultiHeadAttention(
+            (attention): Attention()
+          )
+          (ffn): PositionWiseFFN(
+            (linear): MultiLinear(
+              (dense): Sequential(
+                (0): Linear(in_features=256, out_features=256, bias=True)
+                (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (2): LeakyReLU(negative_slope=0.01)
+                (3): Linear(in_features=256, out_features=256, bias=True)
+                (4): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (5): LeakyReLU(negative_slope=0.01)
+              )
+            )
+            (add_norm): AddNorm(
+              (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+              (dropout): Dropout(p=0, inplace=False)
+            )
+          )
+          (add_norm1): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+          (add_norm2): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+        )
+      )
+    )
+  )
+  (output_layer): ArkBertPretrain()
+)
+2024-10-10 12:26:50,825 [INFO] optimizer: AdamW (
+Parameter Group 0
+    amsgrad: False
+    betas: (0.9, 0.999)
+    capturable: False
+    differentiable: False
+    eps: 1e-08
+    foreach: None
+    fused: None
+    lr: 0.0001
+    maximize: False
+    weight_decay: 0.01
+)
+2024-10-10 12:26:50,826 [INFO] loss_fn: InitialFinalLoss()
+2024-10-10 12:26:50,826 [INFO] num_class: 2
+2024-10-10 12:26:50,826 [INFO] epochs: 20
+2024-10-10 12:26:50,826 [INFO] stop_loss_value: 0.1
+2024-10-10 12:26:50,826 [INFO] stop_min_epoch: 20
+
+2024-10-10 12:28:47,276 [INFO] num_params: 6729504
+2024-10-10 12:28:47,276 [INFO] fit on cpu
+2024-10-10 12:28:47,277 [INFO] model architecture: Ark(
+  (encoder): ArkEncoder(
+    (word_embedding): Embedding(21475, 256)
+    (position_embedding): Embedding(96, 256)
+    (channel_embedding): Embedding(3, 256)
+    (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+    (dropout): Dropout(p=0.5, inplace=False)
+    (fusion_ch): FusionChannel(
+      (lin): MultiLinear(
+        (dense): Sequential(
+          (0): Linear(in_features=256, out_features=256, bias=True)
+          (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (2): Dropout(p=0.5, inplace=False)
+          (3): LeakyReLU(negative_slope=0.01)
+          (4): Linear(in_features=256, out_features=256, bias=True)
+          (5): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (6): Dropout(p=0.5, inplace=False)
+          (7): LeakyReLU(negative_slope=0.01)
+        )
+      )
+    )
+  )
+  (decoder): ArkDecoder(
+    (transformer_layers): TransformerLayers(
+      (transformer_blocks): ModuleList(
+        (0-7): 8 x TransformerLayer(
+          (attention): MultiHeadAttention(
+            (attention): Attention()
+          )
+          (ffn): PositionWiseFFN(
+            (linear): MultiLinear(
+              (dense): Sequential(
+                (0): Linear(in_features=256, out_features=256, bias=True)
+                (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (2): LeakyReLU(negative_slope=0.01)
+                (3): Linear(in_features=256, out_features=256, bias=True)
+                (4): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (5): LeakyReLU(negative_slope=0.01)
+              )
+            )
+            (add_norm): AddNorm(
+              (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+              (dropout): Dropout(p=0, inplace=False)
+            )
+          )
+          (add_norm1): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+          (add_norm2): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+        )
+      )
+    )
+  )
+  (output_layer): ArkBertPretrain()
+)
+2024-10-10 12:28:47,277 [INFO] optimizer: AdamW (
+Parameter Group 0
+    amsgrad: False
+    betas: (0.9, 0.999)
+    capturable: False
+    differentiable: False
+    eps: 1e-08
+    foreach: None
+    fused: None
+    lr: 0.0001
+    maximize: False
+    weight_decay: 0.01
+)
+2024-10-10 12:28:47,277 [INFO] loss_fn: InitialFinalLoss()
+2024-10-10 12:28:47,277 [INFO] num_class: 2
+2024-10-10 12:28:47,277 [INFO] epochs: 20
+2024-10-10 12:28:47,277 [INFO] stop_loss_value: 0.1
+2024-10-10 12:28:47,277 [INFO] stop_min_epoch: 20
+
+2024-10-10 12:31:05,068 [INFO] num_params: 6729504
+2024-10-10 12:31:05,068 [INFO] fit on cpu
+2024-10-10 12:31:05,069 [INFO] model architecture: Ark(
+  (encoder): ArkEncoder(
+    (word_embedding): Embedding(21475, 256)
+    (position_embedding): Embedding(96, 256)
+    (channel_embedding): Embedding(3, 256)
+    (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+    (dropout): Dropout(p=0.5, inplace=False)
+    (fusion_ch): FusionChannel(
+      (lin): MultiLinear(
+        (dense): Sequential(
+          (0): Linear(in_features=256, out_features=256, bias=True)
+          (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (2): Dropout(p=0.5, inplace=False)
+          (3): LeakyReLU(negative_slope=0.01)
+          (4): Linear(in_features=256, out_features=256, bias=True)
+          (5): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (6): Dropout(p=0.5, inplace=False)
+          (7): LeakyReLU(negative_slope=0.01)
+        )
+      )
+    )
+  )
+  (decoder): ArkDecoder(
+    (transformer_layers): TransformerLayers(
+      (transformer_blocks): ModuleList(
+        (0-7): 8 x TransformerLayer(
+          (attention): MultiHeadAttention(
+            (attention): Attention()
+          )
+          (ffn): PositionWiseFFN(
+            (linear): MultiLinear(
+              (dense): Sequential(
+                (0): Linear(in_features=256, out_features=256, bias=True)
+                (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (2): LeakyReLU(negative_slope=0.01)
+                (3): Linear(in_features=256, out_features=256, bias=True)
+                (4): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (5): LeakyReLU(negative_slope=0.01)
+              )
+            )
+            (add_norm): AddNorm(
+              (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+              (dropout): Dropout(p=0, inplace=False)
+            )
+          )
+          (add_norm1): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+          (add_norm2): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+        )
+      )
+    )
+  )
+  (output_layer): ArkBertPretrain()
+)
+2024-10-10 12:31:05,069 [INFO] optimizer: AdamW (
+Parameter Group 0
+    amsgrad: False
+    betas: (0.9, 0.999)
+    capturable: False
+    differentiable: False
+    eps: 1e-08
+    foreach: None
+    fused: None
+    lr: 0.0001
+    maximize: False
+    weight_decay: 0.01
+)
+2024-10-10 12:31:05,069 [INFO] loss_fn: InitialFinalLoss()
+2024-10-10 12:31:05,069 [INFO] num_class: 2
+2024-10-10 12:31:05,069 [INFO] epochs: 20
+2024-10-10 12:31:05,069 [INFO] stop_loss_value: 0.1
+2024-10-10 12:31:05,069 [INFO] stop_min_epoch: 20
+
+2024-10-10 12:31:14,118 [INFO] num_params: 6729504
+2024-10-10 12:31:14,119 [INFO] fit on cpu
+2024-10-10 12:31:14,119 [INFO] model architecture: Ark(
+  (encoder): ArkEncoder(
+    (word_embedding): Embedding(21475, 256)
+    (position_embedding): Embedding(96, 256)
+    (channel_embedding): Embedding(3, 256)
+    (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+    (dropout): Dropout(p=0.5, inplace=False)
+    (fusion_ch): FusionChannel(
+      (lin): MultiLinear(
+        (dense): Sequential(
+          (0): Linear(in_features=256, out_features=256, bias=True)
+          (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (2): Dropout(p=0.5, inplace=False)
+          (3): LeakyReLU(negative_slope=0.01)
+          (4): Linear(in_features=256, out_features=256, bias=True)
+          (5): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (6): Dropout(p=0.5, inplace=False)
+          (7): LeakyReLU(negative_slope=0.01)
+        )
+      )
+    )
+  )
+  (decoder): ArkDecoder(
+    (transformer_layers): TransformerLayers(
+      (transformer_blocks): ModuleList(
+        (0-7): 8 x TransformerLayer(
+          (attention): MultiHeadAttention(
+            (attention): Attention()
+          )
+          (ffn): PositionWiseFFN(
+            (linear): MultiLinear(
+              (dense): Sequential(
+                (0): Linear(in_features=256, out_features=256, bias=True)
+                (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (2): LeakyReLU(negative_slope=0.01)
+                (3): Linear(in_features=256, out_features=256, bias=True)
+                (4): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (5): LeakyReLU(negative_slope=0.01)
+              )
+            )
+            (add_norm): AddNorm(
+              (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+              (dropout): Dropout(p=0, inplace=False)
+            )
+          )
+          (add_norm1): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+          (add_norm2): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+        )
+      )
+    )
+  )
+  (output_layer): ArkBertPretrain()
+)
+2024-10-10 12:31:14,120 [INFO] optimizer: AdamW (
+Parameter Group 0
+    amsgrad: False
+    betas: (0.9, 0.999)
+    capturable: False
+    differentiable: False
+    eps: 1e-08
+    foreach: None
+    fused: None
+    lr: 0.0001
+    maximize: False
+    weight_decay: 0.01
+)
+2024-10-10 12:31:14,120 [INFO] loss_fn: InitialFinalLoss()
+2024-10-10 12:31:14,120 [INFO] num_class: 2
+2024-10-10 12:31:14,120 [INFO] epochs: 20
+2024-10-10 12:31:14,120 [INFO] stop_loss_value: 0.1
+2024-10-10 12:31:14,120 [INFO] stop_min_epoch: 20
+
+2024-10-10 12:32:01,260 [INFO] num_params: 6729504
+2024-10-10 12:32:01,260 [INFO] fit on cpu
+2024-10-10 12:32:01,261 [INFO] model architecture: Ark(
+  (encoder): ArkEncoder(
+    (word_embedding): Embedding(21475, 256)
+    (position_embedding): Embedding(96, 256)
+    (channel_embedding): Embedding(3, 256)
+    (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+    (dropout): Dropout(p=0.5, inplace=False)
+    (fusion_ch): FusionChannel(
+      (lin): MultiLinear(
+        (dense): Sequential(
+          (0): Linear(in_features=256, out_features=256, bias=True)
+          (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (2): Dropout(p=0.5, inplace=False)
+          (3): LeakyReLU(negative_slope=0.01)
+          (4): Linear(in_features=256, out_features=256, bias=True)
+          (5): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (6): Dropout(p=0.5, inplace=False)
+          (7): LeakyReLU(negative_slope=0.01)
+        )
+      )
+    )
+  )
+  (decoder): ArkDecoder(
+    (transformer_layers): TransformerLayers(
+      (transformer_blocks): ModuleList(
+        (0-7): 8 x TransformerLayer(
+          (attention): MultiHeadAttention(
+            (attention): Attention()
+          )
+          (ffn): PositionWiseFFN(
+            (linear): MultiLinear(
+              (dense): Sequential(
+                (0): Linear(in_features=256, out_features=256, bias=True)
+                (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (2): LeakyReLU(negative_slope=0.01)
+                (3): Linear(in_features=256, out_features=256, bias=True)
+                (4): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (5): LeakyReLU(negative_slope=0.01)
+              )
+            )
+            (add_norm): AddNorm(
+              (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+              (dropout): Dropout(p=0, inplace=False)
+            )
+          )
+          (add_norm1): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+          (add_norm2): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+        )
+      )
+    )
+  )
+  (output_layer): ArkBertPretrain()
+)
+2024-10-10 12:32:01,261 [INFO] optimizer: AdamW (
+Parameter Group 0
+    amsgrad: False
+    betas: (0.9, 0.999)
+    capturable: False
+    differentiable: False
+    eps: 1e-08
+    foreach: None
+    fused: None
+    lr: 0.0001
+    maximize: False
+    weight_decay: 0.01
+)
+2024-10-10 12:32:01,261 [INFO] loss_fn: InitialFinalLoss()
+2024-10-10 12:32:01,261 [INFO] num_class: 2
+2024-10-10 12:32:01,261 [INFO] epochs: 20
+2024-10-10 12:32:01,261 [INFO] stop_loss_value: 0.1
+2024-10-10 12:32:01,261 [INFO] stop_min_epoch: 20
+
+2024-10-10 12:36:34,855 [INFO] num_params: 6729504
+2024-10-10 12:36:34,856 [INFO] fit on cpu
+2024-10-10 12:36:34,856 [INFO] model architecture: Ark(
+  (encoder): ArkEncoder(
+    (word_embedding): Embedding(21475, 256)
+    (position_embedding): Embedding(96, 256)
+    (channel_embedding): Embedding(3, 256)
+    (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+    (dropout): Dropout(p=0.5, inplace=False)
+    (fusion_ch): FusionChannel(
+      (lin): MultiLinear(
+        (dense): Sequential(
+          (0): Linear(in_features=256, out_features=256, bias=True)
+          (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (2): Dropout(p=0.5, inplace=False)
+          (3): LeakyReLU(negative_slope=0.01)
+          (4): Linear(in_features=256, out_features=256, bias=True)
+          (5): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (6): Dropout(p=0.5, inplace=False)
+          (7): LeakyReLU(negative_slope=0.01)
+        )
+      )
+    )
+  )
+  (decoder): ArkDecoder(
+    (transformer_layers): TransformerLayers(
+      (transformer_blocks): ModuleList(
+        (0-7): 8 x TransformerLayer(
+          (attention): MultiHeadAttention(
+            (attention): Attention()
+          )
+          (ffn): PositionWiseFFN(
+            (linear): MultiLinear(
+              (dense): Sequential(
+                (0): Linear(in_features=256, out_features=256, bias=True)
+                (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (2): LeakyReLU(negative_slope=0.01)
+                (3): Linear(in_features=256, out_features=256, bias=True)
+                (4): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (5): LeakyReLU(negative_slope=0.01)
+              )
+            )
+            (add_norm): AddNorm(
+              (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+              (dropout): Dropout(p=0, inplace=False)
+            )
+          )
+          (add_norm1): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+          (add_norm2): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+        )
+      )
+    )
+  )
+  (output_layer): ArkBertPretrain()
+)
+2024-10-10 12:36:34,856 [INFO] optimizer: AdamW (
+Parameter Group 0
+    amsgrad: False
+    betas: (0.9, 0.999)
+    capturable: False
+    differentiable: False
+    eps: 1e-08
+    foreach: None
+    fused: None
+    lr: 0.0001
+    maximize: False
+    weight_decay: 0.01
+)
+2024-10-10 12:36:34,857 [INFO] loss_fn: InitialFinalLoss()
+2024-10-10 12:36:34,857 [INFO] num_class: 2
+2024-10-10 12:36:34,857 [INFO] epochs: 20
+2024-10-10 12:36:34,857 [INFO] stop_loss_value: 0.1
+2024-10-10 12:36:34,857 [INFO] stop_min_epoch: 20
+
+2024-10-10 12:37:41,105 [INFO] num_params: 6729504
+2024-10-10 12:37:41,105 [INFO] fit on cpu
+2024-10-10 12:37:41,106 [INFO] model architecture: Ark(
+  (encoder): ArkEncoder(
+    (word_embedding): Embedding(21475, 256)
+    (position_embedding): Embedding(96, 256)
+    (channel_embedding): Embedding(3, 256)
+    (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+    (dropout): Dropout(p=0.5, inplace=False)
+    (fusion_ch): FusionChannel(
+      (lin): MultiLinear(
+        (dense): Sequential(
+          (0): Linear(in_features=256, out_features=256, bias=True)
+          (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (2): Dropout(p=0.5, inplace=False)
+          (3): LeakyReLU(negative_slope=0.01)
+          (4): Linear(in_features=256, out_features=256, bias=True)
+          (5): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (6): Dropout(p=0.5, inplace=False)
+          (7): LeakyReLU(negative_slope=0.01)
+        )
+      )
+    )
+  )
+  (decoder): ArkDecoder(
+    (transformer_layers): TransformerLayers(
+      (transformer_blocks): ModuleList(
+        (0-7): 8 x TransformerLayer(
+          (attention): MultiHeadAttention(
+            (attention): Attention()
+          )
+          (ffn): PositionWiseFFN(
+            (linear): MultiLinear(
+              (dense): Sequential(
+                (0): Linear(in_features=256, out_features=256, bias=True)
+                (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (2): LeakyReLU(negative_slope=0.01)
+                (3): Linear(in_features=256, out_features=256, bias=True)
+                (4): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (5): LeakyReLU(negative_slope=0.01)
+              )
+            )
+            (add_norm): AddNorm(
+              (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+              (dropout): Dropout(p=0, inplace=False)
+            )
+          )
+          (add_norm1): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+          (add_norm2): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+        )
+      )
+    )
+  )
+  (output_layer): ArkBertPretrain()
+)
+2024-10-10 12:37:41,106 [INFO] optimizer: AdamW (
+Parameter Group 0
+    amsgrad: False
+    betas: (0.9, 0.999)
+    capturable: False
+    differentiable: False
+    eps: 1e-08
+    foreach: None
+    fused: None
+    lr: 0.0001
+    maximize: False
+    weight_decay: 0.01
+)
+2024-10-10 12:37:41,106 [INFO] loss_fn: InitialFinalLoss()
+2024-10-10 12:37:41,106 [INFO] num_class: 2
+2024-10-10 12:37:41,106 [INFO] epochs: 20
+2024-10-10 12:37:41,106 [INFO] stop_loss_value: 0.1
+2024-10-10 12:37:41,106 [INFO] stop_min_epoch: 20
+
+2024-10-10 12:37:56,371 [INFO] num_params: 6729504
+2024-10-10 12:37:56,371 [INFO] fit on cpu
+2024-10-10 12:37:56,372 [INFO] model architecture: Ark(
+  (encoder): ArkEncoder(
+    (word_embedding): Embedding(21475, 256)
+    (position_embedding): Embedding(96, 256)
+    (channel_embedding): Embedding(3, 256)
+    (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+    (dropout): Dropout(p=0.5, inplace=False)
+    (fusion_ch): FusionChannel(
+      (lin): MultiLinear(
+        (dense): Sequential(
+          (0): Linear(in_features=256, out_features=256, bias=True)
+          (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (2): Dropout(p=0.5, inplace=False)
+          (3): LeakyReLU(negative_slope=0.01)
+          (4): Linear(in_features=256, out_features=256, bias=True)
+          (5): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (6): Dropout(p=0.5, inplace=False)
+          (7): LeakyReLU(negative_slope=0.01)
+        )
+      )
+    )
+  )
+  (decoder): ArkDecoder(
+    (transformer_layers): TransformerLayers(
+      (transformer_blocks): ModuleList(
+        (0-7): 8 x TransformerLayer(
+          (attention): MultiHeadAttention(
+            (attention): Attention()
+          )
+          (ffn): PositionWiseFFN(
+            (linear): MultiLinear(
+              (dense): Sequential(
+                (0): Linear(in_features=256, out_features=256, bias=True)
+                (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (2): LeakyReLU(negative_slope=0.01)
+                (3): Linear(in_features=256, out_features=256, bias=True)
+                (4): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (5): LeakyReLU(negative_slope=0.01)
+              )
+            )
+            (add_norm): AddNorm(
+              (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+              (dropout): Dropout(p=0, inplace=False)
+            )
+          )
+          (add_norm1): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+          (add_norm2): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+        )
+      )
+    )
+  )
+  (output_layer): ArkBertPretrain()
+)
+2024-10-10 12:37:56,372 [INFO] optimizer: AdamW (
+Parameter Group 0
+    amsgrad: False
+    betas: (0.9, 0.999)
+    capturable: False
+    differentiable: False
+    eps: 1e-08
+    foreach: None
+    fused: None
+    lr: 0.0001
+    maximize: False
+    weight_decay: 0.01
+)
+2024-10-10 12:37:56,372 [INFO] loss_fn: InitialFinalLoss()
+2024-10-10 12:37:56,372 [INFO] num_class: 2
+2024-10-10 12:37:56,372 [INFO] epochs: 20
+2024-10-10 12:37:56,372 [INFO] stop_loss_value: 0.1
+2024-10-10 12:37:56,372 [INFO] stop_min_epoch: 20
+
+2024-10-10 12:38:05,457 [INFO] num_params: 6729504
+2024-10-10 12:38:05,458 [INFO] fit on cpu
+2024-10-10 12:38:05,458 [INFO] model architecture: Ark(
+  (encoder): ArkEncoder(
+    (word_embedding): Embedding(21475, 256)
+    (position_embedding): Embedding(96, 256)
+    (channel_embedding): Embedding(3, 256)
+    (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+    (dropout): Dropout(p=0.5, inplace=False)
+    (fusion_ch): FusionChannel(
+      (lin): MultiLinear(
+        (dense): Sequential(
+          (0): Linear(in_features=256, out_features=256, bias=True)
+          (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (2): Dropout(p=0.5, inplace=False)
+          (3): LeakyReLU(negative_slope=0.01)
+          (4): Linear(in_features=256, out_features=256, bias=True)
+          (5): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (6): Dropout(p=0.5, inplace=False)
+          (7): LeakyReLU(negative_slope=0.01)
+        )
+      )
+    )
+  )
+  (decoder): ArkDecoder(
+    (transformer_layers): TransformerLayers(
+      (transformer_blocks): ModuleList(
+        (0-7): 8 x TransformerLayer(
+          (attention): MultiHeadAttention(
+            (attention): Attention()
+          )
+          (ffn): PositionWiseFFN(
+            (linear): MultiLinear(
+              (dense): Sequential(
+                (0): Linear(in_features=256, out_features=256, bias=True)
+                (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (2): LeakyReLU(negative_slope=0.01)
+                (3): Linear(in_features=256, out_features=256, bias=True)
+                (4): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (5): LeakyReLU(negative_slope=0.01)
+              )
+            )
+            (add_norm): AddNorm(
+              (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+              (dropout): Dropout(p=0, inplace=False)
+            )
+          )
+          (add_norm1): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+          (add_norm2): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+        )
+      )
+    )
+  )
+  (output_layer): ArkBertPretrain()
+)
+2024-10-10 12:38:05,459 [INFO] optimizer: AdamW (
+Parameter Group 0
+    amsgrad: False
+    betas: (0.9, 0.999)
+    capturable: False
+    differentiable: False
+    eps: 1e-08
+    foreach: None
+    fused: None
+    lr: 0.0001
+    maximize: False
+    weight_decay: 0.01
+)
+2024-10-10 12:38:05,459 [INFO] loss_fn: InitialFinalLoss()
+2024-10-10 12:38:05,459 [INFO] num_class: 2
+2024-10-10 12:38:05,459 [INFO] epochs: 20
+2024-10-10 12:38:05,459 [INFO] stop_loss_value: 0.1
+2024-10-10 12:38:05,459 [INFO] stop_min_epoch: 20
+
+2024-10-10 12:38:14,419 [INFO] num_params: 6729504
+2024-10-10 12:38:14,419 [INFO] fit on cpu
+2024-10-10 12:38:14,420 [INFO] model architecture: Ark(
+  (encoder): ArkEncoder(
+    (word_embedding): Embedding(21475, 256)
+    (position_embedding): Embedding(96, 256)
+    (channel_embedding): Embedding(3, 256)
+    (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+    (dropout): Dropout(p=0.5, inplace=False)
+    (fusion_ch): FusionChannel(
+      (lin): MultiLinear(
+        (dense): Sequential(
+          (0): Linear(in_features=256, out_features=256, bias=True)
+          (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (2): Dropout(p=0.5, inplace=False)
+          (3): LeakyReLU(negative_slope=0.01)
+          (4): Linear(in_features=256, out_features=256, bias=True)
+          (5): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (6): Dropout(p=0.5, inplace=False)
+          (7): LeakyReLU(negative_slope=0.01)
+        )
+      )
+    )
+  )
+  (decoder): ArkDecoder(
+    (transformer_layers): TransformerLayers(
+      (transformer_blocks): ModuleList(
+        (0-7): 8 x TransformerLayer(
+          (attention): MultiHeadAttention(
+            (attention): Attention()
+          )
+          (ffn): PositionWiseFFN(
+            (linear): MultiLinear(
+              (dense): Sequential(
+                (0): Linear(in_features=256, out_features=256, bias=True)
+                (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (2): LeakyReLU(negative_slope=0.01)
+                (3): Linear(in_features=256, out_features=256, bias=True)
+                (4): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (5): LeakyReLU(negative_slope=0.01)
+              )
+            )
+            (add_norm): AddNorm(
+              (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+              (dropout): Dropout(p=0, inplace=False)
+            )
+          )
+          (add_norm1): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+          (add_norm2): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+        )
+      )
+    )
+  )
+  (output_layer): ArkBertPretrain()
+)
+2024-10-10 12:38:14,420 [INFO] optimizer: AdamW (
+Parameter Group 0
+    amsgrad: False
+    betas: (0.9, 0.999)
+    capturable: False
+    differentiable: False
+    eps: 1e-08
+    foreach: None
+    fused: None
+    lr: 0.0001
+    maximize: False
+    weight_decay: 0.01
+)
+2024-10-10 12:38:14,420 [INFO] loss_fn: InitialFinalLoss()
+2024-10-10 12:38:14,420 [INFO] num_class: 2
+2024-10-10 12:38:14,421 [INFO] epochs: 20
+2024-10-10 12:38:14,421 [INFO] stop_loss_value: 0.1
+2024-10-10 12:38:14,421 [INFO] stop_min_epoch: 20
+
+2024-10-10 12:40:07,530 [INFO] num_params: 6729504
+2024-10-10 12:40:07,530 [INFO] fit on cpu
+2024-10-10 12:40:07,531 [INFO] model architecture: Ark(
+  (encoder): ArkEncoder(
+    (word_embedding): Embedding(21475, 256)
+    (position_embedding): Embedding(96, 256)
+    (channel_embedding): Embedding(3, 256)
+    (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+    (dropout): Dropout(p=0.5, inplace=False)
+    (fusion_ch): FusionChannel(
+      (lin): MultiLinear(
+        (dense): Sequential(
+          (0): Linear(in_features=256, out_features=256, bias=True)
+          (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (2): Dropout(p=0.5, inplace=False)
+          (3): LeakyReLU(negative_slope=0.01)
+          (4): Linear(in_features=256, out_features=256, bias=True)
+          (5): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (6): Dropout(p=0.5, inplace=False)
+          (7): LeakyReLU(negative_slope=0.01)
+        )
+      )
+    )
+  )
+  (decoder): ArkDecoder(
+    (transformer_layers): TransformerLayers(
+      (transformer_blocks): ModuleList(
+        (0-7): 8 x TransformerLayer(
+          (attention): MultiHeadAttention(
+            (attention): Attention()
+          )
+          (ffn): PositionWiseFFN(
+            (linear): MultiLinear(
+              (dense): Sequential(
+                (0): Linear(in_features=256, out_features=256, bias=True)
+                (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (2): LeakyReLU(negative_slope=0.01)
+                (3): Linear(in_features=256, out_features=256, bias=True)
+                (4): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (5): LeakyReLU(negative_slope=0.01)
+              )
+            )
+            (add_norm): AddNorm(
+              (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+              (dropout): Dropout(p=0, inplace=False)
+            )
+          )
+          (add_norm1): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+          (add_norm2): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+        )
+      )
+    )
+  )
+  (output_layer): ArkBertPretrain()
+)
+2024-10-10 12:40:07,531 [INFO] optimizer: AdamW (
+Parameter Group 0
+    amsgrad: False
+    betas: (0.9, 0.999)
+    capturable: False
+    differentiable: False
+    eps: 1e-08
+    foreach: None
+    fused: None
+    lr: 0.0001
+    maximize: False
+    weight_decay: 0.01
+)
+2024-10-10 12:40:07,531 [INFO] loss_fn: InitialFinalLoss()
+2024-10-10 12:40:07,531 [INFO] num_class: 2
+2024-10-10 12:40:07,531 [INFO] epochs: 20
+2024-10-10 12:40:07,531 [INFO] stop_loss_value: 0.1
+2024-10-10 12:40:07,531 [INFO] stop_min_epoch: 20
+
+2024-10-10 12:49:37,965 [INFO] num_params: 6731040
+2024-10-10 12:49:37,965 [INFO] fit on cpu
+2024-10-10 12:49:37,966 [INFO] model architecture: Ark(
+  (encoder): ArkEncoder(
+    (word_embedding): Embedding(21481, 256)
+    (position_embedding): Embedding(96, 256)
+    (channel_embedding): Embedding(3, 256)
+    (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+    (dropout): Dropout(p=0.5, inplace=False)
+    (fusion_ch): FusionChannel(
+      (lin): MultiLinear(
+        (dense): Sequential(
+          (0): Linear(in_features=256, out_features=256, bias=True)
+          (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (2): Dropout(p=0.5, inplace=False)
+          (3): LeakyReLU(negative_slope=0.01)
+          (4): Linear(in_features=256, out_features=256, bias=True)
+          (5): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (6): Dropout(p=0.5, inplace=False)
+          (7): LeakyReLU(negative_slope=0.01)
+        )
+      )
+    )
+  )
+  (decoder): ArkDecoder(
+    (transformer_layers): TransformerLayers(
+      (transformer_blocks): ModuleList(
+        (0-7): 8 x TransformerLayer(
+          (attention): MultiHeadAttention(
+            (attention): Attention()
+          )
+          (ffn): PositionWiseFFN(
+            (linear): MultiLinear(
+              (dense): Sequential(
+                (0): Linear(in_features=256, out_features=256, bias=True)
+                (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (2): LeakyReLU(negative_slope=0.01)
+                (3): Linear(in_features=256, out_features=256, bias=True)
+                (4): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (5): LeakyReLU(negative_slope=0.01)
+              )
+            )
+            (add_norm): AddNorm(
+              (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+              (dropout): Dropout(p=0, inplace=False)
+            )
+          )
+          (add_norm1): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+          (add_norm2): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+        )
+      )
+    )
+  )
+  (output_layer): ArkBertPretrain()
+)
+2024-10-10 12:49:37,966 [INFO] optimizer: AdamW (
+Parameter Group 0
+    amsgrad: False
+    betas: (0.9, 0.999)
+    capturable: False
+    differentiable: False
+    eps: 1e-08
+    foreach: None
+    fused: None
+    lr: 0.0001
+    maximize: False
+    weight_decay: 0.01
+)
+2024-10-10 12:49:37,967 [INFO] loss_fn: InitialFinalLoss()
+2024-10-10 12:49:37,967 [INFO] num_class: 2
+2024-10-10 12:49:37,967 [INFO] epochs: 20
+2024-10-10 12:49:37,967 [INFO] stop_loss_value: 0.1
+2024-10-10 12:49:37,967 [INFO] stop_min_epoch: 20
+
+2024-10-10 12:55:21,582 [INFO] num_params: 6731040
+2024-10-10 12:55:21,583 [INFO] fit on cpu
+2024-10-10 12:55:21,583 [INFO] model architecture: Ark(
+  (encoder): ArkEncoder(
+    (word_embedding): Embedding(21481, 256)
+    (position_embedding): Embedding(96, 256)
+    (channel_embedding): Embedding(3, 256)
+    (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+    (dropout): Dropout(p=0.5, inplace=False)
+    (fusion_ch): FusionChannel(
+      (lin): MultiLinear(
+        (dense): Sequential(
+          (0): Linear(in_features=256, out_features=256, bias=True)
+          (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (2): Dropout(p=0.5, inplace=False)
+          (3): LeakyReLU(negative_slope=0.01)
+          (4): Linear(in_features=256, out_features=256, bias=True)
+          (5): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (6): Dropout(p=0.5, inplace=False)
+          (7): LeakyReLU(negative_slope=0.01)
+        )
+      )
+    )
+  )
+  (decoder): ArkDecoder(
+    (transformer_layers): TransformerLayers(
+      (transformer_blocks): ModuleList(
+        (0-7): 8 x TransformerLayer(
+          (attention): MultiHeadAttention(
+            (attention): Attention()
+          )
+          (ffn): PositionWiseFFN(
+            (linear): MultiLinear(
+              (dense): Sequential(
+                (0): Linear(in_features=256, out_features=256, bias=True)
+                (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (2): LeakyReLU(negative_slope=0.01)
+                (3): Linear(in_features=256, out_features=256, bias=True)
+                (4): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (5): LeakyReLU(negative_slope=0.01)
+              )
+            )
+            (add_norm): AddNorm(
+              (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+              (dropout): Dropout(p=0, inplace=False)
+            )
+          )
+          (add_norm1): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+          (add_norm2): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+        )
+      )
+    )
+  )
+  (output_layer): ArkBertPretrain()
+)
+2024-10-10 12:55:21,583 [INFO] optimizer: AdamW (
+Parameter Group 0
+    amsgrad: False
+    betas: (0.9, 0.999)
+    capturable: False
+    differentiable: False
+    eps: 1e-08
+    foreach: None
+    fused: None
+    lr: 0.0001
+    maximize: False
+    weight_decay: 0.01
+)
+2024-10-10 12:55:21,584 [INFO] loss_fn: InitialFinalLoss()
+2024-10-10 12:55:21,584 [INFO] num_class: 2
+2024-10-10 12:55:21,584 [INFO] epochs: 20
+2024-10-10 12:55:21,584 [INFO] stop_loss_value: 0.1
+2024-10-10 12:55:21,584 [INFO] stop_min_epoch: 20
+
+2024-10-10 12:56:56,419 [INFO] num_params: 6731040
+2024-10-10 12:56:56,419 [INFO] fit on cpu
+2024-10-10 12:56:56,420 [INFO] model architecture: Ark(
+  (encoder): ArkEncoder(
+    (word_embedding): Embedding(21481, 256)
+    (position_embedding): Embedding(96, 256)
+    (channel_embedding): Embedding(3, 256)
+    (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+    (dropout): Dropout(p=0.5, inplace=False)
+    (fusion_ch): FusionChannel(
+      (lin): MultiLinear(
+        (dense): Sequential(
+          (0): Linear(in_features=256, out_features=256, bias=True)
+          (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (2): Dropout(p=0.5, inplace=False)
+          (3): LeakyReLU(negative_slope=0.01)
+          (4): Linear(in_features=256, out_features=256, bias=True)
+          (5): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+          (6): Dropout(p=0.5, inplace=False)
+          (7): LeakyReLU(negative_slope=0.01)
+        )
+      )
+    )
+  )
+  (decoder): ArkDecoder(
+    (transformer_layers): TransformerLayers(
+      (transformer_blocks): ModuleList(
+        (0-7): 8 x TransformerLayer(
+          (attention): MultiHeadAttention(
+            (attention): Attention()
+          )
+          (ffn): PositionWiseFFN(
+            (linear): MultiLinear(
+              (dense): Sequential(
+                (0): Linear(in_features=256, out_features=256, bias=True)
+                (1): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (2): LeakyReLU(negative_slope=0.01)
+                (3): Linear(in_features=256, out_features=256, bias=True)
+                (4): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+                (5): LeakyReLU(negative_slope=0.01)
+              )
+            )
+            (add_norm): AddNorm(
+              (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+              (dropout): Dropout(p=0, inplace=False)
+            )
+          )
+          (add_norm1): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+          (add_norm2): AddNorm(
+            (ln): LayerNorm((256,), eps=1e-05, elementwise_affine=True)
+            (dropout): Dropout(p=0.5, inplace=False)
+          )
+        )
+      )
+    )
+  )
+  (output_layer): ArkBertPretrain()
+)
+2024-10-10 12:56:56,420 [INFO] optimizer: AdamW (
+Parameter Group 0
+    amsgrad: False
+    betas: (0.9, 0.999)
+    capturable: False
+    differentiable: False
+    eps: 1e-08
+    foreach: None
+    fused: None
+    lr: 0.0001
+    maximize: False
+    weight_decay: 0.01
+)
+2024-10-10 12:56:56,420 [INFO] loss_fn: InitialFinalLoss()
+2024-10-10 12:56:56,420 [INFO] num_class: 2
+2024-10-10 12:56:56,420 [INFO] epochs: 20
+2024-10-10 12:56:56,420 [INFO] stop_loss_value: 0.1
+2024-10-10 12:56:56,420 [INFO] stop_min_epoch: 20
+

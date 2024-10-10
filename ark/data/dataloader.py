@@ -74,7 +74,7 @@ class ArkDataSet(Dataset):
             }
         """
         # 文本
-        text = self.df.iloc[index]['TEXT']
+        text = self.df.iloc[index]['text']
         # 声母
         initial = translate_piny(text, Style.INITIALS)
         # 韵母

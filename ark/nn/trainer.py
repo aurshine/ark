@@ -200,8 +200,7 @@ class Trainer(nn.Module):
             for key, value in data.items():
                 if key == 'label':
                     y = value
-
-                if 'tokens' in key:
+                elif 'tokens' in key:
                     multi_channel_tokens.append(value['input_ids'])
                     multi_channel_masks = value['attention_mask']
                 else:

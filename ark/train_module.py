@@ -29,7 +29,7 @@ DROPOUT = 0.5                                          # 随机失活率
 NUM_CLASS = 2                                          # 分类数
 #################################################################################
 # 训练参数
-BATCH_SIZE = 320                                        # 批量大小
+BATCH_SIZE = 128                                        # 批量大小
 
 TRAIN_EPOCHS = 200                                      # 最大训练轮数
 
@@ -114,6 +114,7 @@ def pre_train(device=None):
                                      tokenizer=TOKENIZER,
                                      num_pred_position=5,
                                      max_length=STEPS,
+                                     batch_size=BATCH_SIZE,
                                      device=device)
 
     ark = Ark(tokenizer=TOKENIZER,

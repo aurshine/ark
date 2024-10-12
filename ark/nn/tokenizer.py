@@ -1,24 +1,36 @@
 import os
 import json
-from typing import List, Dict, Union
+from typing import List, Dict, Optional, Union
 
 import torch
 
 
 class Tokenizer:
-    def __init__(self, tokenizer_path: str, max_length):
+    cls_token: str = '[CLS]'
+    sep_token: str = '[SEP]'
+    pad_token: str = '[PAD]'
+    unk_token: str = '[UNK]'
+    mask_token: str = '[MASK]'
+
+    def __init__(self, tokenizer_path: Optional[str], max_length):
         """
-        tokenizer_path: tokenizer的保存文件夹路径
+        tokenizer_path: tokenizer的保存文件夹路径, 如果为None, 则创建一个空的tokenizer
 
         tokenizer_path 下应该包含以下文件:
 
         - vocab.json: 词表文件, key为词元, value为词元id
         - special_tokens.json: 特殊词元文件, key为特殊词元, value为词元id
         """
-        with open(os.path.join(tokenizer_path, 'normal_tokens.json'), 'r', encoding='utf-8') as f:
-            self._normal_tokens = json.load(f)
-        with open(os.path.join(tokenizer_path, 'special_tokens.json'), 'r', encoding='utf-8') as f:
-            self._special_tokens = json.load(f)
+        if tokenizer_path is not None:
+            with open(os.path.join(tokenizer_path, 'normal_tokens.json'), 'r', encoding='utf-8') as f:
+                self._normal_tokens = json.load(f)
+            with open(os.path.join(tokenizer_path, 'special_tokens.json'), 'r', encoding='utf-8') as f:
+                self._special_tokens = json.load(f)
+        else:
+            self._normal_tokens = {}
+            for token in self.__dict__.keys():
+                if token.endswith('_token'):
+                    self._special_tokens[token] = len(self._special_tokens)
 
         self.max_length = max_length
         self.all_tokens = ['' for _ in range(len(self._normal_tokens) + len(self._special_tokens))]
@@ -26,12 +38,6 @@ class Tokenizer:
             self.all_tokens[id_] = token
         for token, id_ in self._special_tokens.items():
             self.all_tokens[id_] = token
-
-        self.cls_token = '[CLS]'
-        self.sep_token = '[SEP]'
-        self.pad_token = '[PAD]'
-        self.unk_token = '[UNK]'
-        self.mask_token = '[MASK]'
 
     def __len__(self):
         return len(self.all_tokens)

@@ -3,7 +3,7 @@ from typing import List, Union
 import torch
 from torch import nn
 
-from ark.utils import use_device
+from ark.utils import use_device, Timer
 from ark.nn.trainer import Trainer
 from ark.nn.encoder import ArkEncoder
 from ark.nn.decoder import ArkDecoder
@@ -65,7 +65,7 @@ class Ark(Trainer):
         super(Ark, self).__init__(num_class, device=device, **kwargs)
         self.tokenizer = tokenizer
 
-        self.encoder = ArkEncoder(vocab_size=len(self.tokenizer.get_vocab()),
+        self.encoder = ArkEncoder(vocab_size=len(self.tokenizer),
                                   hidden_size=hidden_size,
                                   num_channel=in_channel,
                                   steps=steps,
@@ -82,6 +82,7 @@ class Ark(Trainer):
 
         self.output_layer = output_layer
 
+    @Timer('Ark forward')
     def forward(self,
                 x: Union[torch.Tensor, List[torch.Tensor]],
                 masks: Union[torch.Tensor, List[torch.Tensor]] = None,
@@ -105,16 +106,6 @@ class Ark(Trainer):
         if self.output_layer is not None:
             y = self.output_layer(y, **kwargs)
         return y
-
-    def decode_ids(self, y: Union[List[int], List[List[int]], torch.Tensor]) -> List[str]:
-        """
-        将id序列解码为字符串序列
-
-        :param y: 输出的tensor
-
-        :return: 每个输入的预测结果
-        """
-        return self.tokenizer.decode(y, clean_up_tokenization_spaces=True)
 
 
 class ArkClassifier(nn.Module):

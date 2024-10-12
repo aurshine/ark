@@ -3,12 +3,11 @@ from typing import List, Dict, Union
 import torch
 import pandas as pd
 from torch.utils.data import DataLoader, Dataset
-from transformers.tokenization_utils_base import BatchEncoding
-from transformers import BertTokenizer
 
 from ark.utils import use_device
 from ark.nn.pinyin import translate_piny, translate_char, Style
 from ark.nn.text_process import token_random_mask
+from ark.nn.tokenizer import Tokenizer
 
 
 def collate_dict(batch_datas: List[Dict[str, Union[dict, torch.Tensor]]]) -> Dict[str, Union[dict, torch.Tensor]]:
@@ -28,7 +27,7 @@ def collate_dict(batch_datas: List[Dict[str, Union[dict, torch.Tensor]]]) -> Dic
                 datas[k] = torch.cat(datas[k])
             else:
                 datas[k] = torch.stack(datas[k])
-        elif isinstance(datas[k][0], (dict, BatchEncoding)):
+        elif isinstance(datas[k][0], dict):
             datas[k] = collate_dict(datas[k])
         else:
             raise TypeError(f"Unsupported type {type(datas[k][0])} in collate_dict")
@@ -37,7 +36,7 @@ def collate_dict(batch_datas: List[Dict[str, Union[dict, torch.Tensor]]]) -> Dic
 
 
 class ArkDataSet(Dataset):
-    def __init__(self, csv_: Union[str, pd.DataFrame], tokenizer: BertTokenizer, max_length=128, device=None, **kwargs):
+    def __init__(self, csv_: Union[str, pd.DataFrame], tokenizer: Tokenizer, max_length=128, device=None, **kwargs):
         """
         ArkDataSet 类用于处理文本数据集，包括数据集的读取、预处理、tokenizing等。
 
@@ -80,20 +79,10 @@ class ArkDataSet(Dataset):
         # 韵母
         final = translate_piny(text, Style.FINALS)
 
-        kwargs = {
-            'padding': 'max_length',
-            'truncation': True,
-            'max_length': self.max_length,
-            'return_tensors': 'pt',
-            'return_token_type_ids': False,
-            'return_attention_mask': True,
-            'return_length': False,
-        }
-
         item = {
-            'source_tokens': self.tokenizer.encode_plus(text=text, **kwargs),
-            'initial_tokens': self.tokenizer.encode_plus(text=initial, is_split_into_words=True, **kwargs),
-            'final_tokens': self.tokenizer.encode_plus(text=final, is_split_into_words=True, **kwargs),
+            'source_tokens': self.tokenizer.encode(text=text, device=self.device),
+            'initial_tokens': self.tokenizer.encode(text=initial, device=self.device),
+            'final_tokens': self.tokenizer.encode(text=final, device=self.device),
             'label': torch.tensor([self.df.iloc[index]['label']], dtype=torch.int64, device=self.device)
         }
 
@@ -103,7 +92,7 @@ class ArkDataSet(Dataset):
 class ArkPretrainDataSet(Dataset):
     def __init__(self,
                  file_path_or_texts: Union[str, List[str]],
-                 tokenizer: BertTokenizer,
+                 tokenizer: Tokenizer,
                  num_pred_position=5,
                  max_length=128,
                  device=None):
@@ -130,7 +119,7 @@ class ArkPretrainDataSet(Dataset):
         self.num_pred_position = num_pred_position
         self.max_length = max_length
         self.device = use_device(device)
-        self.all_tokens = [k for k in self.tokenizer.vocab.keys() if len(k) == 1]
+        self.all_tokens = list(filter(lambda x: len(x) == 1, self.tokenizer.all_tokens))
 
     def __len__(self):
         return len(self.texts)
@@ -175,23 +164,12 @@ class ArkPretrainDataSet(Dataset):
             masked_position.extend([0] * num_extend)
             real_tokens.extend([self.tokenizer.cls_token] * num_extend)
 
-        kwargs = {
-            'padding': 'max_length',
-            'truncation': True,
-            'max_length': self.max_length,
-            'return_tensors': 'pt',
-            'return_token_type_ids': False,
-            'return_attention_mask': True,
-            'return_length': False,
-            'is_split_into_words': True
-        }
-
         item = {
-            'source_tokens': self.tokenizer.encode_plus(text=masked_tokens, **kwargs),
-            'initial_tokens': self.tokenizer.encode_plus(text=initials, **kwargs),
-            'final_tokens': self.tokenizer.encode_plus(text=finals, **kwargs),
+            'source_tokens': self.tokenizer.encode(text=masked_tokens, device=self.device),
+            'initial_tokens': self.tokenizer.encode(text=initials, device=self.device),
+            'final_tokens': self.tokenizer.encode(text=finals, device=self.device),
             'masked_position': torch.tensor(masked_position, dtype=torch.int64, device=self.device),
-            'label': torch.tensor(self.tokenizer.convert_tokens_to_ids(real_tokens), dtype=torch.int64, device=self.device)
+            'label': torch.tensor(self.tokenizer.tokens_to_ids(real_tokens), dtype=torch.int64, device=self.device)
         }
         return item
 
@@ -230,6 +208,7 @@ def get_ark_loader(file_path_or_df: Union[str, pd.DataFrame],
     return DataLoader(ArkDataSet(file_path_or_df, sep=sep, tokenizer=tokenizer, max_length=max_length, device=device),
                       batch_size=batch_size,
                       shuffle=shuffle,
+                      num_workers=0,
                       drop_last=drop_last,
                       collate_fn=collate_dict,
                       **kwargs)
@@ -266,5 +245,6 @@ def get_ark_pretrain_loader(file_path_or_texts: Union[str, List[str]],
     return DataLoader(ArkPretrainDataSet(file_path_or_texts, tokenizer, num_pred_position, max_length, device),
                       batch_size=batch_size,
                       shuffle=shuffle,
+                      num_workers=4,
                       drop_last=drop_last,
                       collate_fn=collate_dict)

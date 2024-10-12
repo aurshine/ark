@@ -20,7 +20,7 @@ NOT_BAD_TXT_PATH = os.path.join(CACHE_PATH, 'notBad.txt')
 HAS_URLS_PATH = os.path.join(CACHE_PATH, 'hasUrls')
 
 # pretrain tokenizer 地址
-PRETRAIN_TOKENIZER_PATH = os.path.join(ARK_PATH, 'data/bert-base-chinese')
+PRETRAIN_TOKENIZER_PATH = os.path.join(ARK_PATH, 'data/tokenizer')
 
 # DATASET 文件夹地址
 DATASET_PATH = os.path.join(ARK_PATH, 'data/DATASET')

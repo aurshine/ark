@@ -1,15 +1,14 @@
 import os
 import random
-from typing import List
 
 import pandas as pd
-from transformers import BertTokenizer
 
 from ark.utils import use_device, date_prefix_filename, all_metrics
 from ark.setting import PRETRAIN_TOKENIZER_PATH, LOG_PATH, DATASET_PATH, PRETRAIN_DATASET_PATH
 from ark.data.dataloader import get_ark_loader, get_ark_pretrain_loader
 from ark.nn.accuracy import Plot
 from ark.nn.pretrain_loss import InitialFinalLoss
+from ark.nn.tokenizer import Tokenizer
 from ark.nn.module import Ark, ArkClassifier, ArkBertPretrain
 
 #################################################################################
@@ -37,7 +36,7 @@ STOP_LOSS_VALUE = 0.1                                  # 最小停止损失值
 
 OPTIMIZER_PARAMS = {'lr': 1e-4, 'weight_decay': 1e-2}  # 优化器参数(学习率、权重衰减)
 
-TOKENIZER = BertTokenizer.from_pretrained(PRETRAIN_TOKENIZER_PATH)  # 预训练tokenizer
+TOKENIZER = Tokenizer(PRETRAIN_TOKENIZER_PATH, STEPS)  # 预训练tokenizer
 #################################################################################
 
 
@@ -131,8 +130,3 @@ def pre_train(device=None):
             stop_loss_value=2,
             loss=InitialFinalLoss(tokenizer=TOKENIZER, reduction='mean'),
             )
-
-
-def add_tokens(tokens: List[str]):
-    TOKENIZER.add_tokens(tokens)
-    TOKENIZER.save_pretrained(PRETRAIN_TOKENIZER_PATH)

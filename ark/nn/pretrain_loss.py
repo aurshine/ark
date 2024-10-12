@@ -1,9 +1,9 @@
 import torch
 from torch import nn
 from torch.nn import functional as F
-from transformers import BertTokenizer
 
 from ark.nn.pinyin import translate_piny, Style
+from ark.nn.tokenizer import Tokenizer
 
 
 class InitialFinalLoss(nn.CrossEntropyLoss):
@@ -16,7 +16,7 @@ class InitialFinalLoss(nn.CrossEntropyLoss):
 
     3. 声母韵母相似度损失 = cross_entropy(y) - LOG(pred_score) * (1 - 相似度)
     """
-    def __init__(self, tokenizer: BertTokenizer, initial_weight=0.35, final_weight=0.35, reduction='mean', **kwargs):
+    def __init__(self, tokenizer: Tokenizer, initial_weight=0.35, final_weight=0.35, reduction='mean', **kwargs):
         super(InitialFinalLoss, self).__init__(reduction=reduction, **kwargs)
         self.tokenizer = tokenizer
         self.initial_weight = initial_weight
@@ -35,8 +35,8 @@ class InitialFinalLoss(nn.CrossEntropyLoss):
         # (batch_size * num_prediction)
         pred = y_hat.argmax(dim=-1)
 
-        y_hat_decodes = self.tokenizer.convert_ids_to_tokens(pred, skip_special_tokens=True)
-        y_decodes = self.tokenizer.convert_ids_to_tokens(y, skip_special_tokens=True)
+        y_hat_decodes = self.tokenizer.ids_to_tokens(pred)
+        y_decodes = self.tokenizer.ids_to_tokens(y)
 
         # pred 哪些位置的 token 与 y 相似的 (batch_size * num_prediction)
         token_similarities = torch.zeros_like(y, dtype=torch.float64)

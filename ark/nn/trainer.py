@@ -168,8 +168,8 @@ class Trainer(nn.Module):
             self.logger.info(f'Epoch {epoch + 1}, Batch ({i + 1}/{num_batches}), Loss: {batch_loss.item():.4f}')
 
         # 记录训练集的预测结果
-        train_result = torch.cat(train_result).numpy()
-        train_true = torch.cat(train_true).numpy()
+        train_result = torch.cat(train_result)
+        train_true = torch.cat(train_true)
 
         self.logger.info(f'Epoch {epoch + 1}, Train A Epoch Average Loss: {epoch_loss:.4f}')
         self.logger.info(get_metrics_str(epoch + 1, train_true, train_result))
@@ -194,7 +194,7 @@ class Trainer(nn.Module):
         """
         for data in loader:
             multi_channel_tokens: List[torch.Tensor] = []
-            multi_channel_masks:  List[torch.Tensor] = []
+            multi_channel_masks: List[torch.Tensor] = []
 
             y, kwargs = None, {}
             for key, value in data.items():
@@ -208,6 +208,10 @@ class Trainer(nn.Module):
 
             if y is None:
                 raise ValueError('label not found in data')
+
+            multi_channel_tokens = self._to_device(multi_channel_tokens)
+            multi_channel_masks = self._to_device(multi_channel_masks)
+            y = self._to_device(y)
 
             y_hat = self.forward(multi_channel_tokens, multi_channel_masks, **kwargs)
             yield y_hat, y
@@ -230,8 +234,8 @@ class Trainer(nn.Module):
         self.eval()
         true_y, valid_y = [], []
         for y_hat, y in self._loader_forward(valid_loader):
-            valid_y.append(y_hat.argmax(dim=-1).cpu())
-            true_y.append(y.cpu())
+            valid_y.append(y_hat.argmax(dim=-1))
+            true_y.append(y.clone())
 
         return torch.cat(true_y), torch.cat(valid_y)
 
@@ -324,9 +328,13 @@ class Trainer(nn.Module):
 
     def _to_device(self, ts: Union[torch.Tensor, List[torch.Tensor]]):
         if isinstance(ts, list):
-            return [t.to(self.device) for t in ts]
-        else:
+            return [self._to_device(t) for t in ts]
+        elif isinstance(ts, dict):
+            return {k: self._to_device(v) for k, v in ts.items()}
+        elif isinstance(ts, torch.Tensor):
             return ts.to(self.device)
+        else:
+            raise ValueError(f'Unsupported type: {type(ts)} for _to_device')
 
     def _init_optimizer(self, optimizer, optim_params):
         if optimizer is None:
@@ -342,11 +350,11 @@ class Trainer(nn.Module):
 
     def _log_train_config(self, optimizer, loss, epochs, stop_loss_value, stop_min_epoch):
         # 打印训练信息
-        self.logger.info(f'num_params: {sum(p.numel() for p in self.parameters() if p.requires_grad)}')
-        self.logger.info(f'fit on {self.device}')
         self.logger.info(f'model architecture: {self}')
         self.logger.info(f'optimizer: {optimizer}')
         self.logger.info(f'loss_fn: {loss}')
+        self.logger.info(f'fit on {self.device}')
+        self.logger.info(f'num_params: {sum(p.numel() for p in self.parameters() if p.requires_grad)}')
         self.logger.info(f'num_class: {self.num_class}')
         self.logger.info(f'epochs: {epochs}')
         self.logger.info(f'stop_loss_value: {stop_loss_value}')

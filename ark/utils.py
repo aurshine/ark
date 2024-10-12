@@ -5,25 +5,9 @@ from typing import Union, Tuple
 
 import torch
 import numpy as np
-from sklearn.metrics import confusion_matrix
 
 
 array_like = Union[list, tuple, torch.Tensor, np.ndarray]
-
-
-class Timer:
-    def __init__(self, name=None):
-        self.name = name if name is not None else "Timer"
-
-    def __call__(self, func):
-        def wrapper(*args, **kwargs):
-            start_time = time.time()
-            result = func(*args, **kwargs)
-            end_time = time.time()
-            print(f"{self.name} taken by {func.__name__}: {end_time - start_time} seconds")
-            return result
-
-        return wrapper
 
 
 def use_device(device: Union[int, str, torch.device, None] = 0):
@@ -51,11 +35,15 @@ def use_device(device: Union[int, str, torch.device, None] = 0):
         return torch.device('cpu')
 
 
-def all_metrics(y_true: array_like, y_pred: array_like) -> Tuple[float, float, float, float, float]:
+def all_metrics(y_true: torch.Tensor, y_pred: torch.Tensor) -> Tuple[float, float, float, float, float]:
     """
     计算各种指标，返回 accuracy, precision, recall, fpr, f1
     """
-    tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
+    tp = torch.sum((y_pred == 1) & (y_true == 1)).item()
+    tn = torch.sum((y_pred == 0) & (y_true == 0)).item()
+    fp = torch.sum((y_pred == 1) & (y_true == 0)).item()
+    fn = torch.sum((y_pred == 0) & (y_true == 1)).item()
+
     accuracy = (tp + tn) / (tp + tn + fp + fn)
     precision = tp / (tp + fp)
     recall = tp / (tp + fn)
@@ -96,3 +84,27 @@ def date_prefix_filename(filename: str) -> str:
     # 重新组合成新的路径
     new_file_path = os.path.join(dir_path, new_file_name)
     return new_file_path
+
+
+class Timer:
+    def __init__(self, name=None):
+        self.name = name if name is not None else "Timer"
+        self.start_time = None
+
+    def __call__(self, func):
+        def wrapper(*args, **kwargs):
+            self.start_time = time.time()
+            result = func(*args, **kwargs)
+            end_time = time.time()
+            print(f"{self.name} taken by {func.__name__}: {end_time - self.start_time} seconds")
+            return result
+
+        return wrapper
+
+    def __enter__(self):
+        self.start_time = time.time()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        end_time = time.time()
+        print(f"{self.name} taken: {end_time - self.start_time} seconds")

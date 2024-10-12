@@ -1,10 +1,14 @@
 import os
 import time
 from datetime import datetime
-from typing import Union
+from typing import Union, Tuple
 
 import torch
+import numpy as np
 from sklearn.metrics import confusion_matrix
+
+
+array_like = Union[list, tuple, torch.Tensor, np.ndarray]
 
 
 class Timer:
@@ -47,9 +51,9 @@ def use_device(device: Union[int, str, torch.device, None] = 0):
         return torch.device('cpu')
 
 
-def get_metrics(epoch: int, y_true: torch.Tensor, y_pred: torch.Tensor) -> str:
+def all_metrics(y_true: array_like, y_pred: array_like) -> Tuple[float, float, float, float, float]:
     """
-    计算模型在指定 epoch 的指标, 并返回字符串格式的指标信息
+    计算各种指标，返回 accuracy, precision, recall, fpr, f1
     """
     tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
     accuracy = (tp + tn) / (tp + tn + fp + fn)
@@ -57,6 +61,14 @@ def get_metrics(epoch: int, y_true: torch.Tensor, y_pred: torch.Tensor) -> str:
     recall = tp / (tp + fn)
     fpr = fp / (fp + tn)
     f1 = 2 * precision * recall / (precision + recall)
+    return accuracy, precision, recall, fpr, f1
+
+
+def get_metrics_str(epoch: int, y_true: array_like, y_pred: array_like) -> str:
+    """
+    计算模型在指定 epoch 的指标, 并返回字符串格式的指标信息
+    """
+    accuracy, precision, recall, fpr, f1 = all_metrics(y_true, y_pred)
 
     return (f'Epoch: {epoch}\t'
             f'Accuracy: {accuracy: 4f}\t'

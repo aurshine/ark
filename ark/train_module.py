@@ -4,9 +4,8 @@ from typing import List
 
 import pandas as pd
 from transformers import BertTokenizer
-from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 
-from ark.utils import use_device, date_prefix_filename
+from ark.utils import use_device, date_prefix_filename, all_metrics
 from ark.setting import PRETRAIN_TOKENIZER_PATH, LOG_PATH, DATASET_PATH, PRETRAIN_DATASET_PATH
 from ark.data.dataloader import get_ark_loader, get_ark_pretrain_loader
 from ark.nn.accuracy import Plot
@@ -90,16 +89,12 @@ def train(device=None):
                                                     stop_min_epoch=STOP_MIN_EPOCH,
                                                     stop_loss_value=STOP_LOSS_VALUE)
 
-    plot = Plot(4)
+    plot = Plot(5)
     for valid_true, valid_result in zip(valid_trues, valid_results):
-        acc = accuracy_score(valid_true, valid_result)
-        f1 = f1_score(valid_true, valid_result)
-        precision = precision_score(valid_true, valid_result)
-        recall = recall_score(valid_true, valid_result)
-        plot.add(acc, f1, precision, recall)
+        plot.add(*all_metrics(valid_true, valid_result))
 
-    plot.plot(labels=['accuracy', 'f1-score', 'precision', 'recall'],
-              save_path=os.path.join(LOG_PATH, date_prefix_filename('valid.png'))
+    plot.plot(labels=['accuracy', 'f1-score', 'precision', 'recall', 'fpr'],
+              save_path=os.path.join(LOG_PATH, date_prefix_filename('valid_metrics.png'))
               )
 
 

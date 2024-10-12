@@ -39,11 +39,10 @@ class Plot:
         for axis_y, label in zip(self.points, labels):
             plt.plot(axis_y, label=label)
 
-            plt.title(title)
-            plt.legend()
-            plt.grid()
-            plt.xlabel(x_label)
-            plt.ylabel(y_label)
-
+        plt.title(title)
+        plt.legend()
+        plt.grid()
+        plt.xlabel(x_label)
+        plt.ylabel(y_label)
         if save_path is not None:
             save_fig(save_path)

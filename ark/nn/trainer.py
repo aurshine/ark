@@ -7,7 +7,7 @@ import torch
 from torch import nn
 from torch.nn import init
 
-from ark.utils import date_prefix_filename, use_device, get_metrics
+from ark.utils import date_prefix_filename, use_device, get_metrics_str
 from ark.setting import LOG_PATH, MODEL_LIB
 
 
@@ -84,7 +84,7 @@ class Trainer(nn.Module):
             is_stop = self._achieve_stop_condition(epoch + 1, stop_min_epoch, epoch_loss, stop_loss_value)
             if (epoch + 1) % 10 == 0 or is_stop:
                 self.logger.warning(f'Epoch: {epoch + 1}, ValidMetrics:')
-                self.logger.warning(get_metrics(epoch + 1, valid_result, valid_true))
+                self.logger.warning(get_metrics_str(epoch + 1, valid_result, valid_true))
                 self.save_state_dict(os.path.join(MODEL_LIB, f'{self.prefix_name}_epoch{epoch + 1}.pth'))
                 if is_stop:
                     break
@@ -172,7 +172,7 @@ class Trainer(nn.Module):
         train_true = torch.cat(train_true).numpy()
 
         self.logger.info(f'Epoch {epoch + 1}, Train A Epoch Average Loss: {epoch_loss:.4f}')
-        self.logger.info(get_metrics(epoch + 1, train_true, train_result))
+        self.logger.info(get_metrics_str(epoch + 1, train_true, train_result))
 
         # 训练结束验证
         if valid_loader is not None:

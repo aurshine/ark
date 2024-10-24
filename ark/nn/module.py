@@ -3,7 +3,7 @@ from typing import List, Union
 import torch
 from torch import nn
 
-from ark.utils import use_device, Timer
+from ark.utils import use_device
 from ark.nn.trainer import Trainer
 from ark.nn.encoder import ArkEncoder
 from ark.nn.decoder import ArkDecoder
@@ -31,7 +31,6 @@ class Ark(Trainer):
                  tokenizer,
                  steps: int,
                  hidden_size: int,
-                 in_channel: int,
                  num_heads: int,
                  num_layer: int,
                  num_class: int,
@@ -47,8 +46,6 @@ class Ark(Trainer):
         :param steps: 最大时间步
 
         :param hidden_size: 隐藏层大小
-
-        :param in_channel: 输入通道数
 
         :param num_heads: 注意力头数
 
@@ -67,7 +64,6 @@ class Ark(Trainer):
 
         self.encoder = ArkEncoder(vocab_size=len(self.tokenizer),
                                   hidden_size=hidden_size,
-                                  num_channel=in_channel,
                                   steps=steps,
                                   dropout=dropout,
                                   device=self.device
@@ -82,7 +78,6 @@ class Ark(Trainer):
 
         self.output_layer = output_layer
 
-    @Timer('Ark forward')
     def forward(self,
                 x: Union[torch.Tensor, List[torch.Tensor]],
                 masks: Union[torch.Tensor, List[torch.Tensor]] = None,

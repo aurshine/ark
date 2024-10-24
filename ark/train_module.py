@@ -13,9 +13,9 @@ from ark.nn.module import Ark, ArkClassifier, ArkBertPretrain
 
 #################################################################################
 # 模型参数
-HIDDEN_SIZE = 256                                       # 隐藏层大小
+HIDDEN_SIZE = 512                                       # 隐藏层大小
 
-NUM_HEADS = 8                                          # 多头注意力头数
+NUM_HEADS = 16                                          # 多头注意力头数
 
 NUM_LAYER = 8                                           # 解码器层数
 
@@ -26,7 +26,7 @@ DROPOUT = 0.5                                          # 随机失活率
 NUM_CLASS = 2                                          # 分类数
 #################################################################################
 # 训练参数
-BATCH_SIZE = 720                                        # 批量大小
+BATCH_SIZE = 128                                        # 批量大小
 
 TRAIN_EPOCHS = 200                                      # 最大训练轮数
 
@@ -72,7 +72,6 @@ def train(device=None):
               output_layer=ark_classifier,
               steps=STEPS,
               hidden_size=HIDDEN_SIZE,
-              in_channel=3,
               num_heads=NUM_HEADS,
               num_layer=NUM_LAYER,
               dropout=DROPOUT,
@@ -114,7 +113,6 @@ def pre_train(device=None):
               output_layer=ArkBertPretrain(HIDDEN_SIZE, num_class=len(TOKENIZER), device=device),
               steps=STEPS,
               hidden_size=HIDDEN_SIZE,
-              in_channel=3,
               num_heads=NUM_HEADS,
               num_layer=NUM_LAYER,
               dropout=DROPOUT,

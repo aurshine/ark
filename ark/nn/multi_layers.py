@@ -1,4 +1,4 @@
-from typing import Union, List, Tuple, Optional, Callable
+from typing import List, Optional, Callable
 
 import torch
 from torch import nn
@@ -115,59 +115,6 @@ class MultiLinear(nn.Module):
         return self.dense(x)
 
 
-class MultiConv2d(nn.Module):
-    def __init__(self, in_channels, out_channels,
-                 kernel_size: Union[int, Tuple[int, int]],
-                 stride: Union[int, Tuple[int, int]] = 1,
-                 padding: Union[int, Tuple[int, int]] = 0,
-                 num_layer=1,
-                 batch_norm=False,
-                 active=None,
-                 device=None):
-        """多层同样操作的卷积
-
-        :param in_channels: 输入通道数
-
-        :param out_channels: 输出通道数
-
-        :param kernel_size: 卷积核大小
-
-        :param stride: 步长, 默认步长为 1
-
-        :param padding: 填充大小, 默认填充为 0
-
-        :param num_layer: 网络层数, 默认 3 层
-
-        :param batch_norm: 是否启用批量归一化
-
-        :param active: 激活函数, 默认为 None 时使用 ReLU
-        """
-        super(MultiConv2d, self).__init__()
-        self.device = use_device(device)
-
-        def trans(x):
-            if not isinstance(x, (list, tuple)):
-                x = (x, x)
-            return x
-
-        kernel_size, stride, padding = trans(kernel_size), trans(stride), trans(padding)
-        if active is None:
-            active = nn.ReLU()
-
-        layers = []
-        for i in range(num_layer):
-            layers.append(nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding, device=self.device))
-            if batch_norm:
-                layers.append(nn.BatchNorm2d(out_channels, device=self.device))
-            layers.append(active)
-            in_channels = out_channels
-
-        self.conv = nn.Sequential(*layers)
-
-    def forward(self, X):
-        return self.conv(X.to(self.device))
-
-
 class PositionWiseFFN(nn.Module):
     def __init__(self, input_size, hidden_size, output_size, dropout=0, device=None):
         super(PositionWiseFFN, self).__init__()
@@ -175,28 +122,19 @@ class PositionWiseFFN(nn.Module):
         self.linear = MultiLinear([hidden_size, output_size],
                                   num_input=input_size,
                                   active=nn.LeakyReLU(),
-                                  norm='layer_norm',
                                   dropout=dropout,
                                   save_last_active=True,
                                   device=self.device)
 
-        if input_size == output_size:
-            self.add_norm = AddNorm(output_size, dropout=dropout, device=self.device)
-
     def forward(self, x):
-        y = self.linear(x)
-
-        if hasattr(self, 'add_norm'):
-            y = self.add_norm(x, y)
-
-        return y
+        return self.linear(x)
 
 
 class Attention(nn.Module):
     def __init__(self,
                  query_size: int,
                  key_size: int,
-                 value_size: int = None,
+                 value_size: Optional[int] = None,
                  hidden_size: Optional[int] = None,
                  device=None):
         """
@@ -405,78 +343,3 @@ class TransformerLayer(nn.Module):
         y2 = self.add_norm2(y1, y2)
 
         return y2
-
-
-class TransformerLayers(nn.Module):
-    """
-    多层的 Transformer 块
-
-    由多层的 TransformerLayer 组成
-    """
-
-    def __init__(self,
-                 query_size: int,
-                 num_heads: int,
-                 num_layer: int,
-                 key_size: int = None,
-                 value_size: int = None,
-                 hidden_size: int = None,
-                 dropout: float = 0.5,
-                 device=None):
-        super(TransformerLayers, self).__init__()
-        self.device = use_device(device)
-        self.transformer_blocks = nn.ModuleList([TransformerLayer(query_size, num_heads, key_size, value_size,
-                                                                  hidden_size, dropout=dropout, device=self.device)
-                                                 for _ in range(num_layer)])
-
-    def forward(self,
-                q: torch.Tensor,
-                k: torch.Tensor = None,
-                v: torch.Tensor = None,
-                masks: torch.Tensor = None):
-        """
-        :return: 形状为(batch_size, steps, hidden_size)
-        """
-        y = q
-        for block in self.transformer_blocks:
-            y = block(q, k, v, masks=masks)
-
-        return y
-
-
-class FusionChannel(nn.Module):
-    def __init__(self, hidden_size, num_channel, steps=None, dropout=0.5, device=None):
-        super(FusionChannel, self).__init__()
-        self.device = use_device(device)
-        if steps is None:
-            steps = 1
-
-        self.c_weight = nn.Parameter(torch.randn(size=(steps, num_channel, 1), device=self.device), requires_grad=True)
-        self.lin = MultiLinear([hidden_size, hidden_size],
-                               dropout=dropout,
-                               active=nn.LeakyReLU(),
-                               num_input=hidden_size,
-                               norm='layer_norm',
-                               save_last_active=True,
-                               device=self.device
-                               )
-
-    def forward(self, x: torch.Tensor):
-        """
-        :param x: 3D-(batch_size, channels, hidden_size), 4D-(batch_size, steps, channels, hidden_size)
-
-        :return: 2D-(batch_size, hidden_size) if x is 3D else 3D-(batch_size, steps, hidden_size)
-        """
-        assert x.dim() in [3, 4], "x should be 3D or 4D"
-
-        expect_dim = x.dim() - 1
-        if x.dim() == 3:
-            x = torch.unsqueeze(x, dim=1)
-
-        y = torch.sum(self.c_weight * x, dim=-2)
-        y = self.lin(y)
-
-        if expect_dim == 2:
-            y = torch.squeeze(y, dim=-2)
-
-        return y

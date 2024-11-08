@@ -68,7 +68,7 @@ class PositionWiseFFN(nn.Module):
         self.device = use_device(device)
         self.linear = MultiLinear([hidden_size, output_size],
                                   num_input=input_size,
-                                  active=nn.LeakyReLU(),
+                                  active=nn.GELU(),
                                   dropout=dropout,
                                   save_last_active=True,
                                   device=self.device)
@@ -109,6 +109,7 @@ class Attention(nn.Module):
                 self.value2hidden = nn.Linear(value_size, hidden_size, device=self.device)
             else:
                 self.value2hidden = None
+            self.dropout = nn.Dropout(0.1)
 
     def forward(self,
                 queries: torch.Tensor,
@@ -144,7 +145,7 @@ class Attention(nn.Module):
             weight = weight.masked_fill(masks == 0, -1e9)
 
         # (batch_size, query_steps, value_size)
-        output = torch.bmm(weight, values)
+        output = self.dropout(torch.bmm(weight, values))
 
         return output
 

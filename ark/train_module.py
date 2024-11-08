@@ -13,7 +13,7 @@ from ark.nn.module import Ark, ArkClassifier, ArkBertPretrain
 
 #################################################################################
 # 模型参数
-HIDDEN_SIZE = 512                                       # 隐藏层大小
+HIDDEN_SIZE = 256                                       # 隐藏层大小
 
 NUM_HEADS = 16                                          # 多头注意力头数
 

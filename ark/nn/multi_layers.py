@@ -5,60 +5,7 @@ from torch import nn
 
 from ark.utils import use_device
 from ark.nn.addnorm import AddNorm
-from ark.nn.attention import cosine_similarity_attention
-
-
-def separate_heads(x: torch.Tensor, num_heads: int) -> torch.Tensor:
-    """
-    将输入的tensor分割成多个头，并转置
-
-    :param x: (batch_size, ..., feature_size)
-
-    :param num_heads: 头数
-
-    :return: (batch_size * num_heads, ..., feature_size // num_heads)
-    """
-    if x.shape[-1] % num_heads != 0:
-        raise ValueError("feature size should be divisible by num_heads")
-
-    # [...]
-    batch_size, other_dim = x.shape[0], x.shape[1: -1]
-
-    # (batch_size, 1, ..., num_heads, feature_size // num_heads)
-    y = x.reshape(batch_size, 1, *other_dim, num_heads, -1)
-
-    # (batch_size, num_heads, ...., feature_size // num_heads)
-    y = y.transpose(1, -2)
-
-    # (batch_size * num_heads, ..., feature_size // num_heads)
-    y = y.reshape(batch_size * num_heads, *other_dim, -1)
-
-    return y
-
-
-def concat_heads(x: torch.Tensor, num_heads: int) -> torch.Tensor:
-    """
-    将输入的tensor合并成多个头
-
-    :param x: (batch_size * num_heads, ..., feature_size // num_heads)
-
-    :param num_heads: 头数
-
-    :return: (batch_size, ..., feature_size)
-    """
-    if x.shape[0] % num_heads != 0:
-        raise ValueError("batch size should be divisible by num_heads")
-
-    feature_size, other_dim = x.shape[-1], x.shape[1:-1]
-
-    # (batch_size, num_heads, ..., 1, feature_size // num_heads)
-    x = x.reshape(-1, num_heads, *other_dim, 1, feature_size)
-    # (batch_size, 1, ... num_heads, feature_size // num_heads)
-    x = x.transpose(1, -2)
-
-    # (batch_size, ..., feature_size)
-    x = x.reshape(x.shape[0], *other_dim, -1)
-    return x
+from ark.nn.attention import cosine_similarity_attention, separate_heads, concat_heads
 
 
 class MultiLinear(nn.Module):
@@ -172,13 +119,13 @@ class Attention(nn.Module):
         """
         :param queries: (batch_size, query_steps, query_size)
 
-        :param keys: (batch_size, kv_steps, key_size)
+        :param keys: (batch_size, key_steps, key_size)
 
-        :param values: (batch_size, kv_steps, value_size)
+        :param values: (batch_size, value_steps, value_size)
 
         :param get_qk_weight: 传入query key， 得到每个key的权重，用于计算注意力
 
-        :param masks: (batch_size, query_steps)
+        :param masks: 与queries[:-1]形状相同的掩码
 
         :return: (batch_size, query_steps, value_size)
         """
@@ -192,7 +139,7 @@ class Attention(nn.Module):
         # (batch_size, query_steps, kv_steps)
         weight = get_qk_weight(queries, keys)
         if masks is not None:
-            masks = masks.unsqueeze(2).expand_as(weight)
+            masks = masks.unsqueeze(-1).expand_as(weight)
 
             weight = weight.masked_fill(masks == 0, -1e9)
 
@@ -243,13 +190,13 @@ class MultiHeadAttention(nn.Module):
         """
         :param queries: (batch_size, query_steps, query_size)
 
-        :param keys: (batch_size, kv_steps, key_size)
+        :param keys: (batch_size, key_steps, key_size)
 
-        :param values: (batch_size, kv_steps, value_size)
+        :param values: (batch_size, value_steps, value_size)
 
         :param get_qk_weight: 传入query key， 得到每个key的权重，用于计算注意力
 
-        :param masks: (batch_size, query_steps)
+        :param masks: 与queries[:-1]形状相同的掩码
 
         :return: (batch_size, query_steps, value_size)
         """
@@ -281,6 +228,7 @@ class TransformerLayer(nn.Module):
                  key_size: int = None,
                  value_size: int = None,
                  hidden_size: Optional[int] = None,
+                 get_qk_weight: Callable[[torch.Tensor, torch.Tensor], torch.Tensor] = cosine_similarity_attention,
                  dropout=0.5,
                  device=None):
         """
@@ -309,35 +257,30 @@ class TransformerLayer(nn.Module):
         self.ffn = PositionWiseFFN(value_size, value_size, value_size, device=self.device)
         self.add_norm1 = AddNorm(value_size, dropout=dropout, device=self.device)
         self.add_norm2 = AddNorm(value_size, dropout=dropout, device=self.device)
+        self.get_qk_weight = get_qk_weight
 
     def forward(self,
                 q: torch.Tensor,
                 k: torch.Tensor = None,
                 v: torch.Tensor = None,
-                masks: torch.Tensor = None,
-                get_qk_weight: Callable[[torch.Tensor, torch.Tensor], torch.Tensor] = None):
+                masks: torch.Tensor = None):
         """
         计算 transformer 块的输出
 
-        :param q: query
+        :param q: (batch_size, query_steps, query_size)
 
-        :param k: key
+        :param k: (batch_size, key_steps, key_size)
 
-        :param v: value
+        :param v: (batch_size, value_steps, value_size)
 
-        :param masks: 掩码，形状为(batch_size, query_steps)
+        :param masks: 与q[:-1]形状相同的掩码
 
-        :param get_qk_weight: 获取query key的权重，用于计算注意力，默认为cosine_similarity_attention
-
-        :return: 与value形状相同的输出
+        :return: (batch_size, query_steps, value_size)
         """
-        if get_qk_weight is None:
-            get_qk_weight = cosine_similarity_attention
-
         k = q if k is None else k
         v = k if v is None else v
 
-        y1 = self.attention(q, k, v, get_qk_weight, masks=masks)
+        y1 = self.attention(q, k, v, self.get_qk_weight, masks=masks)
         y1 = self.add_norm1(q, y1)
         y2 = self.ffn(y1)
         y2 = self.add_norm2(y1, y2)

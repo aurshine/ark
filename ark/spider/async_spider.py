@@ -11,14 +11,13 @@ from ark.setting import HEADERS
 def clear_reply(relpy_text: str):
     """清洗回复文本"""
     text = relpy_text.split('：', 1)[-1].strip()
-    print(text)
-    exit()
     return text
 
 
 def catch_replies(reply_filed: BeautifulSoup) -> List[str]:
     """返回某个回复楼层的回复列表"""
     reply_list = []
+    return reply_list
     for reply_tag in reply_filed.select('.'):
         reply_list.append(clear_reply(reply_tag.text))
 
@@ -35,6 +34,7 @@ def catch_comments_from_comment_field(comment_field: BeautifulSoup) -> Dict[str,
         'reply_comments': catch_replies(reply_field)
     }
 
+    print(result)
     return result
 
 
@@ -103,4 +103,5 @@ async def spider_main(tie_ba_names: List[str], save_path: str):
         catch_comment_tasks = [catch_comments_from_tie_ba(session, result['tid']) for result in results]
         comments = await asyncio.gather(*catch_comment_tasks)
 
-asyncio.run(spider_main(['孙笑川'], ''))
+if __name__ == '__main__':
+    asyncio.run(spider_main(['孙笑川'], ''))

@@ -6,6 +6,59 @@ from torch import nn
 from ark.utils import use_device
 
 
+def separate_heads(x: torch.Tensor, num_heads: int) -> torch.Tensor:
+    """
+    将输入的tensor分割成多个头，并转置
+
+    :param x: (batch_size, ..., feature_size)
+
+    :param num_heads: 头数
+
+    :return: (batch_size * num_heads, ..., feature_size // num_heads)
+    """
+    if x.shape[-1] % num_heads != 0:
+        raise ValueError("feature size should be divisible by num_heads")
+
+    # [...]
+    batch_size, other_dim = x.shape[0], x.shape[1: -1]
+
+    # (batch_size, 1, ..., num_heads, feature_size // num_heads)
+    y = x.reshape(batch_size, 1, *other_dim, num_heads, -1)
+
+    # (batch_size, num_heads, ...., feature_size // num_heads)
+    y = y.transpose(1, -2)
+
+    # (batch_size * num_heads, ..., feature_size // num_heads)
+    y = y.reshape(batch_size * num_heads, *other_dim, -1)
+
+    return y
+
+
+def concat_heads(x: torch.Tensor, num_heads: int) -> torch.Tensor:
+    """
+    将输入的tensor合并成多个头
+
+    :param x: (batch_size * num_heads, ..., feature_size // num_heads)
+
+    :param num_heads: 头数
+
+    :return: (batch_size, ..., feature_size)
+    """
+    if x.shape[0] % num_heads != 0:
+        raise ValueError("batch size should be divisible by num_heads")
+
+    feature_size, other_dim = x.shape[-1], x.shape[1:-1]
+
+    # (batch_size, num_heads, ..., 1, feature_size // num_heads)
+    x = x.reshape(-1, num_heads, *other_dim, 1, feature_size)
+    # (batch_size, 1, ... num_heads, feature_size // num_heads)
+    x = x.transpose(1, -2)
+
+    # (batch_size, ..., feature_size)
+    x = x.reshape(x.shape[0], *other_dim, -1)
+    return x
+
+
 def scaled_dot_product_attention(queries: torch.Tensor, keys: torch.Tensor) -> torch.Tensor:
     """
     缩放点积注意力

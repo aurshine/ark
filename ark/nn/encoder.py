@@ -4,7 +4,6 @@ import torch
 from torch import nn, Tensor
 
 from ark.utils import use_device
-from ark.nn.multi_layers import FusionChannel
 
 
 class Encoder(nn.Module):
@@ -90,7 +89,7 @@ class ArkEncoder(Encoder):
 
         :param masks: mask形状为 (batch_size, steps)
 
-        :return: 形状为 (batch_size, steps, hidden_size)
+        :return: 形状为 (num_channels, batch_size, steps, hidden_size)
         """
         # (num_channels, batch_size, steps)
         if isinstance(x, (list, tuple)):

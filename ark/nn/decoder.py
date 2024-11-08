@@ -13,13 +13,15 @@ class ArkDecoder(nn.Module):
     def __init__(self, hidden_size: int, num_heads: int, num_layer: int, dropout: float = 0.5, device=None):
         super(ArkDecoder, self).__init__()
         self.device = use_device(device)
-        self.transformer123 = nn.ModuleList([TransformerLayer(hidden_size, num_heads, dropout=dropout, device=self.device)
-                                            for _ in range(num_layer)])
-        self.transformer132 = nn.ModuleList([TransformerLayer(hidden_size, num_heads, dropout=dropout, device=self.device)
-                                            for _ in range(num_layer)])
-        self.transformer231 = nn.ModuleList([TransformerLayer(hidden_size, num_heads, dropout=dropout, device=self.device)
-                                            for _ in range(num_layer)])
-        self.concat = nn.Linear(hidden_size * 3, hidden_size, device=self.device)
+
+        def transformer_layer():
+            return TransformerLayer(hidden_size, num_heads, dropout=dropout, device=self.device)
+
+        self.transformer_layers1 = nn.ModuleList([transformer_layer() for _ in range(num_layer)])
+        self.transformer_layers2 = nn.ModuleList([transformer_layer() for _ in range(num_layer)])
+        self.transformer_layers3 = nn.ModuleList([transformer_layer() for _ in range(num_layer)])
+
+        self.dim_reduce = nn.Linear(hidden_size * 3, hidden_size, device=self.device)
 
     def forward(self, x, **kwargs):
         """
@@ -28,11 +30,11 @@ class ArkDecoder(nn.Module):
         :param kwargs: TransformerLayers 的其它参数
         """
         x1, x2, x3 = x
-        for layer123, layer132, layer231 in zip(self.transformer123, self.transformer132, self.transformer231):
-            y3 = layer123(x1, x2, x3, **kwargs)
-            y2 = layer132(x1, x3, x2, **kwargs)
-            y1 = layer231(x2, x3, x1, **kwargs)
-
+        for layer1, layer2, layer3 in zip(self.transformer_layers1, self.transformer_layers2, self.transformer_layers3):
+            flatten_x = torch.cat([x1, x2, x3], dim=-2)
+            y1 = layer1(x1, flatten_x, **kwargs)
+            y2 = layer2(x2, flatten_x, **kwargs)
+            y3 = layer3(x3, flatten_x, **kwargs)
             x1, x2, x3 = y1, y2, y3
 
-        return self.concat(torch.cat([x1, x2, x3], dim=-1))
+        return self.dim_reduce(torch.cat([x1, x2, x3], dim=-1))

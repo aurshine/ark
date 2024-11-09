@@ -4,10 +4,6 @@ from datetime import datetime
 from typing import Union, Tuple
 
 import torch
-import numpy as np
-
-
-array_like = Union[list, tuple, torch.Tensor, np.ndarray]
 
 
 def use_device(device: Union[int, str, torch.device, None] = 0):
@@ -52,7 +48,7 @@ def all_metrics(y_true: torch.Tensor, y_pred: torch.Tensor) -> Tuple[float, floa
     return accuracy, precision, recall, fpr, f1
 
 
-def get_metrics_str(epoch: int, y_true: array_like, y_pred: array_like) -> str:
+def get_metrics_str(epoch: int, y_true: torch.Tensor, y_pred: torch.Tensor) -> str:
     """
     计算模型在指定 epoch 的指标, 并返回字符串格式的指标信息
     """
@@ -84,6 +80,15 @@ def date_prefix_filename(filename: str) -> str:
     # 重新组合成新的路径
     new_file_path = os.path.join(dir_path, new_file_name)
     return new_file_path
+
+
+def cpu_ts(ts: torch.Tensor) -> torch.Tensor:
+    """
+    将一个tensor转移到cpu上
+
+    :param ts: 一个tensor
+    """
+    return ts.clone().detach().cpu()
 
 
 class Timer:

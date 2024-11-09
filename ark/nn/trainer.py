@@ -7,8 +7,8 @@ import torch
 from torch import nn
 from torch.nn import init
 
-from ark.utils import date_prefix_filename, use_device, get_metrics_str
-from ark.setting import LOG_PATH, MODEL_LIB
+from ark.utils import date_prefix_filename, use_device, get_metrics_str, cpu_ts
+from ark.setting import TRAIN_RESULT_PATH
 
 
 class Trainer(nn.Module):
@@ -16,16 +16,21 @@ class Trainer(nn.Module):
         super(Trainer, self).__init__()
         self.device = use_device(device)
         self.num_class = num_class
-        self.prefix_name = date_prefix_filename(prefix_name)
+        self.train_result_path = os.path.join(TRAIN_RESULT_PATH, date_prefix_filename(prefix_name))
+        self.checkpoint_path = os.path.join(self.train_result_path, 'checkpoint')
+        self.log_path = os.path.join(self.train_result_path, 'log')
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.setLevel(logging.INFO)
+
+        for path in [self.train_result_path, self.model_path, self.log_path]:
+            if not os.path.exists(path):
+                os.makedirs(path)
 
     def forward(self, inputs, *args, **kwargs):
         raise NotImplementedError
 
     def fit(self,
             train_loader,
-            log_file: str = None,
             epochs=500,
             stop_loss_value=-1,
             stop_min_epoch=0,
@@ -37,8 +42,6 @@ class Trainer(nn.Module):
         训练函数
 
         :param train_loader: 训练集导入器
-
-        :param log_file: 日志文件地址, 默认为 None, 即不保存日志文件
 
         :param epochs: 设置的最大训练轮数
 
@@ -57,7 +60,7 @@ class Trainer(nn.Module):
         :return: 每轮训练的loss构成的列表, 验证集的真实标签, 每轮训练验证集的预测结果
         """
         # 初始化日志文件
-        self._init_logger(log_file)
+        self._init_logger()
         # 初始化优化器
         optimizer = self._init_optimizer(optimizer, optim_params)
         # 初始化损失函数
@@ -65,8 +68,8 @@ class Trainer(nn.Module):
         # 记录训练前的配置信息
         self._log_train_config(optimizer, loss, epochs, stop_loss_value, stop_min_epoch)
 
-        # 记录 每个 epoch 的 loss, 训练集准确率，验证集准确率
-        loss_list, valid_results, valid_trues = [], [], []
+        # 记录 每个 epoch 的 loss, 训练集真实标签，验证集预测结果
+        loss_list, valid_trues, valid_results = [], [], []
 
         self.train()
         num_batches = len(train_loader)
@@ -85,7 +88,7 @@ class Trainer(nn.Module):
             if (epoch + 1) % 10 == 0 or is_stop:
                 self.logger.warning(f'Epoch: {epoch + 1}, ValidMetrics:')
                 self.logger.warning(get_metrics_str(epoch + 1, valid_result, valid_true))
-                self.save_state_dict(os.path.join(MODEL_LIB, f'{self.prefix_name}_epoch{epoch + 1}.pth'))
+                self.save_state_dict(os.path.join(self.checkpoint_path, f'epoch{epoch + 1}.pth'))
                 if is_stop:
                     break
 
@@ -93,7 +96,6 @@ class Trainer(nn.Module):
 
     def fit_pretrain(self,
                      train_loader,
-                     log_file: str = None,
                      epochs=20,
                      stop_loss_value=1,
                      stop_min_epoch=5,
@@ -101,10 +103,8 @@ class Trainer(nn.Module):
                      optim_params: Optional[Dict] = None,
                      loss=None,
                      ):
-        pretrain_identifier = date_prefix_filename('pretrain')
-
         # 初始化日志文件
-        self._init_logger(log_file)
+        self._init_logger()
         # 初始化优化器
         optimizer = self._init_optimizer(optimizer, optim_params)
         # 初始化损失函数
@@ -120,7 +120,7 @@ class Trainer(nn.Module):
                                               num_batches=num_batches,
                                               optimizer=optimizer,
                                               loss_fn=loss)
-            self.save_state_dict(os.path.join(MODEL_LIB, f'{pretrain_identifier}_epoch{epoch + 1}.pth'))
+            self.save_state_dict(os.path.join(self.checkpoint_path, f'pretrain_epoch{epoch + 1}.pth'))
             if self._achieve_stop_condition(epoch + 1, stop_min_epoch, epoch_loss, stop_loss_value):
                 break
 
@@ -147,15 +147,14 @@ class Trainer(nn.Module):
 
         :param valid_loader: 验证集导入器
 
-        :return: 训练集的平均损失, 验证集的真实标签, 验证集的预测结果
+        :return: 训练集的平均损失, 验证集的真实标签(batch_size, ), 验证集的预测结果(batch_size, )
         """
         self.train()
-        epoch_loss = 0
-        train_result, train_true, valid_result, valid_true = [], [], [], []
+        epoch_loss, y_trues, y_predicts = 0, [], []
 
         for i, (y_hat, y) in enumerate(self._loader_forward(train_loader)):
             batch_loss = loss_fn(y_hat, y)
-            epoch_loss += batch_loss.item() / len(train_loader)
+            epoch_loss += batch_loss.item()  # / len(train_loader)
 
             # 梯度计算
             batch_loss.backward()
@@ -163,22 +162,24 @@ class Trainer(nn.Module):
             optimizer.zero_grad()
 
             # 记录训练集的预测结果
-            train_result.append(y_hat.argmax(dim=-1).cpu())
-            train_true.append(y.cpu())
+            y_predicts.append(cpu_ts(y_hat.argmax(dim=-1)))
+            y_trues.append(cpu_ts(y))
             self.logger.info(f'Epoch {epoch + 1}, Batch ({i + 1}/{num_batches}), Loss: {batch_loss.item():.4f}')
 
         # 记录训练集的预测结果
-        train_result = torch.cat(train_result)
-        train_true = torch.cat(train_true)
+        y_predicts = torch.cat(y_predicts)
+        y_trues = torch.cat(y_trues)
 
         self.logger.info(f'Epoch {epoch + 1}, Train A Epoch Average Loss: {epoch_loss:.4f}')
-        self.logger.info(get_metrics_str(epoch + 1, train_true, train_result))
+        self.logger.info(get_metrics_str(epoch + 1, y_trues, y_predicts))
 
         # 训练结束验证
         if valid_loader is not None:
-            valid_true, valid_result = self.validate(valid_loader)
+            valid_true, valid_predict = self.validate(valid_loader)
+        else:
+            valid_true, valid_predict = None, None
 
-        return epoch_loss, valid_true, valid_result
+        return epoch_loss, valid_true, valid_predict
 
     def _loader_forward(self, loader) -> Generator[Tuple[torch.Tensor, torch.Tensor], None, None]:
         """
@@ -225,19 +226,20 @@ class Trainer(nn.Module):
 
     def validate(self, valid_loader) -> Tuple[torch.Tensor, torch.Tensor]:
         """
-        验证函数
+        验证模式, 计算真实标签和预测结果
 
         :param valid_loader: 验证集导入器
 
-        :return: true_y, valid_y
+        :return: y_true, y_predicts
         """
         self.eval()
-        true_y, valid_y = [], []
-        for y_hat, y in self._loader_forward(valid_loader):
-            valid_y.append(y_hat.argmax(dim=-1))
-            true_y.append(y.clone())
+        y_trues, y_predicts = [], []
+        with torch.no_grad():
+            for y_hat, y in self._loader_forward(valid_loader):
+                y_predicts.append(cpu_ts(y_hat.argmax(dim=-1)))
+                y_trues.append(cpu_ts(y))
 
-        return torch.cat(true_y), torch.cat(valid_y)
+        return torch.cat(y_trues), torch.cat(y_predicts)
 
     def predict(self, x: torch.Tensor, *args, **kwargs) -> torch.Tensor:
         """
@@ -252,12 +254,12 @@ class Trainer(nn.Module):
         :returns: 返回长度为batch_size的一维tensor
         """
         self.eval()
-
-        y = self.forward(x, *args, **kwargs)
+        with torch.no_grad():
+            y = self.forward(x, *args, **kwargs)
 
         if 0 < self.num_class < y.shape[-1]:
             y = y[:, :self.num_class]
-        return torch.argmax(y, dim=-1)
+        return cpu_ts(torch.argmax(y, dim=-1))
 
     def analyse(self, x: torch.Tensor, classes: list, **kwargs) -> list:
         """
@@ -303,23 +305,17 @@ class Trainer(nn.Module):
                 print(e)
                 sys.exit()
 
-    def _init_logger(self, log_file: str = None):
+    def _init_logger(self):
         """
         初始化日志文件
-
-        :param log_file: log文件地址, 默认为 None, 即不保存日志文件
         """
         self.logger.handlers.clear()
-        if log_file is not None:
-            log_file = date_prefix_filename(log_file)
-            if not os.path.exists(log_file):
-                log_file = os.path.join(LOG_PATH, log_file)
-                os.makedirs(os.path.dirname(log_file), exist_ok=True)
 
-            file_handler = logging.FileHandler(log_file)
-            file_handler.setLevel(logging.INFO)
-            file_handler.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(message)s'))
-            self.logger.addHandler(file_handler)
+        log_file = os.path.join(self.log_path, 'train.log')
+        file_handler = logging.FileHandler(log_file)
+        file_handler.setLevel(logging.INFO)
+        file_handler.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(message)s'))
+        self.logger.addHandler(file_handler)
 
         stream_handler = logging.StreamHandler()
         stream_handler.setLevel(logging.INFO)

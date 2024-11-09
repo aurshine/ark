@@ -48,11 +48,11 @@ def _load_dir(dir_path,
     return _get_text_label_from_df(pd.concat(all_df), text_col, label_col, device)
 
 
-def load(dataset_path='train.csv',
+def load(dataset_path,
          text_col='text',
          label_col='label',
          sep=',',
-         device=None) -> Tuple[List[str], torch.Tensor]:
+         device=None):
     """
     读取csv文件, 返回text和label两个列表
 

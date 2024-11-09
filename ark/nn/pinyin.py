@@ -4,7 +4,6 @@ from typing import Sequence, List, Union
 from pypinyin import lazy_pinyin, Style, load_phrases_dict
 
 from ark.setting import COMMON_CHAR_PATH
-from ark.spider.classify import get_lines
 
 
 EXTEND_PINY = {
@@ -73,9 +72,10 @@ def translate_into_other_piny(text: str, p: float = 0):
     global piny_dict
     if piny_dict is None:
         piny_dict = {}
-        for line in get_lines(COMMON_CHAR_PATH):
-            line = line.split()
-            piny_dict[line[0]] = line[1:]
+        with open(COMMON_CHAR_PATH, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.split()
+                piny_dict[line[0]] = line[1:]
 
     ret = ''
     for s in text:

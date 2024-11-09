@@ -109,7 +109,7 @@ class Attention(nn.Module):
                 self.value2hidden = nn.Linear(value_size, hidden_size, device=self.device)
             else:
                 self.value2hidden = None
-            self.dropout = nn.Dropout(0.1)
+        self.dropout = nn.Dropout(0.1)
 
     def forward(self,
                 queries: torch.Tensor,

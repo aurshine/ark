@@ -79,8 +79,7 @@ def train(device=None):
               device=device,
               prefix_name='ark')
 
-    loss_list, valid_trues, valid_results = ark.fit(log_file='train.LOG',
-                                                    train_loader=train_loader,
+    loss_list, valid_trues, valid_results = ark.fit(train_loader=train_loader,
                                                     valid_loader=valid_loader,
                                                     epochs=TRAIN_EPOCHS,
                                                     optim_params=OPTIMIZER_PARAMS,
@@ -121,7 +120,6 @@ def pre_train(device=None):
               prefix_name='ark_pretrain')
 
     ark.fit(train_loader=loader,
-            log_file='pretrain.LOG',
             epochs=20,
             optim_params=OPTIMIZER_PARAMS,
             stop_min_epoch=5,

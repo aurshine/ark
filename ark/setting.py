@@ -17,7 +17,7 @@ COMMON_CHAR_PATH = os.path.join(DATASET_PATH, 'common_char.txt')
 PRETRAIN_DATASET_PATH = os.path.join(DATASET_PATH, 'pretrain.txt')
 
 # 训练结果的存储地址
-TRAIN_RESULT_PATH = os.path.join('./data', 'TRAIN_RESULT')
+TRAIN_RESULT_PATH = os.path.join(ARK_PATH, 'data/TRAIN_RESULT')
 
 
 if not os.path.exists(DATASET_PATH):

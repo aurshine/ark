@@ -5,14 +5,50 @@ import pandas as pd
 from numpy import int64 as np_int64
 
 from ark.setting import *
-from ark.spider.classify import get_lines, write_lines, clear
 from ark.utils import use_device
 
 
 CURRENT_FOLDER = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
 
 
-def load(file_path='train.csv',
+def _get_text_label_from_df(df, text_col='text', label_col='label', device=None) -> Tuple[List[str], torch.Tensor]:
+    """
+    从dataframe中获取text和label
+    """
+    device = use_device(device)
+    texts, labels = df[text_col].tolist(), torch.from_numpy(df[label_col].to_numpy(dtype=np_int64))
+
+    return texts, labels.to(device)
+
+
+def _load_dir(dir_path,
+              text_col='text',
+              label_col='label',
+              sep=',',
+              device=None):
+    """
+    读取一个文件夹的所有csv文件, 返回text和label
+
+    :param dir_path: 文件夹路径
+
+    :param text_col: 文本列名
+
+    :param label_col: 标签列名
+
+    :param sep: csv分隔符
+
+    :param device: 设备
+    """
+    all_df = []
+    for file in os.listdir(dir_path):
+        if file.endswith('.csv'):
+            df = pd.read_csv(os.path.join(dir_path, file), encoding='utf-8', sep=sep)
+            all_df.append(df)
+
+    return _get_text_label_from_df(pd.concat(all_df), text_col, label_col, device)
+
+
+def load(dataset_path='train.csv',
          text_col='text',
          label_col='label',
          sep=',',
@@ -20,7 +56,7 @@ def load(file_path='train.csv',
     """
     读取csv文件, 返回text和label两个列表
 
-    :param file_path: 文件路径，可以是相对于DATASET_PATH的路径，也可以是绝对路径
+    :param dataset_path: 数据集路径，如果是一个文件，可以是相对于DATASET_PATH的路径，也可以是绝对路径。如果是一个文件夹，则读取文件夹下所有csv文件。
 
     :param text_col: 文本列名
 
@@ -30,73 +66,11 @@ def load(file_path='train.csv',
 
     :param sep: csv分隔符
     """
-    device = use_device(device)
-    if not os.path.exists(file_path):
-        file_path = os.path.join(DATASET_PATH, file_path)
+    if os.path.isdir(dataset_path):
+        return _load_dir(dataset_path, text_col, label_col, sep, device)
 
-    df = pd.read_csv(file_path, encoding='utf-8', sep=sep)
+    if not os.path.exists(dataset_path):
+        dataset_path = os.path.join(DATASET_PATH, dataset_path)
 
-    texts, labels = df[text_col].tolist(), torch.from_numpy(df[label_col].to_numpy(dtype=np_int64))
-
-    return texts, labels.to(device)
-
-
-def update_tie_ba(encoding='utf-8-sig'):
-    """
-    内部函数, 更新tie-ba数据集
-
-    :param encoding: 编码方式
-    """
-    def dic(path, label):
-        lines = get_lines(path, encoding=encoding)
-        return {
-            'TEXT': lines,
-            'label': [label] * len(lines)
-        }
-
-    df1 = pd.DataFrame(dic(BAD_TXT_PATH, 1))
-    df2 = pd.DataFrame(dic(NOT_BAD_TXT_PATH, 0))
-    comment = pd.read_csv(TIE_BA_CSV_PATH, encoding=encoding)
-
-    if df1.shape[0]:
-        comment = pd.concat([df1, comment])
-
-    if df2.shape[0]:
-        comment = pd.concat([df2, comment])
-    comment = comment.sort_values(by=['label'], ascending=False)
-    comment.to_csv(TIE_BA_CSV_PATH, index=False, encoding=encoding)
-    clear(BAD_TXT_PATH), clear(NOT_BAD_TXT_PATH)
-
-    update_tie_ba_split(encoding=encoding)
-    print('更新贴吧数据集')
-
-
-def update_tie_ba_split(encoding='utf-8-sig'):
-    """
-    内部函数
-
-    将tie-ba数据集分为pos和nag两个数据集
-    """
-    path = os.path.join(CURRENT_FOLDER, 'DATASET')
-    df = pd.read_csv(TIE_BA_CSV_PATH, encoding=encoding)
-
-    pos = df[df['label'] == 0]
-    neg = df[df['label'] == 1]
-
-    pos.to_csv(os.path.join(path, 'tie-ba-pos.csv'), index=False, encoding=encoding)
-    neg.to_csv(os.path.join(path, 'tie-ba-neg.csv'), index=False, encoding=encoding)
-
-
-def update_vocab():
-    """更新词表"""
-    df = pd.read_csv(TIE_BA_CSV_PATH)
-    vocab = set(get_lines(VOCAB_PATH))
-
-    add_news = []
-    for line in df['TEXT']:
-        for c in line:
-            if not c.isspace() and c not in vocab:
-                vocab.add(c)
-                add_news.append(c)
-
-    write_lines(add_news, VOCAB_PATH, mode='a')
+    df = pd.read_csv(dataset_path, encoding='utf-8', sep=sep)
+    return _get_text_label_from_df(df, text_col, label_col, device)

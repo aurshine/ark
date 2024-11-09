@@ -22,7 +22,7 @@ class Trainer(nn.Module):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.setLevel(logging.INFO)
 
-        for path in [self.train_result_path, self.model_path, self.log_path]:
+        for path in [self.train_result_path, self.checkpoint_path, self.log_path]:
             if not os.path.exists(path):
                 os.makedirs(path)
 

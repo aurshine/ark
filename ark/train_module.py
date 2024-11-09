@@ -4,7 +4,7 @@ import random
 import pandas as pd
 
 from ark.utils import use_device, date_prefix_filename, all_metrics
-from ark.setting import PRETRAIN_TOKENIZER_PATH, LOG_PATH, DATASET_PATH, PRETRAIN_DATASET_PATH
+from ark.setting import PRETRAIN_TOKENIZER_PATH, DATASET_PATH, PRETRAIN_DATASET_PATH
 from ark.data.dataloader import get_ark_loader, get_ark_pretrain_loader
 from ark.nn.accuracy import Plot
 from ark.nn.pretrain_loss import InitialFinalLoss
@@ -26,7 +26,7 @@ DROPOUT = 0.5                                          # 随机失活率
 NUM_CLASS = 2                                          # 分类数
 #################################################################################
 # 训练参数
-BATCH_SIZE = 128                                        # 批量大小
+BATCH_SIZE = 64                                        # 批量大小
 
 TRAIN_EPOCHS = 200                                      # 最大训练轮数
 
@@ -91,7 +91,7 @@ def train(device=None):
         plot.add(*all_metrics(valid_true, valid_result))
 
     plot.plot(labels=['accuracy', 'f1-score', 'precision', 'recall', 'fpr'],
-              save_path=os.path.join(LOG_PATH, date_prefix_filename('valid_metrics.png'))
+              save_path=os.path.join(ark.log_path, 'valid_metrics.png')
               )
 
 

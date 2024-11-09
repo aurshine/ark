@@ -17,9 +17,9 @@ def clear_reply(relpy_text: str):
 def catch_replies(reply_filed: BeautifulSoup) -> List[str]:
     """返回某个回复楼层的回复列表"""
     reply_list = []
-    return reply_list
-    for reply_tag in reply_filed.select('.'):
-        reply_list.append(clear_reply(reply_tag.text))
+    if reply_filed:
+        for reply_tag in reply_filed.select('.lzl_content_main'):
+            reply_list.append(clear_reply(reply_tag.text))
 
     return reply_list
 
@@ -34,7 +34,6 @@ def catch_comments_from_comment_field(comment_field: BeautifulSoup) -> Dict[str,
         'reply_comments': catch_replies(reply_field)
     }
 
-    print(result)
     return result
 
 
@@ -104,4 +103,4 @@ async def spider_main(tie_ba_names: List[str], save_path: str):
         comments = await asyncio.gather(*catch_comment_tasks)
 
 if __name__ == '__main__':
-    asyncio.run(spider_main(['孙笑川'], ''))
+    asyncio.run(spider_main(['孙笑川'], '1.txt'))

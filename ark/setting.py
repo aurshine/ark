@@ -46,7 +46,7 @@ with open(HAS_URLS_PATH, encoding='utf-8', mode='r') as f:
 
 # 爬虫 headers 配置
 HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    'User-Agent': 'Mozilla/5.0 (compatible; Baiduspider/2.0; +http://www.baidu.com/search/spider.html)',
     'Host': 'tieba.baidu.com',
     'Referer': 'https://tieba.baidu.com',
     'Cache-Control': 'max-age=0',

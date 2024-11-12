@@ -26,7 +26,7 @@ DROPOUT = 0.5                                          # 随机失活率
 NUM_CLASS = 2                                          # 分类数
 #################################################################################
 # 训练参数
-BATCH_SIZE = 64                                        # 批量大小
+BATCH_SIZE = 1                                        # 批量大小
 
 TRAIN_EPOCHS = 200                                      # 最大训练轮数
 
@@ -74,6 +74,7 @@ def train(device=None):
               hidden_size=HIDDEN_SIZE,
               num_heads=NUM_HEADS,
               num_layer=NUM_LAYER,
+              num_channels=3,
               dropout=DROPOUT,
               num_class=NUM_CLASS,
               device=device,
@@ -114,6 +115,7 @@ def pre_train(device=None):
               hidden_size=HIDDEN_SIZE,
               num_heads=NUM_HEADS,
               num_layer=NUM_LAYER,
+              num_channels=3,
               dropout=DROPOUT,
               num_class=NUM_CLASS,
               device=device,

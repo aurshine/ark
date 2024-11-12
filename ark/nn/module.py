@@ -34,6 +34,7 @@ class Ark(Trainer):
                  num_heads: int,
                  num_layer: int,
                  num_class: int,
+                 num_channels: int = 3,
                  dropout: float = 0.5,
                  output_layer=None,
                  device: Union[str, torch.device, None] = None,
@@ -52,6 +53,8 @@ class Ark(Trainer):
         :param num_layer: 层数
 
         :param num_class: 类别数
+
+        :param num_channels: 输入通道数
 
         :param dropout: dropout
 
@@ -72,6 +75,7 @@ class Ark(Trainer):
         self.decoder = ArkDecoder(hidden_size=hidden_size,
                                   num_heads=num_heads,
                                   num_layer=num_layer,
+                                  num_channels=num_channels,
                                   dropout=dropout,
                                   device=self.device
                                   )
@@ -97,7 +101,6 @@ class Ark(Trainer):
         y, masks = self.encoder(x, masks, **kwargs)
         # y     (batch_size, steps, hidden_size)
         y = self.decoder(y, masks=masks, **kwargs)
-
         if self.output_layer is not None:
             y = self.output_layer(y, **kwargs)
         return y
@@ -115,7 +118,6 @@ class ArkClassifier(nn.Module):
 
     def forward(self, x, **kwargs):
         """
-
         :param x: x 形状为 (batch_size, steps, hidden_size)
 
         :param kwargs: TransformerLayer 的其它参数

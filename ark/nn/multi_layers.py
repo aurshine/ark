@@ -178,7 +178,7 @@ class MultiHeadAttention(nn.Module):
 
         self.attention = Attention(query_size // num_heads,
                                    key_size // num_heads,
-                                   head_hidden_size,
+                                   hidden_size=head_hidden_size,
                                    device=self.device)
 
     def forward(self,
@@ -251,6 +251,11 @@ class TransformerLayer(nn.Module):
         """
         super(TransformerLayer, self).__init__()
         self.device = use_device(device)
+        if hidden_size is not None:
+            assert hidden_size % num_heads == 0, \
+                f"hidden size should be divisible by num_heads, but got {hidden_size} and {num_heads}"
+            hidden_size = hidden_size // num_heads
+
         key_size = query_size if key_size is None else key_size
         value_size = key_size if value_size is None else value_size
 
@@ -282,8 +287,65 @@ class TransformerLayer(nn.Module):
         v = k if v is None else v
 
         y1 = self.attention(q, k, v, self.get_qk_weight, masks=masks)
-        y1 = self.add_norm1(q, y1)
+        if v.shape == y1.shape:
+            y1 = self.add_norm1(v, y1)
         y2 = self.ffn(y1)
         y2 = self.add_norm2(y1, y2)
 
         return y2
+
+
+class ChannelWiseTransformerLayer(nn.Module):
+    """
+    通道注意力机制的 TransformerLayer
+
+    将单通道信息与所有通道的信息进行注意力机制计算，得到每个通道对全部通道关注的结果
+    """
+    def __init__(self, hidden_size: int, num_heads: int, num_channels: int, dropout: float = 0.5, device=None):
+        super(ChannelWiseTransformerLayer, self).__init__()
+        self.device = use_device(device)
+        self.num_channels = num_channels
+
+        def layer():
+            return TransformerLayer(query_size=hidden_size,
+                                    key_size=hidden_size * num_channels,
+                                    value_size=hidden_size * num_channels,
+                                    num_heads=num_heads,
+                                    dropout=dropout,
+                                    device=self.device)
+
+        self.local2global = MultiLinear(num_input=hidden_size,
+                                        num_outputs=[hidden_size * num_channels],
+                                        active=nn.GELU(),
+                                        dropout=dropout,
+                                        device=self.device)
+
+        self.global2local = MultiLinear(num_input=hidden_size * num_channels,
+                                        num_outputs=[hidden_size],
+                                        active=nn.GELU(),
+                                        dropout=dropout,
+                                        device=self.device)
+
+        self.channel_wise_layers = nn.ModuleList([layer() for _ in range(num_channels)])
+        self.add_norms = nn.ModuleList([AddNorm(hidden_size, dropout=dropout, device=self.device) for _ in range(num_channels)])
+
+    def forward(self, x, **kwargs):
+        """
+        :param x: 形状为 (num_channels, batch_size, steps, hidden_size)
+
+        :param kwargs: TransformerLayer 的其它参数
+
+        :return : 形状为 (num_channels, batch_size, steps, hidden_size)
+        """
+        if self.num_channels != len(x):
+            raise ValueError(f"The number of channels in x({len(x)}) != num_channels({self.num_channels})")
+        # (batch_size, steps, num_channels * hidden_size)
+        flatten_x = x.permute(1, 2, 0, 3).reshape(x.shape[1], x.shape[2], -1)
+
+        # 每个单通道对所有通道信息的注意力计算结果
+        channels_result = torch.zeros_like(x, device=self.device)
+        for i, channel_layer in enumerate(self.channel_wise_layers):
+            y = channel_layer(self.local2global(x[i]), flatten_x, **kwargs)
+            channels_result[i] = self.add_norms[i](x[i], self.global2local(y))
+
+        return channels_result

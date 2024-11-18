@@ -130,3 +130,22 @@ def clear_train_result():
             shutil.rmtree(clear_dir)
         else:
             os.remove(clear_dir)
+
+
+def load_pretrain_model(model, pretrain_model_path, device=None):
+    """
+    加载预训练模型到model中
+    """
+    device = use_device(device)
+
+    pretrain_dict = torch.load(pretrain_model_path)
+    model_dict = model.static_dict()
+
+    for key in pretrain_dict.keys():
+        if key in model_dict:
+            model_dict[key] = pretrain_dict[key]
+
+    model.load_state_dict(model_dict)
+    model.to(device)
+
+    return model

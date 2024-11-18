@@ -16,15 +16,22 @@ class Trainer(nn.Module):
         super(Trainer, self).__init__()
         self.device = use_device(device)
         self.num_class = num_class
-        self.train_result_path = os.path.join(TRAIN_RESULT_PATH, date_prefix_filename(prefix_name))
+
+        # 记录训练结果的路径
+        self.train_result_path = os.path.join(TRAIN_RESULT_PATH, f'_{date_prefix_filename(prefix_name)}')
+        # 记录保存模型的路径
         self.checkpoint_path = os.path.join(self.train_result_path, 'checkpoint')
+        # 记录训练日志的路径
         self.log_path = os.path.join(self.train_result_path, 'log')
+        # 记录训练样本得分的路径
+        self.sample_score_path = os.path.join(self.train_result_path, 'sample_score')
+
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.setLevel(logging.INFO)
 
-        for path in [self.train_result_path, self.checkpoint_path, self.log_path]:
+        for path in [self.checkpoint_path, self.log_path, self.sample_score_path]:
             if not os.path.exists(path):
-                os.makedirs(path)
+                os.makedirs(path, exist_ok=True)
 
     def forward(self, inputs, *args, **kwargs):
         raise NotImplementedError
@@ -152,36 +159,40 @@ class Trainer(nn.Module):
         self.train()
         epoch_loss, y_trues, y_predicts = 0, [], []
 
-        for i, (y_hat, y) in enumerate(self._loader_forward(train_loader)):
-            batch_loss = loss_fn(y_hat, y)
-            epoch_loss += batch_loss.item()  # / len(train_loader)
+        ith_sample_score_path = os.path.join(self.sample_score_path, f'epoch{epoch + 1}.csv')
+        with open(ith_sample_score_path, 'w') as csv_file:
+            csv_file.write('text,neg_score,pos_score,pred_label,true_label\n')
+            for i, (texts, y_hat, y) in enumerate(self._loader_forward(train_loader)):
+                batch_loss = loss_fn(y_hat, y)
+                epoch_loss += batch_loss.item()  # / len(train_loader)
 
-            # 梯度计算
-            batch_loss.backward()
-            optimizer.step()
-            optimizer.zero_grad()
+                # 梯度计算
+                batch_loss.backward()
+                optimizer.step()
+                optimizer.zero_grad()
+
+                # 记录训练集的预测结果
+                y_predicts.append(cpu_ts(y_hat.argmax(dim=-1)))
+                y_trues.append(cpu_ts(y))
+                self.logger.info(f'Epoch {epoch + 1}, Batch ({i + 1}/{num_batches}), Loss: {batch_loss.item():.4f}')
+                self.log_sample_score(csv_file, texts, y_hat, y)
 
             # 记录训练集的预测结果
-            y_predicts.append(cpu_ts(y_hat.argmax(dim=-1)))
-            y_trues.append(cpu_ts(y))
-            self.logger.info(f'Epoch {epoch + 1}, Batch ({i + 1}/{num_batches}), Loss: {batch_loss.item():.4f}')
+            y_predicts = torch.cat(y_predicts)
+            y_trues = torch.cat(y_trues)
 
-        # 记录训练集的预测结果
-        y_predicts = torch.cat(y_predicts)
-        y_trues = torch.cat(y_trues)
+            self.logger.info(f'Epoch {epoch + 1}, Train A Epoch Average Loss: {epoch_loss:.4f}')
+            self.logger.info(get_metrics_str(epoch + 1, y_trues, y_predicts))
 
-        self.logger.info(f'Epoch {epoch + 1}, Train A Epoch Average Loss: {epoch_loss:.4f}')
-        self.logger.info(get_metrics_str(epoch + 1, y_trues, y_predicts))
+            # 训练结束验证
+            if valid_loader is not None:
+                valid_true, valid_predict = self.validate(valid_loader)
+            else:
+                valid_true, valid_predict = None, None
 
-        # 训练结束验证
-        if valid_loader is not None:
-            valid_true, valid_predict = self.validate(valid_loader)
-        else:
-            valid_true, valid_predict = None, None
+            return epoch_loss, valid_true, valid_predict
 
-        return epoch_loss, valid_true, valid_predict
-
-    def _loader_forward(self, loader) -> Generator[Tuple[torch.Tensor, torch.Tensor], None, None]:
+    def _loader_forward(self, loader) -> Generator[Tuple[Optional[List[str]], torch.Tensor, torch.Tensor], None, None]:
         """
         传入一个loader, 计算loader的预测结果
 
@@ -197,13 +208,15 @@ class Trainer(nn.Module):
             multi_channel_tokens: List[torch.Tensor] = []
             multi_channel_masks: List[torch.Tensor] = []
 
-            y, kwargs = None, {}
+            texts, y, kwargs = None, None, {}
             for key, value in data.items():
                 if key == 'label':
                     y = value
                 elif 'tokens' in key:
                     multi_channel_tokens.append(value['input_ids'])
                     multi_channel_masks = value['attention_mask']
+                elif key == '__text__':
+                    texts = value
                 else:
                     kwargs[key] = value
 
@@ -215,7 +228,7 @@ class Trainer(nn.Module):
             y = self._to_device(y)
 
             y_hat = self.forward(multi_channel_tokens, multi_channel_masks, **kwargs)
-            yield y_hat, y
+            yield texts, y_hat, y
 
     @staticmethod
     def _achieve_stop_condition(epoch: int, stop_min_epoch: int, loss: float, stop_max_loss: float) -> bool:
@@ -235,7 +248,7 @@ class Trainer(nn.Module):
         self.eval()
         y_trues, y_predicts = [], []
         with torch.no_grad():
-            for y_hat, y in self._loader_forward(valid_loader):
+            for _, y_hat, y in self._loader_forward(valid_loader):
                 y_predicts.append(cpu_ts(y_hat.argmax(dim=-1)))
                 y_trues.append(cpu_ts(y))
 
@@ -355,3 +368,20 @@ class Trainer(nn.Module):
         self.logger.info(f'epochs: {epochs}')
         self.logger.info(f'stop_loss_value: {stop_loss_value}')
         self.logger.info(f'stop_min_epoch: {stop_min_epoch}\n')
+
+    def log_sample_score(self, fd, texts: List[str], y_hat: torch.Tensor, y: torch.Tensor):
+        """
+        记录训练集的预测结果
+
+        text,neg_score,pos_score,pred_label,true_label
+
+        :param fd: 保存文件IO流
+
+        :param texts: 文本
+
+        :param y_hat: 预测结果
+
+        :param y: 真实标签
+        """
+        for text, (neg_score, pos_score), true_label in zip(texts, y_hat, y):
+            fd.write(f'{text},{neg_score.item():.4f},{pos_score.item():.4f},{int(neg_score < pos_score)},{true_label.item()}\n')

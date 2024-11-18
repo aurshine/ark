@@ -3,3 +3,5 @@
 /ark/data/__pycache__/
 /ark/spider/__pycache__/
 /ark/data/TRAIN_RESULT
+/main.py
+/test.py

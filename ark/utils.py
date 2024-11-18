@@ -2,8 +2,11 @@ import os
 import time
 from datetime import datetime
 from typing import Union, Tuple
+import shutil
 
 import torch
+
+from ark.setting import TRAIN_RESULT_PATH
 
 
 def use_device(device: Union[int, str, torch.device, None] = 0):
@@ -113,3 +116,17 @@ class Timer:
     def __exit__(self, exc_type, exc_val, exc_tb):
         end_time = time.time()
         print(f"{self.name} taken: {end_time - self.start_time} seconds")
+
+
+def clear_train_result():
+    """
+    清理训练结果
+
+    删除前缀有_的目录和文件
+    """
+    clear_dirs = [os.path.join(TRAIN_RESULT_PATH, d) for d in os.listdir(TRAIN_RESULT_PATH) if d.startswith('_')]
+    for clear_dir in clear_dirs:
+        if os.path.isdir(clear_dir):
+            shutil.rmtree(clear_dir)
+        else:
+            os.remove(clear_dir)

@@ -2,8 +2,9 @@ import os
 import random
 
 import pandas as pd
+import torch
 
-from ark.utils import use_device, date_prefix_filename, all_metrics
+from ark.utils import use_device, date_prefix_filename, all_metrics, load_pretrain_model
 from ark.setting import PRETRAIN_TOKENIZER_PATH, DATASET_PATH, PRETRAIN_DATASET_PATH
 from ark.data.dataloader import get_ark_loader, get_ark_pretrain_loader
 from ark.nn.accuracy import Plot
@@ -56,11 +57,11 @@ def train(device=None):
     }
 
     datas = pd.read_csv(os.path.join(DATASET_PATH, 'train.csv'), sep=',', encoding='utf-8')
-    indices, num_datas = random.sample(range(len(datas)), len(datas)), len(datas)
+    indices, train_size = random.sample(range(len(datas)), len(datas)), int(len(datas) * 0.9)
 
     # 构造数据加载器
-    train_loader = get_ark_loader(datas.iloc[indices[:num_datas * 9 // 10]], **loader_kwargs)
-    valid_loader = get_ark_loader(datas.iloc[indices[num_datas * 9 // 10:]], **loader_kwargs)
+    train_loader = get_ark_loader(datas.iloc[indices[:train_size]], **loader_kwargs)
+    valid_loader = get_ark_loader(datas.iloc[indices[train_size:]], **loader_kwargs)
 
     ark_classifier = ArkClassifier(hidden_size=HIDDEN_SIZE,
                                    num_classes=NUM_CLASS,
@@ -88,7 +89,7 @@ def train(device=None):
                                                     stop_loss_value=STOP_LOSS_VALUE)
 
     plot = Plot(5)
-    for valid_true, valid_result in zip(valid_trues, valid_results):
+    for valid_true, valid_result in zip(valid_trues, valid_results.argmax(dim=-1)):
         plot.add(*all_metrics(valid_true, valid_result))
 
     plot.plot(labels=['accuracy', 'f1-score', 'precision', 'recall', 'fpr'],

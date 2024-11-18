@@ -6,6 +6,7 @@ from typing import Dict, Union, Optional, List, Tuple, Generator
 import torch
 from torch import nn
 from torch.nn import init
+from torch.functional import F
 
 from ark.utils import date_prefix_filename, use_device, get_metrics_str, cpu_ts
 from ark.setting import TRAIN_RESULT_PATH
@@ -92,7 +93,7 @@ class Trainer(nn.Module):
             valid_trues.append(valid_true)
 
             is_stop = self._achieve_stop_condition(epoch + 1, stop_min_epoch, epoch_loss, stop_loss_value)
-            if (epoch + 1) % 10 == 0 or is_stop:
+            if (epoch + 1) % 5 == 0 or is_stop:
                 self.logger.warning(f'Epoch: {epoch + 1}, ValidMetrics:')
                 self.logger.warning(get_metrics_str(epoch + 1, valid_result, valid_true))
                 self.save_state_dict(os.path.join(self.checkpoint_path, f'epoch{epoch + 1}.pth'))
@@ -154,13 +155,13 @@ class Trainer(nn.Module):
 
         :param valid_loader: 验证集导入器
 
-        :return: 训练集的平均损失, 验证集的真实标签(batch_size, ), 验证集的预测结果(batch_size, )
+        :return: 训练集的平均损失, 验证集的真实标签(batch_size, ), 验证集的预测结果(batch_size, num_class)
         """
         self.train()
         epoch_loss, y_trues, y_predicts = 0, [], []
 
-        ith_sample_score_path = os.path.join(self.sample_score_path, f'epoch{epoch + 1}.csv')
-        with open(ith_sample_score_path, 'w') as csv_file:
+        ith_train_sample_score_path = os.path.join(self.sample_score_path, f'train_sample_score_epoch{epoch + 1}.csv')
+        with open(ith_train_sample_score_path, 'w') as csv_file:
             csv_file.write('text,neg_score,pos_score,pred_label,true_label\n')
             for i, (texts, y_hat, y) in enumerate(self._loader_forward(train_loader)):
                 batch_loss = loss_fn(y_hat, y)
@@ -184,13 +185,13 @@ class Trainer(nn.Module):
             self.logger.info(f'Epoch {epoch + 1}, Train A Epoch Average Loss: {epoch_loss:.4f}')
             self.logger.info(get_metrics_str(epoch + 1, y_trues, y_predicts))
 
-            # 训练结束验证
-            if valid_loader is not None:
-                valid_true, valid_predict = self.validate(valid_loader)
-            else:
-                valid_true, valid_predict = None, None
+        # 训练结束验证
+        if valid_loader is not None:
+            valid_true, valid_predict = self.validate(valid_loader)
+        else:
+            valid_true, valid_predict = None, None
 
-            return epoch_loss, valid_true, valid_predict
+        return epoch_loss, valid_true, valid_predict
 
     def _loader_forward(self, loader) -> Generator[Tuple[Optional[List[str]], torch.Tensor, torch.Tensor], None, None]:
         """
@@ -248,8 +249,8 @@ class Trainer(nn.Module):
         self.eval()
         y_trues, y_predicts = [], []
         with torch.no_grad():
-            for _, y_hat, y in self._loader_forward(valid_loader):
-                y_predicts.append(cpu_ts(y_hat.argmax(dim=-1)))
+            for y_hat, y in self._loader_forward(valid_loader):
+                y_predicts.append(cpu_ts(y_hat))
                 y_trues.append(cpu_ts(y))
 
         return torch.cat(y_trues), torch.cat(y_predicts)
@@ -295,7 +296,16 @@ class Trainer(nn.Module):
 
     def load(self, path: str):
         """读取本地模型"""
-        self.load_state_dict(torch.load(path, map_location=use_device()))
+        self.load_state_dict(torch.load(path, map_location=self.device))
+
+    def load_pretrain(self, path: str):
+        """读取预训练模型"""
+        pretrain_dict = torch.load(path, map_location=self.device)
+        model_dict = self.state_dict()
+        for key in pretrain_dict.keys():
+            if key in model_dict:
+                model_dict[key] = pretrain_dict[key]
+        self.load_state_dict(model_dict)
 
     def init_params(self):
         """
@@ -369,6 +379,7 @@ class Trainer(nn.Module):
         self.logger.info(f'stop_loss_value: {stop_loss_value}')
         self.logger.info(f'stop_min_epoch: {stop_min_epoch}\n')
 
+    @torch.no_grad()
     def log_sample_score(self, fd, texts: List[str], y_hat: torch.Tensor, y: torch.Tensor):
         """
         记录训练集的预测结果
@@ -383,5 +394,5 @@ class Trainer(nn.Module):
 
         :param y: 真实标签
         """
-        for text, (neg_score, pos_score), true_label in zip(texts, y_hat, y):
+        for text, (neg_score, pos_score), true_label in zip(texts, F.softmax(y_hat, dim=-1), y):
             fd.write(f'{text},{neg_score.item():.4f},{pos_score.item():.4f},{int(neg_score < pos_score)},{true_label.item()}\n')

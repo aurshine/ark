@@ -1,4 +1,4 @@
-from typing import List, Dict, Union
+from typing import List, Dict, Union, Any
 
 import torch
 import pandas as pd
@@ -10,7 +10,7 @@ from ark.nn.text_process import token_random_mask
 from ark.nn.tokenizer import Tokenizer
 
 
-def collate_dict(batch_datas: List[Dict[str, Union[dict, torch.Tensor]]]) -> Dict[str, Union[dict, torch.Tensor]]:
+def collate_dict(batch_datas: List[Dict[str, Union[Dict, torch.Tensor, Any]]]) -> Dict[str, Union[dict, torch.Tensor]]:
     """
     将dict形式的batch数据合并, 并将tensor stack或cat到一起
 
@@ -29,8 +29,6 @@ def collate_dict(batch_datas: List[Dict[str, Union[dict, torch.Tensor]]]) -> Dic
                 datas[k] = torch.stack(datas[k])
         elif isinstance(datas[k][0], dict):
             datas[k] = collate_dict(datas[k])
-        else:
-            raise TypeError(f"Unsupported type {type(datas[k][0])} in collate_dict")
 
     return datas
 
@@ -80,6 +78,7 @@ class ArkDataSet(Dataset):
         final = translate_piny(text, Style.FINALS)
 
         item = {
+            '__text__': text,
             'source_tokens': self.tokenizer.encode(text=text, device=self.device),
             'initial_tokens': self.tokenizer.encode(text=initial, device=self.device),
             'final_tokens': self.tokenizer.encode(text=final, device=self.device),

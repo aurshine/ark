@@ -41,9 +41,17 @@ TOKENIZER = Tokenizer(PRETRAIN_TOKENIZER_PATH, STEPS)  # 预训练tokenizer
 #################################################################################
 
 
-def train(device=None):
+def train(model_path=None, pretrain_model_path=None, device=None):
     """
     训练模型
+
+    :param model_path: 模型导入路径, 默认为None无需导入
+
+    :param pretrain_model_path: 预训练模型导入路径, 默认为None无需导入
+
+                                设置后model_path导入的部分参数将被忽略, 仅导入预训练模型参数
+
+    :param device: 训练设备, 默认为None, 自动选择
     """
     device = use_device(device)
 
@@ -81,6 +89,11 @@ def train(device=None):
               device=device,
               prefix_name='ark')
 
+    if model_path is not None:
+        ark.load(model_path)
+    if pretrain_model_path is not None:
+        ark.load_pretrain(pretrain_model_path)
+
     loss_list, valid_trues, valid_results = ark.fit(train_loader=train_loader,
                                                     valid_loader=valid_loader,
                                                     epochs=TRAIN_EPOCHS,
@@ -97,9 +110,13 @@ def train(device=None):
               )
 
 
-def pre_train(device=None):
+def pre_train(model_path=None, device=None):
     """
     预训练模型
+
+    :param model_path: 预训练模型导入路径, 默认为None无需导入
+
+    :param device: 训练设备, 默认为None, 自动选择
     """
     device = use_device(device)
 
@@ -121,6 +138,9 @@ def pre_train(device=None):
               num_class=NUM_CLASS,
               device=device,
               prefix_name='ark_pretrain')
+
+    if model_path is not None:
+        ark.load(model_path)
 
     ark.fit(train_loader=loader,
             epochs=20,

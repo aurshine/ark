@@ -24,7 +24,7 @@ def _get_text_label_from_df(df, text_col='text', label_col='label', device=None)
 def _load_dir(dir_path,
               text_col='text',
               label_col='label',
-              sep=',',
+              sep='\t',
               device=None):
     """
     读取一个文件夹的所有csv文件, 返回text和label
@@ -51,7 +51,7 @@ def _load_dir(dir_path,
 def load(dataset_path,
          text_col='text',
          label_col='label',
-         sep=',',
+         sep='\t',
          device=None):
     """
     读取csv文件, 返回text和label两个列表
@@ -66,11 +66,11 @@ def load(dataset_path,
 
     :param sep: csv分隔符
     """
-    if os.path.isdir(dataset_path):
-        return _load_dir(dataset_path, text_col, label_col, sep, device)
-
     if not os.path.exists(dataset_path):
         dataset_path = os.path.join(DATASET_PATH, dataset_path)
+
+    if os.path.isdir(dataset_path):
+        return _load_dir(dataset_path, text_col, label_col, sep, device)
 
     df = pd.read_csv(dataset_path, encoding='utf-8', sep=sep)
     return _get_text_label_from_df(df, text_col, label_col, device)

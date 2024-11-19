@@ -2,9 +2,8 @@ import os
 import random
 
 import pandas as pd
-import torch
 
-from ark.utils import use_device, date_prefix_filename, all_metrics, load_pretrain_model
+from ark.utils import use_device, all_metrics
 from ark.setting import PRETRAIN_TOKENIZER_PATH, DATASET_PATH, PRETRAIN_DATASET_PATH
 from ark.data.dataloader import get_ark_loader, get_ark_pretrain_loader
 from ark.nn.accuracy import Plot

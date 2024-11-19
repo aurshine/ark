@@ -176,7 +176,7 @@ class ArkPretrainDataSet(Dataset):
 def get_ark_loader(file_path_or_df: Union[str, pd.DataFrame],
                    tokenizer,
                    max_length: int,
-                   sep: str = ',',
+                   sep: str = '\t',
                    batch_size: int = 32,
                    shuffle=True,
                    drop_last=False,

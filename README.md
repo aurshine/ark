@@ -17,3 +17,15 @@ git clone https://github.com/aurshine/ark.git
 cd ark
 pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
 ```
+
+# 训练
+
+```python
+from ark.train_module import train, pre_train
+
+# 训练模型
+train()
+
+# 预训练模型
+# pre_train()
+```

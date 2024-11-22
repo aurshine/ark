@@ -2,9 +2,11 @@ import os
 import random
 
 import pandas as pd
+from sklearn.model_selection import train_test_split
 
 from ark.utils import use_device, all_metrics
 from ark.setting import PRETRAIN_TOKENIZER_PATH, DATASET_PATH, PRETRAIN_DATASET_PATH
+from ark.data.load import load
 from ark.data.dataloader import get_ark_loader, get_ark_pretrain_loader
 from ark.nn.accuracy import Plot
 from ark.nn.pretrain_loss import InitialFinalLoss
@@ -56,19 +58,18 @@ def train(model_path=None, pretrain_model_path=None, device=None):
 
     # loader参数
     loader_kwargs = {
-        'sep': ',',
         'tokenizer': TOKENIZER,
         'max_length': STEPS,
         'batch_size': BATCH_SIZE,
         'device': device,
     }
 
-    datas = pd.read_csv(os.path.join(DATASET_PATH, 'train.csv'), sep=',', encoding='utf-8')
-    indices, train_size = random.sample(range(len(datas)), len(datas)), int(len(datas) * 0.9)
+    texts, labels = load(os.path.join(DATASET_PATH, 'all_data'))
+    train_texts, valid_texts, train_labels, valid_labels = train_test_split(texts, labels, test_size=0.2, random_state=42)
 
     # 构造数据加载器
-    train_loader = get_ark_loader(datas.iloc[indices[:train_size]], **loader_kwargs)
-    valid_loader = get_ark_loader(datas.iloc[indices[train_size:]], **loader_kwargs)
+    train_loader = get_ark_loader(train_texts, train_labels, **loader_kwargs)
+    valid_loader = get_ark_loader(valid_texts, valid_labels, **loader_kwargs)
 
     ark_classifier = ArkClassifier(hidden_size=HIDDEN_SIZE,
                                    num_classes=NUM_CLASS,

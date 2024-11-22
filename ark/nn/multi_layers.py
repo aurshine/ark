@@ -314,12 +314,14 @@ class ChannelWiseTransformerLayer(nn.Module):
                                     dropout=dropout,
                                     device=self.device)
 
+        # 将单通道信息映射到全局信息
         self.local2global = MultiLinear(num_input=hidden_size,
                                         num_outputs=[hidden_size * num_channels],
                                         active=nn.GELU(),
                                         dropout=dropout,
                                         device=self.device)
 
+        # 将全局信息映射到单通道信息
         self.global2local = MultiLinear(num_input=hidden_size * num_channels,
                                         num_outputs=[hidden_size],
                                         active=nn.GELU(),
@@ -343,9 +345,10 @@ class ChannelWiseTransformerLayer(nn.Module):
         flatten_x = x.permute(1, 2, 0, 3).reshape(x.shape[1], x.shape[2], -1)
 
         # 每个单通道对所有通道信息的注意力计算结果
+        # (num_channels, batch_size, steps, hidden_size)
         channels_result = torch.zeros_like(x, device=self.device)
-        for i, channel_layer in enumerate(self.channel_wise_layers):
+        for i, (channel_layer, add_norm) in enumerate(zip(self.channel_wise_layers, self.add_norms)):
             y = channel_layer(self.local2global(x[i]), flatten_x, **kwargs)
-            channels_result[i] = self.add_norms[i](x[i], self.global2local(y))
+            channels_result[i] = add_norm(x[i], self.global2local(y))
 
         return channels_result

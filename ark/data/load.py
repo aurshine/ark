@@ -48,7 +48,7 @@ def _load_dir(dir_path,
     return _get_text_label_from_df(pd.concat(all_df), text_col, label_col, device)
 
 
-def load(dataset_path,
+def load(dataset_path: str,
          text_col='text',
          label_col='label',
          sep='\t',

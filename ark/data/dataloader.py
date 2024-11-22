@@ -23,7 +23,9 @@ def collate_dict(batch_datas: List[Dict[str, Union[Dict, torch.Tensor, Any]]]) -
             datas[k].append(data[k])
 
         if isinstance(datas[k][0], torch.Tensor):
-            if datas[k][0].shape[0] == 1:
+            if datas[k][0].dim() == 0:
+                datas[k] = torch.tensor(datas[k])
+            elif datas[k][0].shape[0] == 1:
                 datas[k] = torch.cat(datas[k])
             else:
                 datas[k] = torch.stack(datas[k])
@@ -34,30 +36,28 @@ def collate_dict(batch_datas: List[Dict[str, Union[Dict, torch.Tensor, Any]]]) -
 
 
 class ArkDataSet(Dataset):
-    def __init__(self, csv_: Union[str, pd.DataFrame], tokenizer: Tokenizer, max_length=128, device=None, **kwargs):
+    def __init__(self, texts: List[str], labels: torch.Tensor, tokenizer: Tokenizer, max_length=128, device=None):
         """
         ArkDataSet 类用于处理文本数据集，包括数据集的读取、预处理、tokenizing等。
 
-        :param csv_: csv文件路径或DataFrame对象
+        :param texts: 文本列表
+
+        :param labels: 标签列表
 
         :param tokenizer: 用于分词的Tokenizer对象
 
         :param max_length: 最大长度
 
         :param device: 加载数据的设备
-
-        :param kwargs: read_csv的参数
         """
-        if isinstance(csv_, str):
-            self.df = pd.read_csv(csv_, **kwargs)
-        else:
-            self.df = csv_
+        self.texts = texts
+        self.labels = labels
         self.tokenizer = tokenizer
         self.max_length = max_length
         self.device = use_device(device)
 
     def __len__(self):
-        return len(self.df)
+        return len(self.texts)
 
     def __getitem__(self, index) -> Dict[str, Union[Dict[str, torch.Tensor], torch.Tensor]]:
         """
@@ -71,7 +71,10 @@ class ArkDataSet(Dataset):
             }
         """
         # 文本
-        text = self.df.iloc[index]['text']
+        text = self.texts[index]
+        # 标签
+        label = self.labels[index]
+
         # 声母
         initial = translate_piny(text, Style.INITIALS)
         # 韵母
@@ -82,7 +85,7 @@ class ArkDataSet(Dataset):
             'source_tokens': self.tokenizer.encode(text=text, device=self.device),
             'initial_tokens': self.tokenizer.encode(text=initial, device=self.device),
             'final_tokens': self.tokenizer.encode(text=final, device=self.device),
-            'label': torch.tensor([self.df.iloc[index]['label']], dtype=torch.int64, device=self.device)
+            'label': label.to(self.device)
         }
 
         return item
@@ -173,10 +176,10 @@ class ArkPretrainDataSet(Dataset):
         return item
 
 
-def get_ark_loader(file_path_or_df: Union[str, pd.DataFrame],
+def get_ark_loader(texts: List[str],
+                   labels: torch.Tensor,
                    tokenizer,
                    max_length: int,
-                   sep: str = '\t',
                    batch_size: int = 32,
                    shuffle=True,
                    drop_last=False,
@@ -186,13 +189,13 @@ def get_ark_loader(file_path_or_df: Union[str, pd.DataFrame],
 
     loader 返回的data的类型为pandas.DataFrame
 
-    :param file_path_or_df: csv文件路径或DataFrame对象
+    :param texts: 文本列表
+
+    :param labels: 标签列表
 
     :param tokenizer: 用于分词的Tokenizer对象
 
     :param max_length: 词元的最大长度
-
-    :param sep: csv文件分隔符
 
     :param batch_size: 批量大小
 
@@ -204,7 +207,7 @@ def get_ark_loader(file_path_or_df: Union[str, pd.DataFrame],
 
     :param kwargs: DataLoader的其他参数
     """
-    return DataLoader(ArkDataSet(file_path_or_df, sep=sep, tokenizer=tokenizer, max_length=max_length, device=device),
+    return DataLoader(ArkDataSet(texts, labels, tokenizer=tokenizer, max_length=max_length, device=device),
                       batch_size=batch_size,
                       shuffle=shuffle,
                       num_workers=0,

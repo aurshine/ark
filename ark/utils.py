@@ -38,6 +38,12 @@ def all_metrics(y_true: torch.Tensor, y_pred: torch.Tensor) -> Tuple[float, floa
     """
     计算各种指标，返回 accuracy, precision, recall, fpr, f1
     """
+    assert 0 < y_true.dim() <= 2 and 0 < y_pred.dim() <= 2, "y_true and y_pred should be 1-D or 2-D tensor"
+    if y_true.dim() == 2:
+        y_true = y_true.argmax(dim=1)
+    if y_pred.dim() == 2:
+        y_pred = y_pred.argmax(dim=1)
+
     tp = torch.sum((y_pred == 1) & (y_true == 1)).item()
     tn = torch.sum((y_pred == 0) & (y_true == 0)).item()
     fp = torch.sum((y_pred == 1) & (y_true == 0)).item()

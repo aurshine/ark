@@ -162,7 +162,8 @@ class Trainer(nn.Module):
 
         ith_train_sample_score_path = os.path.join(self.sample_score_path, f'train_sample_score_epoch{epoch + 1}.csv')
         with open(ith_train_sample_score_path, 'w') as csv_file:
-            csv_file.write('text,neg_score,pos_score,pred_label,true_label\n')
+            sep = '\t'
+            csv_file.write(f'text{sep}neg_score{sep}pos_score{sep}pred_label{sep}true_label\n')
             for i, (texts, y_hat, y) in enumerate(self._loader_forward(train_loader)):
                 batch_loss = loss_fn(y_hat, y)
                 epoch_loss += batch_loss.item()  # / len(train_loader)
@@ -176,7 +177,7 @@ class Trainer(nn.Module):
                 y_predicts.append(cpu_ts(y_hat.argmax(dim=-1)))
                 y_trues.append(cpu_ts(y))
                 self.logger.info(f'Epoch {epoch + 1}, Batch ({i + 1}/{num_batches}), Loss: {batch_loss.item():.4f}')
-                self.log_sample_score(csv_file, texts, y_hat, y)
+                self.log_sample_score(csv_file, texts, y_hat, y, sep=sep)
 
             # 记录训练集的预测结果
             y_predicts = torch.cat(y_predicts)
@@ -249,7 +250,7 @@ class Trainer(nn.Module):
         self.eval()
         y_trues, y_predicts = [], []
         with torch.no_grad():
-            for y_hat, y in self._loader_forward(valid_loader):
+            for _, y_hat, y in self._loader_forward(valid_loader):
                 y_predicts.append(cpu_ts(y_hat))
                 y_trues.append(cpu_ts(y))
 
@@ -380,7 +381,7 @@ class Trainer(nn.Module):
         self.logger.info(f'stop_min_epoch: {stop_min_epoch}\n')
 
     @torch.no_grad()
-    def log_sample_score(self, fd, texts: List[str], y_hat: torch.Tensor, y: torch.Tensor):
+    def log_sample_score(self, fd, texts: List[str], y_hat: torch.Tensor, y: torch.Tensor, sep='\t'):
         """
         记录训练集的预测结果
 
@@ -393,6 +394,8 @@ class Trainer(nn.Module):
         :param y_hat: 预测结果
 
         :param y: 真实标签
+
+        :param sep: 字段分隔符
         """
         for text, (neg_score, pos_score), true_label in zip(texts, F.softmax(y_hat, dim=-1), y):
-            fd.write(f'{text},{neg_score.item():.4f},{pos_score.item():.4f},{int(neg_score < pos_score)},{true_label.item()}\n')
+            fd.write(f'{text}{sep}{neg_score.item():.4f}{sep}{pos_score.item():.4f}{sep}{int(neg_score < pos_score)}{sep}{true_label.item()}\n')

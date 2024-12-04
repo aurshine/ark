@@ -28,7 +28,6 @@ class Trainer(nn.Module):
         self.sample_score_path = os.path.join(self.train_result_path, 'sample_score')
 
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.logger.setLevel(logging.INFO)
 
         for path in [self.checkpoint_path, self.log_path, self.sample_score_path]:
             if not os.path.exists(path):
@@ -176,7 +175,7 @@ class Trainer(nn.Module):
                 # 记录训练集的预测结果
                 y_predicts.append(cpu_ts(y_hat.argmax(dim=-1)))
                 y_trues.append(cpu_ts(y))
-                self.logger.info(f'Epoch {epoch + 1}, Batch ({i + 1}/{num_batches}), Loss: {batch_loss.item():.4f}')
+                self.logger.debug(f'Epoch {epoch + 1}, Batch ({i + 1}/{num_batches}), Loss: {batch_loss.item():.4f}')
                 self.log_sample_score(csv_file, texts, y_hat, y, sep=sep)
 
             # 记录训练集的预测结果
@@ -334,17 +333,28 @@ class Trainer(nn.Module):
         初始化日志文件
         """
         self.logger.handlers.clear()
+        log_fmt = logging.Formatter(
+            '%(asctime)s [%(levelname)s] %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S'
+        )
 
         log_file = os.path.join(self.log_path, 'train.log')
+        accuracy_file = os.path.join(self.log_path, 'accuracy.log')
+
         file_handler = logging.FileHandler(log_file)
-        file_handler.setLevel(logging.INFO)
-        file_handler.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(message)s'))
+        file_handler.setLevel(logging.DEBUG)
+        file_handler.setFormatter(log_fmt)
         self.logger.addHandler(file_handler)
 
         stream_handler = logging.StreamHandler()
-        stream_handler.setLevel(logging.INFO)
-        stream_handler.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(message)s'))
+        stream_handler.setLevel(logging.DEBUG)
+        stream_handler.setFormatter(log_fmt)
         self.logger.addHandler(stream_handler)
+
+        info_handler = logging.FileHandler(accuracy_file)
+        info_handler.setLevel(logging.INFO)
+        info_handler.setFormatter(log_fmt)
+        self.logger.addHandler(info_handler)
 
     def _to_device(self, ts: Union[torch.Tensor, List[torch.Tensor]]):
         if isinstance(ts, list):
@@ -370,15 +380,15 @@ class Trainer(nn.Module):
 
     def _log_train_config(self, optimizer, loss, epochs, stop_loss_value, stop_min_epoch):
         # 打印训练信息
-        self.logger.info(f'model architecture: {self}')
-        self.logger.info(f'optimizer: {optimizer}')
-        self.logger.info(f'loss_fn: {loss}')
-        self.logger.info(f'fit on {self.device}')
-        self.logger.info(f'num_params: {sum(p.numel() for p in self.parameters() if p.requires_grad)}')
-        self.logger.info(f'num_class: {self.num_class}')
-        self.logger.info(f'epochs: {epochs}')
-        self.logger.info(f'stop_loss_value: {stop_loss_value}')
-        self.logger.info(f'stop_min_epoch: {stop_min_epoch}\n')
+        self.logger.debug(f'model architecture: {self}')
+        self.logger.debug(f'optimizer: {optimizer}')
+        self.logger.debug(f'loss_fn: {loss}')
+        self.logger.debug(f'fit on {self.device}')
+        self.logger.debug(f'num_params: {sum(p.numel() for p in self.parameters() if p.requires_grad)}')
+        self.logger.debug(f'num_class: {self.num_class}')
+        self.logger.debug(f'epochs: {epochs}')
+        self.logger.debug(f'stop_loss_value: {stop_loss_value}')
+        self.logger.debug(f'stop_min_epoch: {stop_min_epoch}\n')
 
     @torch.no_grad()
     def log_sample_score(self, fd, texts: List[str], y_hat: torch.Tensor, y: torch.Tensor, sep='\t'):

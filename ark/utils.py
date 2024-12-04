@@ -63,12 +63,7 @@ def get_metrics_str(epoch: int, y_true: torch.Tensor, y_pred: torch.Tensor) -> s
     """
     accuracy, precision, recall, fpr, f1 = all_metrics(y_true, y_pred)
 
-    return (f'Epoch: {epoch}\t'
-            f'Accuracy: {accuracy: 4f}\t'
-            f'Precision: {precision: 4f}\t'
-            f'Recall: {recall: 4f}\t'
-            f'FPR: {fpr: 4f}\t'
-            f'F1-score: {f1: 4f}\n')
+    return f'Epoch {epoch}, Accuracy {accuracy: 4f}, Precision {precision: 4f}, recall {recall: 4f}, FPR {fpr: 4f}, F1-score {f1: 4f}\n'
 
 
 def date_prefix_filename(filename: str) -> str:

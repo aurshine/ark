@@ -159,10 +159,21 @@ class Trainer(nn.Module):
         self.train()
         epoch_loss, y_trues, y_predicts = 0, [], []
 
-        ith_train_sample_score_path = os.path.join(self.sample_score_path, f'train_sample_score_epoch{epoch + 1}.csv')
-        with open(ith_train_sample_score_path, 'w') as csv_file:
+        ith_sample_score_path = os.path.join(self.sample_score_path, f'sample_score_epoch{epoch + 1}')
+        os.makedirs(ith_sample_score_path, exist_ok=True)
+        ith_train_sample_score_path = os.path.join(ith_sample_score_path, f'train_sample.csv')
+        ith_false_pos_sample_score_path = os.path.join(ith_sample_score_path, f'false_pos_sample.csv')
+        ith_false_neg_sample_score_path = os.path.join(ith_sample_score_path, f'false_neg_sample.csv')
+        with open(ith_train_sample_score_path, 'w') as csv_file, \
+             open(ith_false_pos_sample_score_path, 'w') as fp_csv_file, \
+             open(ith_false_neg_sample_score_path, 'w') as fn_csv_file:
+
             sep = '\t'
-            csv_file.write(f'text{sep}neg_score{sep}pos_score{sep}pred_label{sep}true_label\n')
+            header = f'text{sep}neg_score{sep}pos_score{sep}pred_label{sep}true_label\n'
+            csv_file.write(header)
+            fp_csv_file.write(header)
+            fn_csv_file.write(header)
+
             for i, (texts, y_hat, y) in enumerate(self._loader_forward(train_loader)):
                 batch_loss = loss_fn(y_hat, y)
                 epoch_loss += batch_loss.item()  # / len(train_loader)
@@ -175,8 +186,8 @@ class Trainer(nn.Module):
                 # 记录训练集的预测结果
                 y_predicts.append(cpu_ts(y_hat.argmax(dim=-1)))
                 y_trues.append(cpu_ts(y))
-                self.logger.debug(f'Epoch {epoch + 1}, Batch ({i + 1}/{num_batches}), Loss: {batch_loss.item():.4f}')
-                self.log_sample_score(csv_file, texts, y_hat, y, sep=sep)
+                self.logger.debug(f'Epoch {epoch + 1}, Batch ({i + 1}/{num_batches}), Loss {batch_loss.item():.4f}')
+                self.log_sample_score(csv_file, fp_csv_file, fn_csv_file, texts, y_hat, y, sep=sep)
 
             # 记录训练集的预测结果
             y_predicts = torch.cat(y_predicts)
@@ -391,21 +402,33 @@ class Trainer(nn.Module):
         self.logger.debug(f'stop_min_epoch: {stop_min_epoch}\n')
 
     @torch.no_grad()
-    def log_sample_score(self, fd, texts: List[str], y_hat: torch.Tensor, y: torch.Tensor, sep='\t'):
+    def log_sample_score(self, all_fd, fp_fd, fn_fd, texts: List[str], y_hat: torch.Tensor, y: torch.Tensor, sep='\t'):
         """
         记录训练集的预测结果
 
         text,neg_score,pos_score,pred_label,true_label
 
-        :param fd: 保存文件IO流
+        :param all_fd: 保存所有样本的IO流
+
+        :param fp_fd: 保存false positive样本的IO流
+
+        :param fn_fd: 保存false negative样本的IO流
 
         :param texts: 文本
 
-        :param y_hat: 预测结果
+        :param y_hat: 预测结果 (batch_size, num_class)
 
-        :param y: 真实标签
+        :param y: 真实标签 (batch_size,)
 
         :param sep: 字段分隔符
         """
         for text, (neg_score, pos_score), true_label in zip(texts, F.softmax(y_hat, dim=-1), y):
-            fd.write(f'{text}{sep}{neg_score.item():.4f}{sep}{pos_score.item():.4f}{sep}{int(neg_score < pos_score)}{sep}{true_label.item()}\n')
+            line = f'{text}{sep}{neg_score.item():.4f}{sep}{pos_score.item():.4f}{sep}{int(neg_score < pos_score)}{sep}{true_label.item()}\n'
+            all_fd.write(line)
+
+            # 预测1, 实际0
+            if neg_score < pos_score and true_label.item() == 0:
+                fp_fd.write(line)
+            # 预测0, 实际1
+            elif neg_score >= pos_score and true_label.item() == 1:
+                fn_fd.write(line)

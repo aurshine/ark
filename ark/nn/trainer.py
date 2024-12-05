@@ -34,6 +34,9 @@ class Trainer(nn.Module):
             if not os.path.exists(path):
                 os.makedirs(path, exist_ok=True)
 
+        # 初始化日志文件
+        self._init_logger()
+
     def forward(self, inputs, *args, **kwargs):
         raise NotImplementedError
 
@@ -67,8 +70,6 @@ class Trainer(nn.Module):
 
         :return: 每轮训练的loss构成的列表, 验证集的真实标签, 每轮训练验证集的预测结果
         """
-        # 初始化日志文件
-        self._init_logger()
         # 初始化优化器
         optimizer = self._init_optimizer(optimizer, optim_params)
         # 初始化损失函数
@@ -111,8 +112,6 @@ class Trainer(nn.Module):
                      optim_params: Optional[Dict] = None,
                      loss=None,
                      ):
-        # 初始化日志文件
-        self._init_logger()
         # 初始化优化器
         optimizer = self._init_optimizer(optimizer, optim_params)
         # 初始化损失函数
@@ -347,6 +346,7 @@ class Trainer(nn.Module):
     def load(self, path: str):
         """读取本地模型"""
         self.load_state_dict(torch.load(path, map_location=self.device))
+        self.logger.debug(f'load model from {path}')
 
     def load_pretrain(self, path: str):
         """读取预训练模型"""
@@ -356,6 +356,7 @@ class Trainer(nn.Module):
             if key in model_dict:
                 model_dict[key] = pretrain_dict[key]
         self.load_state_dict(model_dict)
+        self.logger.debug(f'load pretrain model from {path}')
 
     def init_params(self):
         """

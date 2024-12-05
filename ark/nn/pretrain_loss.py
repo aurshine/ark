@@ -35,8 +35,8 @@ class InitialFinalLoss(nn.CrossEntropyLoss):
         # (batch_size * num_prediction)
         pred = y_hat.argmax(dim=-1)
 
-        y_hat_decodes = self.tokenizer.ids_to_tokens(pred)
-        y_decodes = self.tokenizer.ids_to_tokens(y)
+        y_hat_decodes = self.tokenizer.ids_to_tokens(pred.tolist())
+        y_decodes = self.tokenizer.ids_to_tokens(y.tolist())
 
         # pred 哪些位置的 token 与 y 相似的 (batch_size * num_prediction)
         token_similarities = torch.zeros_like(y, dtype=torch.float64)

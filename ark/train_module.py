@@ -26,7 +26,7 @@ DROPOUT = 0.5                                          # 随机失活率
 NUM_CLASS = 2                                          # 分类数
 #################################################################################
 # 训练参数
-BATCH_SIZE = 32                                        # 批量大小
+BATCH_SIZE = 96                                        # 批量大小
 
 TRAIN_EPOCHS = 200                                      # 最大训练轮数
 
@@ -34,7 +34,7 @@ STOP_MIN_EPOCH = 20                                     # 最小停止轮数
 
 STOP_LOSS_VALUE = 0.1                                  # 最小停止损失值
 
-OPTIMIZER_PARAMS = {'lr': 1e-4, 'weight_decay': 1e-2}  # 优化器参数(学习率、权重衰减)
+OPTIMIZER_PARAMS = {'lr': 1e-5, 'weight_decay': 1e-4}  # 优化器参数(学习率、权重衰减)
 
 TOKENIZER = Tokenizer(PRETRAIN_TOKENIZER_PATH, STEPS)  # 预训练tokenizer
 #################################################################################
@@ -140,10 +140,10 @@ def pre_train(model_path=None, device=None):
     if model_path is not None:
         ark.load(model_path)
 
-    ark.fit(train_loader=loader,
-            epochs=20,
-            optim_params=OPTIMIZER_PARAMS,
-            stop_min_epoch=5,
-            stop_loss_value=2,
-            loss=InitialFinalLoss(tokenizer=TOKENIZER, reduction='mean'),
-            )
+    ark.fit_pretrain(train_loader=loader,
+                     epochs=20,
+                     optim_params=OPTIMIZER_PARAMS,
+                     stop_min_epoch=5,
+                     stop_loss_value=2,
+                     loss=InitialFinalLoss(tokenizer=TOKENIZER, reduction='mean'),
+                     )

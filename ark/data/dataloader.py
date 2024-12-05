@@ -247,6 +247,6 @@ def get_ark_pretrain_loader(file_path_or_texts: Union[str, List[str]],
     return DataLoader(ArkPretrainDataSet(file_path_or_texts, tokenizer, num_pred_position, max_length, device),
                       batch_size=batch_size,
                       shuffle=shuffle,
-                      num_workers=2,
+                      num_workers=0,
                       drop_last=drop_last,
                       collate_fn=collate_dict)

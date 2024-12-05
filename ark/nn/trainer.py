@@ -123,11 +123,11 @@ class Trainer(nn.Module):
         self.train()
         num_batches = len(train_loader)
         for epoch in range(epochs):
-            epoch_loss, _, _ = self.fit_epoch(epoch=epoch,
-                                              train_loader=train_loader,
-                                              num_batches=num_batches,
-                                              optimizer=optimizer,
-                                              loss_fn=loss)
+            epoch_loss = self.fit_epoch_pretrain(epoch=epoch,
+                                                 train_loader=train_loader,
+                                                 num_batches=num_batches,
+                                                 optimizer=optimizer,
+                                                 loss_fn=loss)
             self.save_state_dict(os.path.join(self.checkpoint_path, f'pretrain_epoch{epoch + 1}.pth'))
             if self._achieve_stop_condition(epoch + 1, stop_min_epoch, epoch_loss, stop_loss_value):
                 break
@@ -204,6 +204,31 @@ class Trainer(nn.Module):
             valid_true, valid_predict = None, None
 
         return epoch_loss, valid_true, valid_predict
+
+    def fit_epoch_pretrain(self, epoch: int,
+                           train_loader,
+                           num_batches,
+                           optimizer,
+                           loss_fn,
+                           ):
+        """
+        预训练训练一个 epoch 的操作
+        """
+        self.train()
+        epoch_loss = 0.0
+        for i, (texts, y_hat, y) in enumerate(self._loader_forward(train_loader)):
+            batch_loss = loss_fn(y_hat, y)
+            epoch_loss += batch_loss.item()  # / len(train_loader)
+
+            # 梯度计算
+            batch_loss.backward()
+            optimizer.step()
+            optimizer.zero_grad()
+
+            self.logger.debug(f'Epoch {epoch + 1}, Batch ({i + 1}/{num_batches}), Loss {batch_loss.item():.4f}')
+            self.logger.info(f'Epoch {epoch + 1}, Train A Epoch Average Loss: {epoch_loss:.4f}')
+
+        return epoch_loss
 
     def _loader_forward(self, loader) -> Generator[Tuple[Optional[List[str]], torch.Tensor, torch.Tensor], None, None]:
         """

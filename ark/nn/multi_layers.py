@@ -269,7 +269,8 @@ class TransformerLayer(nn.Module):
                 q: torch.Tensor,
                 k: torch.Tensor = None,
                 v: torch.Tensor = None,
-                masks: torch.Tensor = None):
+                masks: torch.Tensor = None,
+                **kwargs):
         """
         计算 transformer 块的输出
 

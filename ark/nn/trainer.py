@@ -28,6 +28,7 @@ class Trainer(nn.Module):
         self.sample_score_path = os.path.join(self.train_result_path, 'sample_score')
 
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.setLevel(logging.DEBUG)
 
         for path in [self.checkpoint_path, self.log_path, self.sample_score_path]:
             if not os.path.exists(path):

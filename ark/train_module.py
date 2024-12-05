@@ -141,9 +141,7 @@ def pre_train(model_path=None, device=None):
         ark.load(model_path)
 
     ark.fit_pretrain(train_loader=loader,
-                     epochs=20,
+                     epochs=5,
                      optim_params=OPTIMIZER_PARAMS,
-                     stop_min_epoch=5,
-                     stop_loss_value=2,
                      loss=InitialFinalLoss(tokenizer=TOKENIZER, reduction='mean'),
                      )

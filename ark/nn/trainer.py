@@ -194,7 +194,7 @@ class Trainer(nn.Module):
             y_predicts = torch.cat(y_predicts)
             y_trues = torch.cat(y_trues)
 
-            self.logger.info(f'Epoch {epoch + 1}, Train A Epoch Average Loss: {epoch_loss:.4f}')
+            self.logger.info(f'Epoch {epoch + 1}, Train A Epoch Total Loss: {epoch_loss:.4f}')
             self.logger.info(get_metrics_str(epoch + 1, y_trues, y_predicts))
 
         # 训练结束验证
@@ -205,7 +205,8 @@ class Trainer(nn.Module):
 
         return epoch_loss, valid_true, valid_predict
 
-    def fit_epoch_pretrain(self, epoch: int,
+    def fit_epoch_pretrain(self,
+                           epoch: int,
                            train_loader,
                            num_batches,
                            optimizer,
@@ -213,6 +214,18 @@ class Trainer(nn.Module):
                            ):
         """
         预训练训练一个 epoch 的操作
+
+        :param epoch: 当前训练轮数
+
+        :param train_loader: 训练集导入器,
+
+        :param num_batches: 训练集的batch数
+
+        :param optimizer: 优化器
+
+        :param loss_fn: 计算损失的函数
+
+        :return: 训练集的平均损失
         """
         self.train()
         epoch_loss = 0.0
@@ -226,7 +239,7 @@ class Trainer(nn.Module):
             optimizer.zero_grad()
 
             self.logger.debug(f'Epoch {epoch + 1}, Batch ({i + 1}/{num_batches}), Loss {batch_loss.item():.4f}')
-            self.logger.info(f'Epoch {epoch + 1}, Train A Epoch Average Loss: {epoch_loss:.4f}')
+        self.logger.info(f'Epoch {epoch + 1}, Train A Epoch Total Loss: {epoch_loss:.4f}')
 
         return epoch_loss
 

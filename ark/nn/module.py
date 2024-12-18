@@ -95,12 +95,11 @@ class Ark(Trainer):
 
         if masks is not None:
             masks = self._to_device(masks)
-
         # y     (batch_size, steps, hidden_size)
         # masks (batch_size, steps)
         y, masks = self.encoder(x, masks, **kwargs)
         # y     (batch_size, steps, hidden_size)
-        y = self.decoder(y, masks=masks, **kwargs)
+        y = self.decoder(y, memory_key_padding_mask=masks, **kwargs)
         if self.output_layer is not None:
             y = self.output_layer(y, **kwargs)
         return y

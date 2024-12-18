@@ -102,8 +102,8 @@ class Tokenizer:
             text = list(text)
 
         tokens = [self.cls_token] + text + [self.sep_token] + [self.pad_token] * (self.max_length - token_length - 2)
-        masked_ts = torch.zeros(size=(self.max_length,), dtype=torch.int64, device=device)
-        masked_ts[token_length + 2:] = 1
+        masked_ts = torch.zeros(size=(self.max_length,), dtype=torch.bool, device=device)
+        masked_ts[token_length + 2:] = True
 
         ids = self.tokens_to_ids(tokens)
         ids_ts = torch.tensor(ids, dtype=torch.int64, device=device)

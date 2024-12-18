@@ -2,6 +2,7 @@ from typing import List, Optional, Callable
 
 import torch
 from torch import nn
+from torch.nn import functional as F
 
 from ark.utils import use_device
 from ark.nn.addnorm import AddNorm
@@ -258,7 +259,7 @@ class TransformerLayer(nn.Module):
 
         key_size = query_size if key_size is None else key_size
         value_size = key_size if value_size is None else value_size
-
+        
         self.attention = MultiHeadAttention(query_size, key_size, num_heads, hidden_size, device=self.device)
         self.ffn = PositionWiseFFN(value_size, value_size, value_size, device=self.device)
         self.add_norm1 = AddNorm(value_size, dropout=dropout, device=self.device)
@@ -308,48 +309,27 @@ class ChannelWiseTransformerLayer(nn.Module):
         self.num_channels = num_channels
 
         def layer():
-            return TransformerLayer(query_size=hidden_size,
-                                    key_size=hidden_size * num_channels,
-                                    value_size=hidden_size * num_channels,
-                                    num_heads=num_heads,
-                                    dropout=dropout,
-                                    device=self.device)
-
-        # 将单通道信息映射到全局信息
-        self.local2global = MultiLinear(num_input=hidden_size,
-                                        num_outputs=[hidden_size * num_channels],
-                                        active=nn.GELU(),
-                                        dropout=dropout,
-                                        device=self.device)
-
-        # 将全局信息映射到单通道信息
-        self.global2local = MultiLinear(num_input=hidden_size * num_channels,
-                                        num_outputs=[hidden_size],
-                                        active=nn.GELU(),
-                                        dropout=dropout,
-                                        device=self.device)
+            return nn.TransformerDecoderLayer(d_model=hidden_size * num_channels, 
+                                              nhead=num_heads, 
+                                              dim_feedforward=hidden_size * 4,
+                                              batch_first=True,
+                                              dropout=dropout,
+                                              device=self.device)
+    
 
         self.channel_wise_layers = nn.ModuleList([layer() for _ in range(num_channels)])
-        self.add_norms = nn.ModuleList([AddNorm(hidden_size, dropout=dropout, device=self.device) for _ in range(num_channels)])
 
     def forward(self, x, **kwargs):
         """
-        :param x: 形状为 (num_channels, batch_size, steps, hidden_size)
+        :param x: 形状为 (batch_size, steps, hidden_size * num_channels)
 
         :param kwargs: TransformerLayer 的其它参数
 
-        :return : 形状为 (num_channels, batch_size, steps, hidden_size)
+        :return : 形状为 (batch_size, steps, num_channels * hidden_size)
         """
-        if self.num_channels != len(x):
-            raise ValueError(f"The number of channels in x({len(x)}) != num_channels({self.num_channels})")
-        # (batch_size, steps, num_channels * hidden_size)
-        flatten_x = x.permute(1, 2, 0, 3).reshape(x.shape[1], x.shape[2], -1)
-
         # 每个单通道对所有通道信息的注意力计算结果
-        # (num_channels, batch_size, steps, hidden_size)
-        channels_result = torch.zeros_like(x, device=self.device)
-        for i, (channel_layer, add_norm) in enumerate(zip(self.channel_wise_layers, self.add_norms)):
-            y = channel_layer(self.local2global(x[i]), flatten_x, **kwargs)
-            channels_result[i] = add_norm(x[i], self.global2local(y))
+        # (batch_size, steps, num_channels * hidden_size)
+        for channel_layer in self.channel_wise_layers:
+            x = channel_layer(F.dropout(x, p=0.2, training=self.training), x, **kwargs)
 
-        return channels_result
+        return x

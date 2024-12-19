@@ -73,7 +73,7 @@ def press_wait(maybes: Dict[str, int]):
                 print(f'text: {text}\nmaybe label: {label}')
         except StopIteration:
             print('所有可能分错的样本已标记完成')
-            # reset_data(changes)
+            reset_data(changes)
             return 
 
 # 点击重新分类数据

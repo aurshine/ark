@@ -112,7 +112,12 @@ class ArkClassifier(nn.Module):
 
         self.query = nn.Parameter(torch.empty(size=(1, 1, hidden_size), device=self.device))
         nn.init.xavier_normal_(self.query)
-        self.fusion = TransformerLayer(hidden_size, num_heads, dropout=dropout, device=self.device)
+        self.fusion = nn.TransformerDecoderLayer(d_model=hidden_size, 
+                                                 num_heads=num_heads, 
+                                                 dim_feedforward=hidden_size*4, 
+                                                 dropout=dropout, 
+                                                 batch_first=True, 
+                                                 device=self.device)
         self.classifier = nn.Linear(hidden_size, num_classes, device=self.device)
 
     def forward(self, x, **kwargs):
@@ -124,7 +129,7 @@ class ArkClassifier(nn.Module):
         :return: (batch_size, num_classes)
         """
         query = self.query.repeat(x.shape[0], 1, 1)
-        x = self.fusion(query, x, x, **kwargs).squeeze(1)
+        x = self.fusion(query, x, **kwargs).squeeze(1)
         return self.classifier(x)
 
 

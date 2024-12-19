@@ -52,9 +52,10 @@ def reset_data(texts_labels: Dict[str, int]):
             df.to_csv(file_path, sep='\t', index=False)
 
 def press_wait(maybes: Dict[str, int]):
+    i, lens = 1, len(maybes)
     it = iter(maybes.items())
     text, label = next(it)
-    print(f'text: {text}\nmaybe label: {label}')
+    print(f'({i}/{lens}) text: {text}\nmaybe label: {"neg" if label == 0 else "pos"}')
     changes = {}
 
     while True:
@@ -70,7 +71,8 @@ def press_wait(maybes: Dict[str, int]):
                     print('已退出分类')
                     return 
                 text, label = next(it)
-                print(f'text: {text}\nmaybe label: {label}')
+                i += 1
+                print(f'({i}/{lens}) text: {text}\nmaybe label: {"neg" if label == 0 else "pos"}')
         except StopIteration:
             print('所有可能分错的样本已标记完成')
             reset_data(changes)
@@ -80,11 +82,11 @@ def press_wait(maybes: Dict[str, int]):
 def click_check(items: Iterable[int]):
     maybes = {}
     num_pos, num_neg = 0, 0
-    for pos in maybe_cls_false(items, 'pos'):
-        maybes[pos] = 1
+    for maybe_pos in maybe_cls_false(items, 'pos'):
+        maybes[maybe_pos] = 1
     num_pos = len(maybes)
-    for neg in maybe_cls_false(items, 'neg'):
-        maybes[neg] = 0
+    for maybe_neg in maybe_cls_false(items, 'neg'):
+        maybes[maybe_neg] = 0
     num_neg = len(maybes) - num_pos
 
     if len(maybes) == 0:

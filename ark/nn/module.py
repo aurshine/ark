@@ -11,19 +11,6 @@ from .decoder import ArkDecoder
 from .tokenizer import Tokenizer
 
 
-def analyse(model: Trainer, inputs, classes: List[str]):
-    """
-    :param model: 用于分析的模型
-
-    :param inputs: 输入
-
-    :param classes: 类别
-
-    :return: 每个输入的预测结果
-    """
-    return [classes[index] for index in model.predict(inputs)]
-
-
 class Ark(Trainer):
     """
     ark 注意力模型

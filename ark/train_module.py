@@ -22,7 +22,7 @@ NUM_LAYER = 8                                           # 解码器层数
 
 STEPS = 128                                            # 每个文本的步长
 
-DROPOUT = 0.4                                          # 随机失活率
+DROPOUT = 0.5                                          # 随机失活率
 
 NUM_CLASS = 2                                          # 分类数
 #################################################################################
@@ -35,7 +35,7 @@ STOP_MIN_EPOCH = 20                                     # 最小停止轮数
 
 STOP_LOSS_VALUE = 0.1                                  # 最小停止损失值
 
-OPTIMIZER_PARAMS = {'lr': 1e-5, 'weight_decay': 1e-4}  # 优化器参数(学习率、权重衰减)
+OPTIMIZER_PARAMS = {'lr': 1e-5, 'weight_decay': 1e-5}  # 优化器参数(学习率、权重衰减)
 
 TOKENIZER = Tokenizer(PRETRAIN_TOKENIZER_PATH, STEPS)  # 预训练tokenizer
 #################################################################################

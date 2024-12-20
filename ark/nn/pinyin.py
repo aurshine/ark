@@ -23,26 +23,23 @@ EXTEND_PINY = {
 load_phrases_dict(EXTEND_PINY)
 
 @lru_cache(maxsize=10000)
-def translate_piny(inputs: Union[str, Sequence[str]], style=None) -> Union[List[str], List[List[str]]]:
+def translate_piny(inputs: str, style=None) -> Union[List[str], List[List[str]]]:
     """文本翻译拼音
 
-    :param inputs: 由列表存储的tokenize后的文本 或 一串字符串
+    :param inputs: 由列表存储的tokenize后的文本
 
     :param style: 拼音格式, 默认不带音标, Style.FIRST_LETTER 只得到首字母
 
     :return: 将文本转化为拼音返回
 
-    >>> inputs = [['你好吗'], ['还行']]
+    >>> inputs = '你好吗'
     >>> translate_piny(inputs)
-    [['ni', 'hao', 'ma'], ['hai', 'xing']]
+    ['ni', 'hao', 'ma']
     """
     if style is None:
         style = Style.NORMAL
 
-    if isinstance(inputs, str):
-        return [lazy_pinyin(s, style=style, errors='default', strict=False)[0] for s in inputs]
-    else:
-        return [translate_piny(_input, style) for _input in inputs]
+    return [lazy_pinyin(s, style=style, errors='default', strict=False)[0] for s in inputs]
 
 
 def translate_char(c: str, style=None):

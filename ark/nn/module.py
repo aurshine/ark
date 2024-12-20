@@ -8,7 +8,7 @@ from ark.utils import use_device
 from ark.nn.trainer import Trainer
 from ark.nn.encoder import ArkEncoder
 from ark.nn.decoder import ArkDecoder
-from ark.nn.multi_layers import TransformerLayer
+from ark.nn.tokenizer import Tokenizer
 
 
 def analyse(model: Trainer, inputs, classes: List[str]):
@@ -29,7 +29,7 @@ class Ark(Trainer):
     ark 注意力模型
     """
     def __init__(self,
-                 tokenizer,
+                 tokenizer: Tokenizer,
                  steps: int,
                  hidden_size: int,
                  num_heads: int,

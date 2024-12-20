@@ -310,26 +310,15 @@ class ChannelWiseTransformerLayer(nn.Module):
         self.hidden_size = hidden_size
         
         self.channel_wise_layers = nn.TransformerDecoderLayer(d_model=hidden_size * num_channels, 
-                                                            nhead=num_heads, 
-                                                            dim_feedforward=hidden_size * num_channels,
-                                                            batch_first=True,
-                                                            dropout=dropout,
-                                                            device=self.device)
-        
-        self.local2global = MultiLinear(num_input=hidden_size, 
-                                        num_outputs=[num_channels * hidden_size], 
-                                        active=nn.GELU(), 
-                                        norm='layer_norm', 
-                                        device=self.device)
-        
-        self.global2local = MultiLinear(num_input=num_channels * hidden_size, 
-                                        num_outputs=[hidden_size], 
-                                        active=nn.GELU(), 
-                                        norm='layer_norm', 
-                                        device=self.device)
+                                                              nhead=num_heads, 
+                                                              dim_feedforward=hidden_size * num_channels,
+                                                              batch_first=True,
+                                                              dropout=dropout,
+                                                              device=self.device)
         
         self.pool_ln_norm = nn.LayerNorm(hidden_size, device=self.device)
-    
+        self.xy_add_norm = AddNorm(hidden_size, dropout=dropout, device=self.device)
+
     def _raw2kv(self, x):
         """
         将输入通道融合进隐藏层, 转化为kv形式
@@ -358,18 +347,22 @@ class ChannelWiseTransformerLayer(nn.Module):
             (x.size(1), -1, self.hidden_size)
         )
     
-    def _pool_channels(self, q):
+    def _pool_channels(self, o):
         """
         将每个通道的信息汇总到一个通道
 
-        :param q: (batch_size, num_channels * steps, num_channels * hidden_size)
+        :param o: (batch_size, num_channels * steps, num_channels * hidden_size)
 
         :return: (num_channels, batch_size, steps, hidden_size)
         """
-        # (batch_size, num_channels, steps, num_channels * hidden_size)
-        flatten_q = torch.reshape(q, (q.size(0), self.num_channels, -1, q.size(2)))
+        # (batch_size, num_channels, steps, num_channels, hidden_size)
+        o = torch.reshape(o, (o.size(0), self.num_channels, -1, self.num_channels, self.hidden_size))
+        # (batch_size, steps, num_channels, hidden_size)
+        avg_o, max_o = torch.mean(o, dim=1), torch.max(o, dim=1)[0]
+        # (batch_size, steps, num_channels, hidden_size)
+        y = self.pool_ln_norm(avg_o + max_o)
         # (num_channels, batch_size, steps, hidden_size)
-        y = torch.transpose(self.global2local(flatten_q), 0, 1)
+        y = torch.permute(y, (2, 0, 1, 3))
         return y
     
     def forward(self, x, **kwargs):
@@ -380,13 +373,12 @@ class ChannelWiseTransformerLayer(nn.Module):
 
         :return : 形状为 (num_channels, batch_size, steps, hidden_size)
         """
-        # (batch_size, steps, num_channels * hidden_size)
         q, kv = self._raw2q(x), self._raw2kv(x)
         # (batch_size, num_channels * steps, num_channels * hidden_size)
-        global_q = self.local2global(q)
+        repeat_q = q.repeat_interleave(self.num_channels, dim=-1)
         # (batch_size, num_channels * steps, num_channels * hidden_size)
-        o = self.channel_wise_layers(global_q, kv, **kwargs)
+        o = self.channel_wise_layers(repeat_q, kv, **kwargs)
         # (num_channels, batch_size, steps, hidden_size)
         y = self._pool_channels(o)
-            
-        return y
+        
+        return self.xy_add_norm(x, y)

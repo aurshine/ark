@@ -1,8 +1,9 @@
-import os
-import time
 from datetime import datetime
-from typing import Union, Tuple
+import os
 import shutil
+import time
+from typing import Union, Tuple
+import warnings
 
 import torch
 
@@ -31,6 +32,7 @@ def use_device(device: Union[int, str, torch.device, None] = 0):
         else:
             raise RuntimeError
     except RuntimeError:
+        warnings.warn(f"Device {device} is not available, use cpu instead")
         return torch.device('cpu')
 
 

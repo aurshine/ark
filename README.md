@@ -21,11 +21,22 @@ pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
 # 训练
 
 ```python
-from ark.train_module import train, pre_train
+from ark import train, pre_train
 
 # 训练模型
 train()
 
-# 预训练模型
+# 训练预训练模型
 # pre_train()
+```
+
+# 预测
+
+```python
+from ark import ark
+
+print(ark(['原神启动', 
+           '小亮来给他整个活', 
+           '团长你就是歌姬吧', 
+           '你是真没见过黑社会啊?三天之内杀了你']))
 ```

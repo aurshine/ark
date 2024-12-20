@@ -315,21 +315,86 @@ class ChannelWiseTransformerLayer(nn.Module):
                                               batch_first=True,
                                               dropout=dropout,
                                               device=self.device)
-    
 
         self.channel_wise_layers = nn.ModuleList([layer() for _ in range(num_channels)])
+        self.local2global = MultiLinear(num_input=hidden_size, 
+                                        num_outputs=[num_channels * hidden_size], 
+                                        active=nn.GELU(), 
+                                        device=self.device)
+        self.pool_batch_norm = nn.BatchNorm1d(num_channels * hidden_size, device=self.device)
+        self.num_channels = num_channels
+        self.hidden_size = hidden_size
+    
+    def _raw2kv(self, x):
+        """
+        将输入通道融合进隐藏层, 转化为kv形式
 
+        :param x: 形状为 (num_channels, batch_size, steps, hidden_size)
+        
+        :return: (batch_size, steps, num_channels * hidden_size)
+        """
+        return torch.reshape(torch.permute(x, (1, 2, 0, 3)), 
+                             (x.size(1), x.size(2), self.num_channels * self.hidden_size)
+                            )
+    
+    def _raw2q(self, x):
+        """
+        将输入通道融合进时间步, 转化为q形式
+
+        :param x: 形状为 (num_channels, batch_size, steps, hidden_size)
+
+        :return: (batch_size, num_channels * steps, hidden_size)
+        """
+        return torch.reshape(torch.permute(x, (1, 0, 2, 3)), 
+                             (x.size(1), -1, self.hidden_size)
+                            )
+    
+    def _pool_channels(self, q):
+        """
+        将每个通道的信息汇总到一个通道
+
+        :param q: (batch_size, num_channels * steps, num_channels * hidden_size)
+
+        :return: (num_channels, batch_size, steps, hidden_size)
+        """
+        # (batch_size, num_channels, steps, num_channels * hidden_size)
+        flatten_q = torch.reshape(q, (q.size(0), self.num_channels, -1, q.size(2)))
+        # (batch_size, steps, num_channels * hidden_size)
+        avg_q = torch.mean(flatten_q, dim=1)
+        # (batch_size, steps, num_channels * hidden_size)
+        max_q = torch.max(flatten_q, dim=1)[0]
+        # (batch_size, steps, num_channels * hidden_size)
+        addtive_q = torch.transpose(
+                        self.pool_batch_norm(
+                        # (batch_size, num_channels * hidden_size, steps)
+                        torch.transpose(avg_q + max_q, 1, 2)
+                        ), 1, 2
+                    )
+        # (num_channels, batch_size, steps, hidden_size)
+        y = torch.permute(
+            # (batch_size, steps, num_channels, hidden_size)
+            torch.reshape(addtive_q, (q.size(0), -1, self.num_channels, self.hidden_size)),
+            (2, 0, 1, 3)
+        )
+        return y
+    
     def forward(self, x, **kwargs):
         """
-        :param x: 形状为 (batch_size, steps, hidden_size * num_channels)
+        :param x: 形状为 (num_channels, batch_size, steps, hidden_size)
 
         :param kwargs: TransformerLayer 的其它参数
 
-        :return : 形状为 (batch_size, steps, num_channels * hidden_size)
+        :return : 形状为 (num_channels, batch_size, steps, hidden_size)
         """
-        # 每个单通道对所有通道信息的注意力计算结果
+        y = x
         # (batch_size, steps, num_channels * hidden_size)
         for channel_layer in self.channel_wise_layers:
-            x = channel_layer(F.dropout(x, p=0.2, training=self.training), x, **kwargs)
-
-        return x
+            q, kv = self._raw2q(y), self._raw2kv(y)
+            # (batch_size, num_channels * steps, num_channels * hidden_size)
+            global_q = self.local2global(q)
+            # (batch_size, num_channels * steps, num_channels * hidden_size)
+            o = channel_layer(global_q, kv, **kwargs)
+            # (num_channels, batch_size, steps, hidden_size)
+            y = self._pool_channels(o)
+            
+        return y

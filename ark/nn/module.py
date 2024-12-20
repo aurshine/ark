@@ -107,6 +107,7 @@ class ArkClassifier(nn.Module):
                                                  batch_first=True, 
                                                  device=self.device)
         self.classifier = nn.Linear(hidden_size, num_classes, device=self.device)
+        self.dropout = nn.Dropout(dropout)
 
     def forward(self, x, **kwargs):
         """
@@ -117,7 +118,7 @@ class ArkClassifier(nn.Module):
         :return: (batch_size, num_classes)
         """
         query = self.query.repeat(x.shape[0], 1, 1)
-        x = self.fusion(F.dropout(query, p=0.2, training=self.training), x, **kwargs).squeeze(1)
+        x = self.fusion(self.dropout(query), x, **kwargs).squeeze(1)
         return self.classifier(x)
 
 

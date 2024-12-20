@@ -28,7 +28,8 @@ class ArkDecoder(nn.Module):
                                                device=self.device)
 
         self.channel_wise_transformer_layers = nn.ModuleList([cwt_layer() for _ in range(num_layer)])
-        self.ln = nn.LayerNorm(hidden_size, device=self.device)
+        self.ln = nn.LayerNorm(hidden_size, device=device)
+        self.dropout = nn.Dropout(dropout)
 
     def forward(self, x, **kwargs):
         """
@@ -45,6 +46,6 @@ class ArkDecoder(nn.Module):
         # (batch_size, steps, hidden_size)
         y_avg = torch.mean(x, dim=0)
         y_max = torch.max(x, dim=0)[0]
-        y = self.ln(y_avg + y_max)
-
+        y = self.dropout(self.ln(y_avg + y_max))
+        
         return y

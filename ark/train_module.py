@@ -16,7 +16,7 @@ from .utils import use_device, all_metrics
 # 模型参数
 HIDDEN_SIZE = 256                                       # 隐藏层大小
 
-NUM_HEADS = 16                                          # 多头注意力头数
+NUM_HEADS = 32                                          # 多头注意力头数
 
 NUM_LAYER = 8                                           # 解码器层数
 
@@ -27,7 +27,7 @@ DROPOUT = 0.5                                          # 随机失活率
 NUM_CLASS = 2                                          # 分类数
 #################################################################################
 # 训练参数
-BATCH_SIZE = 16                                        # 批量大小
+BATCH_SIZE = 32                                        # 批量大小
 
 TRAIN_EPOCHS = 200                                      # 最大训练轮数
 
@@ -35,7 +35,7 @@ STOP_MIN_EPOCH = 20                                     # 最小停止轮数
 
 STOP_LOSS_VALUE = 0.1                                  # 最小停止损失值
 
-OPTIMIZER_PARAMS = {'lr': 1e-5, 'weight_decay': 1e-5}  # 优化器参数(学习率、权重衰减)
+OPTIMIZER_PARAMS = {'lr': 1e-4, 'weight_decay': 1e-5}  # 优化器参数(学习率、权重衰减)
 
 TOKENIZER = Tokenizer(PRETRAIN_TOKENIZER_PATH, STEPS)  # 预训练tokenizer
 #################################################################################

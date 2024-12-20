@@ -307,29 +307,28 @@ class ChannelWiseTransformerLayer(nn.Module):
         super(ChannelWiseTransformerLayer, self).__init__()
         self.device = use_device(device)
         self.num_channels = num_channels
-
-        def layer():
-            return nn.TransformerDecoderLayer(d_model=hidden_size * num_channels, 
-                                              nhead=num_heads, 
-                                              dim_feedforward=hidden_size * 4,
-                                              batch_first=True,
-                                              dropout=dropout,
-                                              device=self.device)
-
-        self.channel_wise_layers = nn.ModuleList([layer() for _ in range(num_channels)])
+        self.hidden_size = hidden_size
+        
+        self.channel_wise_layers = nn.TransformerDecoderLayer(d_model=hidden_size * num_channels, 
+                                                            nhead=num_heads, 
+                                                            dim_feedforward=hidden_size * num_channels,
+                                                            batch_first=True,
+                                                            dropout=dropout,
+                                                            device=self.device)
+        
         self.local2global = MultiLinear(num_input=hidden_size, 
                                         num_outputs=[num_channels * hidden_size], 
                                         active=nn.GELU(), 
                                         norm='layer_norm', 
                                         device=self.device)
+        
         self.global2local = MultiLinear(num_input=num_channels * hidden_size, 
                                         num_outputs=[hidden_size], 
                                         active=nn.GELU(), 
                                         norm='layer_norm', 
                                         device=self.device)
+        
         self.pool_ln_norm = nn.LayerNorm(hidden_size, device=self.device)
-        self.num_channels = num_channels
-        self.hidden_size = hidden_size
     
     def _raw2kv(self, x):
         """
@@ -381,15 +380,13 @@ class ChannelWiseTransformerLayer(nn.Module):
 
         :return : 形状为 (num_channels, batch_size, steps, hidden_size)
         """
-        y = x
         # (batch_size, steps, num_channels * hidden_size)
-        for channel_layer in self.channel_wise_layers:
-            q, kv = self._raw2q(y), self._raw2kv(y)
-            # (batch_size, num_channels * steps, num_channels * hidden_size)
-            global_q = self.local2global(q)
-            # (batch_size, num_channels * steps, num_channels * hidden_size)
-            o = channel_layer(global_q, kv, **kwargs)
-            # (num_channels, batch_size, steps, hidden_size)
-            y = self._pool_channels(o)
+        q, kv = self._raw2q(x), self._raw2kv(x)
+        # (batch_size, num_channels * steps, num_channels * hidden_size)
+        global_q = self.local2global(q)
+        # (batch_size, num_channels * steps, num_channels * hidden_size)
+        o = self.channel_wise_layers(global_q, kv, **kwargs)
+        # (num_channels, batch_size, steps, hidden_size)
+        y = self._pool_channels(o)
             
         return y

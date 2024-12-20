@@ -320,8 +320,14 @@ class ChannelWiseTransformerLayer(nn.Module):
         self.local2global = MultiLinear(num_input=hidden_size, 
                                         num_outputs=[num_channels * hidden_size], 
                                         active=nn.GELU(), 
+                                        norm='layer_norm', 
                                         device=self.device)
-        self.pool_batch_norm = nn.BatchNorm1d(num_channels * hidden_size, device=self.device)
+        self.global2local = MultiLinear(num_input=num_channels * hidden_size, 
+                                        num_outputs=[hidden_size], 
+                                        active=nn.GELU(), 
+                                        norm='layer_norm', 
+                                        device=self.device)
+        self.pool_ln_norm = nn.LayerNorm(hidden_size, device=self.device)
         self.num_channels = num_channels
         self.hidden_size = hidden_size
     
@@ -333,9 +339,11 @@ class ChannelWiseTransformerLayer(nn.Module):
         
         :return: (batch_size, steps, num_channels * hidden_size)
         """
-        return torch.reshape(torch.permute(x, (1, 2, 0, 3)), 
-                             (x.size(1), x.size(2), self.num_channels * self.hidden_size)
-                            )
+        return torch.reshape(
+            # (batch_size, steps, num_channels, hidden_size)
+            torch.permute(x, (1, 2, 0, 3)), 
+            (x.size(1), x.size(2), self.num_channels * self.hidden_size)
+        )
     
     def _raw2q(self, x):
         """
@@ -345,9 +353,11 @@ class ChannelWiseTransformerLayer(nn.Module):
 
         :return: (batch_size, num_channels * steps, hidden_size)
         """
-        return torch.reshape(torch.permute(x, (1, 0, 2, 3)), 
-                             (x.size(1), -1, self.hidden_size)
-                            )
+        return torch.reshape(
+            # (batch_size, num_channels, steps, hidden_size)
+            torch.permute(x, (1, 0, 2, 3)), 
+            (x.size(1), -1, self.hidden_size)
+        )
     
     def _pool_channels(self, q):
         """
@@ -359,23 +369,8 @@ class ChannelWiseTransformerLayer(nn.Module):
         """
         # (batch_size, num_channels, steps, num_channels * hidden_size)
         flatten_q = torch.reshape(q, (q.size(0), self.num_channels, -1, q.size(2)))
-        # (batch_size, steps, num_channels * hidden_size)
-        avg_q = torch.mean(flatten_q, dim=1)
-        # (batch_size, steps, num_channels * hidden_size)
-        max_q = torch.max(flatten_q, dim=1)[0]
-        # (batch_size, steps, num_channels * hidden_size)
-        addtive_q = torch.transpose(
-                        self.pool_batch_norm(
-                        # (batch_size, num_channels * hidden_size, steps)
-                        torch.transpose(avg_q + max_q, 1, 2)
-                        ), 1, 2
-                    )
         # (num_channels, batch_size, steps, hidden_size)
-        y = torch.permute(
-            # (batch_size, steps, num_channels, hidden_size)
-            torch.reshape(addtive_q, (q.size(0), -1, self.num_channels, self.hidden_size)),
-            (2, 0, 1, 3)
-        )
+        y = torch.transpose(self.global2local(flatten_q), 0, 1)
         return y
     
     def forward(self, x, **kwargs):

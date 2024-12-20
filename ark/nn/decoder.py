@@ -39,9 +39,8 @@ class ArkDecoder(nn.Module):
 
         :return: 解码结果，形状为 (batch_size, steps, hidden_size)
         """
-        x = x.permute(1, 2, 0, 3).reshape(x.shape[1], x.shape[2], -1)
         for cwt_layer in self.channel_wise_transformer_layers:
-            # (batch_size, steps, hidden_size * num_channels)
+            # (num_channels, batch_size, steps, hidden_size)
             x = cwt_layer(x, **kwargs)
 
         # (batch_size, steps, hidden_size)

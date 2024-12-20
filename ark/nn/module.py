@@ -2,6 +2,7 @@ from typing import List, Union
 
 import torch
 from torch import nn
+from torch.nn import functional as F
 
 from ark.utils import use_device
 from ark.nn.trainer import Trainer
@@ -99,7 +100,7 @@ class Ark(Trainer):
         # masks (batch_size, steps)
         y, masks = self.encoder(x, masks, **kwargs)
         # y     (batch_size, steps, hidden_size)
-        y = self.decoder(y, memory_key_padding_mask=masks, **kwargs)
+        y = self.decoder(y, memory_key_padding_mask=masks)
         if self.output_layer is not None:
             y = self.output_layer(y, **kwargs)
         return y
@@ -113,7 +114,7 @@ class ArkClassifier(nn.Module):
         self.query = nn.Parameter(torch.empty(size=(1, 1, hidden_size), device=self.device))
         nn.init.xavier_normal_(self.query)
         self.fusion = nn.TransformerDecoderLayer(d_model=hidden_size, 
-                                                 num_heads=num_heads, 
+                                                 nhead=num_heads, 
                                                  dim_feedforward=hidden_size*4, 
                                                  dropout=dropout, 
                                                  batch_first=True, 
@@ -129,7 +130,7 @@ class ArkClassifier(nn.Module):
         :return: (batch_size, num_classes)
         """
         query = self.query.repeat(x.shape[0], 1, 1)
-        x = self.fusion(query, x, **kwargs).squeeze(1)
+        x = self.fusion(F.dropout(query, p=0.2, training=self.training), x, **kwargs).squeeze(1)
         return self.classifier(x)
 
 

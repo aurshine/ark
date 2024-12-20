@@ -1,4 +1,4 @@
-from typing import List, Dict, Union, Any
+from typing import List, Dict, Union, Any, Optional
 
 import torch
 import pandas as pd
@@ -36,7 +36,7 @@ def collate_dict(batch_datas: List[Dict[str, Union[Dict, torch.Tensor, Any]]]) -
 
 
 class ArkDataSet(Dataset):
-    def __init__(self, texts: List[str], labels: torch.Tensor, tokenizer: Tokenizer, max_length=128, device=None):
+    def __init__(self, texts: List[str], labels: Optional[torch.Tensor], tokenizer: Tokenizer, max_length=128, device=None):
         """
         ArkDataSet 类用于处理文本数据集，包括数据集的读取、预处理、tokenizing等。
 
@@ -73,7 +73,7 @@ class ArkDataSet(Dataset):
         # 文本
         text = self.texts[index]
         # 标签
-        label = self.labels[index]
+        label = None if self.labels is None else self.labels[index]
 
         # 声母
         initial = translate_piny(text, Style.INITIALS)
@@ -85,7 +85,7 @@ class ArkDataSet(Dataset):
             'source_tokens': self.tokenizer.encode(text=text, device=self.device),
             'initial_tokens': self.tokenizer.encode(text=initial, device=self.device),
             'final_tokens': self.tokenizer.encode(text=final, device=self.device),
-            'label': label.to(self.device)
+            'label': None if label is None else label.to(self.device)
         }
 
         return item
@@ -177,7 +177,7 @@ class ArkPretrainDataSet(Dataset):
 
 
 def get_ark_loader(texts: List[str],
-                   labels: torch.Tensor,
+                   labels: Optional[torch.Tensor],
                    tokenizer,
                    max_length: int,
                    batch_size: int = 32,

@@ -1,5 +1,6 @@
 import random
 from typing import Sequence, List, Union
+from functools import lru_cache
 
 from pypinyin import lazy_pinyin, Style, load_phrases_dict
 
@@ -21,7 +22,7 @@ EXTEND_PINY = {
 
 load_phrases_dict(EXTEND_PINY)
 
-
+@lru_cache(maxsize=10000)
 def translate_piny(inputs: Union[str, Sequence[str]], style=None) -> Union[List[str], List[List[str]]]:
     """文本翻译拼音
 

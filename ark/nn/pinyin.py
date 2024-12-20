@@ -1,10 +1,10 @@
 import random
-from typing import Sequence, List, Union
+from typing import List, Union
 from functools import lru_cache
 
 from pypinyin import lazy_pinyin, Style, load_phrases_dict
 
-from ark.setting import COMMON_CHAR_PATH
+from ..setting import COMMON_CHAR_PATH
 
 
 EXTEND_PINY = {

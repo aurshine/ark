@@ -4,10 +4,10 @@ import torch
 import pandas as pd
 from torch.utils.data import DataLoader, Dataset
 
-from ark.utils import use_device
-from ark.nn.pinyin import translate_piny, translate_char, Style
-from ark.nn.text_process import token_random_mask
-from ark.nn.tokenizer import Tokenizer
+from ..utils import use_device
+from ..nn.pinyin import translate_piny, translate_char, Style
+from ..nn.text_process import token_random_mask
+from ..nn.tokenizer import Tokenizer
 
 
 def collate_dict(batch_datas: List[Dict[str, Union[Dict, torch.Tensor, Any]]]) -> Dict[str, Union[dict, torch.Tensor]]:

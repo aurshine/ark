@@ -2,14 +2,15 @@ import os
 
 from sklearn.model_selection import train_test_split
 
-from ark.utils import use_device, all_metrics
-from ark.setting import PRETRAIN_TOKENIZER_PATH, DATASET_PATH, PRETRAIN_DATASET_PATH
-from ark.data.load import load
-from ark.data.dataloader import get_ark_loader, get_ark_pretrain_loader
-from ark.nn.accuracy import Plot
-from ark.nn.pretrain_loss import InitialFinalLoss
-from ark.nn.tokenizer import Tokenizer
-from ark.nn.module import Ark, ArkClassifier, ArkBertPretrain
+from .data.load import load
+from .data.dataloader import get_ark_loader, get_ark_pretrain_loader
+from .nn.accuracy import Plot
+from .nn.pretrain_loss import InitialFinalLoss
+from .nn.tokenizer import Tokenizer
+from .nn.module import Ark, ArkClassifier, ArkBertPretrain
+from .setting import PRETRAIN_TOKENIZER_PATH, DATASET_PATH, PRETRAIN_DATASET_PATH
+from .utils import use_device, all_metrics
+
 
 #################################################################################
 # 模型参数

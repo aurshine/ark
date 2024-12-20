@@ -3,7 +3,7 @@ from typing import List, Union
 import torch
 from torch import nn, Tensor
 
-from ark.utils import use_device
+from ..utils import use_device
 
 
 class Encoder(nn.Module):

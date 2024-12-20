@@ -2,8 +2,8 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from ark.nn.pinyin import translate_piny, Style
-from ark.nn.tokenizer import Tokenizer
+from .pinyin import translate_piny, Style
+from .tokenizer import Tokenizer
 
 
 class InitialFinalLoss(nn.CrossEntropyLoss):

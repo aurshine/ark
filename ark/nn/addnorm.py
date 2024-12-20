@@ -1,5 +1,6 @@
 from torch import nn
-from ark.utils import use_device
+
+from ..utils import use_device
 
 
 class AddNorm(nn.Module):

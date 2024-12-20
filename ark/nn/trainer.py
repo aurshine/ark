@@ -8,8 +8,8 @@ from torch import nn
 from torch.nn import init
 from torch.functional import F
 
-from ark.utils import date_prefix_filename, use_device, get_metrics_str, cpu_ts
-from ark.setting import TRAIN_RESULT_PATH
+from ..utils import date_prefix_filename, use_device, get_metrics_str, cpu_ts
+from ..setting import TRAIN_RESULT_PATH
 
 
 class Trainer(nn.Module):

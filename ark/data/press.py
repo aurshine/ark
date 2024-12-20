@@ -5,8 +5,8 @@ from typing import Dict, Iterable
 import pandas as pd
 import keyboard
 
-from ark.setting import TRAIN_RESULT_PATH, DATASET_PATH
-from ark.data.load import load
+from .load import load
+from ..setting import TRAIN_RESULT_PATH, DATASET_PATH
 
 def get_text(file_path: str):
     df = pd.read_csv(file_path, sep='\t')

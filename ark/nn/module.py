@@ -4,11 +4,11 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from ark.utils import use_device
-from ark.nn.trainer import Trainer
-from ark.nn.encoder import ArkEncoder
-from ark.nn.decoder import ArkDecoder
-from ark.nn.tokenizer import Tokenizer
+from ..utils import use_device
+from .trainer import Trainer
+from .encoder import ArkEncoder
+from .decoder import ArkDecoder
+from .tokenizer import Tokenizer
 
 
 def analyse(model: Trainer, inputs, classes: List[str]):

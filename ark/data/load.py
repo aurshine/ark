@@ -4,8 +4,8 @@ import torch
 import pandas as pd
 from numpy import int64 as np_int64
 
-from ark.setting import *
-from ark.utils import use_device
+from ..setting import *
+from ..utils import use_device
 
 
 CURRENT_FOLDER = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))

@@ -6,7 +6,7 @@ import shutil
 
 import torch
 
-from ark.setting import TRAIN_RESULT_PATH
+from .setting import TRAIN_RESULT_PATH
 
 
 def use_device(device: Union[int, str, torch.device, None] = 0):

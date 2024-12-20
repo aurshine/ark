@@ -2,7 +2,7 @@ from typing import Tuple, List, Union, Optional, Sequence, TypeVar
 
 import numpy as np
 
-from ark.nn.pinyin import translate_into_other_piny
+from .pinyin import translate_into_other_piny
 
 
 def data_augment_(texts: List[str], labels: List = None, choice_p: float = 0.2, mdf_p: float = 0.1) -> Tuple[List[str], Optional[List]]:

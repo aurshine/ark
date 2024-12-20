@@ -4,9 +4,9 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from ark.utils import use_device
-from ark.nn.addnorm import AddNorm
-from ark.nn.attention import cosine_similarity_attention, separate_heads, concat_heads
+from ..utils import use_device
+from .addnorm import AddNorm
+from .attention import cosine_similarity_attention, separate_heads, concat_heads
 
 
 class MultiLinear(nn.Module):

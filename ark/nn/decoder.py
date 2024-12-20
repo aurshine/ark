@@ -1,8 +1,8 @@
 import torch
 from torch import nn
-from ark.utils import use_device
-from ark.nn.multi_layers import ChannelWiseTransformerLayer
 
+from .multi_layers import ChannelWiseTransformerLayer
+from ..utils import use_device
 
 class ArkDecoder(nn.Module):
     """

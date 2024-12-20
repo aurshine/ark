@@ -30,10 +30,6 @@ class Trainer(nn.Module):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.setLevel(logging.DEBUG)
 
-        for path in [self.checkpoint_path, self.log_path, self.sample_score_path]:
-            if not os.path.exists(path):
-                os.makedirs(path, exist_ok=True)
-
         # 初始化日志文件
         self._init_logger()
 
@@ -70,6 +66,8 @@ class Trainer(nn.Module):
 
         :return: 每轮训练的loss构成的列表, 验证集的真实标签, 每轮训练验证集的预测结果
         """
+        # 初始化文件夹
+        self._init_folder()
         # 初始化优化器
         optimizer = self._init_optimizer(optimizer, optim_params)
         # 初始化损失函数
@@ -112,6 +110,8 @@ class Trainer(nn.Module):
                      optim_params: Optional[Dict] = None,
                      loss=None,
                      ):
+        # 初始化文件夹
+        self._init_folder()
         # 初始化优化器
         optimizer = self._init_optimizer(optimizer, optim_params)
         # 初始化损失函数
@@ -379,6 +379,14 @@ class Trainer(nn.Module):
                 print(e)
                 sys.exit()
 
+    def _init_folder(self):
+        """
+        初始化文件夹
+        """
+        for path in [self.checkpoint_path, self.log_path, self.sample_score_path]:
+            if not os.path.exists(path):
+                os.makedirs(path, exist_ok=True)
+        
     def _init_logger(self):
         """
         初始化日志文件

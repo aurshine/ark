@@ -70,10 +70,6 @@ def ark(texts: List[str],
     :param texts: 输入文本列表
 
     :param batch_size: 批处理大小
-
-    :param initials: 输入文本的声母列表,如果为None则自动转换为声母
-    
-    :param finals: 输入文本的韵母列表,如果为None则自动转换为韵母
     
     :param ark_pth: Ark模型的路径,如果为None则使用默认模型
 

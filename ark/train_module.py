@@ -16,7 +16,7 @@ from .utils import use_device, all_metrics
 # 模型参数
 HIDDEN_SIZE = 256                                       # 隐藏层大小
 
-NUM_HEADS = 32                                          # 多头注意力头数
+NUM_HEADS = 16                                          # 多头注意力头数
 
 NUM_LAYER = 8                                           # 解码器层数
 

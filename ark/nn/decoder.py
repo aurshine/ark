@@ -42,6 +42,13 @@ class ArkDecoder(nn.Module):
         for cwt_layer in self.channel_wise_transformer_layers:
             # (num_channels, batch_size, steps, hidden_size)
             x = cwt_layer(x, **kwargs)
+        
+        # (batch_size, steps, num_channels * hidden_size)
+        x = torch.reshape(
+            # (batch_size, steps, num_channels, hiddem_size)
+            torch.permute(x, (1, 2, 0, 3)),
+            (x.size(1), x.size(2), -1)
+        )
 
         # (batch_size, steps, hidden_size)
         y = self.dim_reduce(x)

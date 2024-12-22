@@ -30,9 +30,6 @@ class Trainer(nn.Module):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.setLevel(logging.DEBUG)
 
-        # 初始化日志文件
-        self._init_logger()
-
     def forward(self, inputs, *args, **kwargs):
         raise NotImplementedError
 
@@ -67,7 +64,7 @@ class Trainer(nn.Module):
         :return: 每轮训练的loss构成的列表, 验证集的真实标签, 每轮训练验证集的预测结果
         """
         # 初始化文件夹
-        self._init_folder()
+        self._init_fit()
         # 初始化优化器
         optimizer = self._init_optimizer(optimizer, optim_params)
         # 初始化损失函数
@@ -111,7 +108,7 @@ class Trainer(nn.Module):
                      loss=None,
                      ):
         # 初始化文件夹
-        self._init_folder()
+        self._init_fit()
         # 初始化优化器
         optimizer = self._init_optimizer(optimizer, optim_params)
         # 初始化损失函数
@@ -414,6 +411,10 @@ class Trainer(nn.Module):
         info_handler.setLevel(logging.INFO)
         info_handler.setFormatter(log_fmt)
         self.logger.addHandler(info_handler)
+
+    def _init_fit(self):
+        self._init_folder()
+        self._init_logger()
 
     def _to_device(self, ts: Union[torch.Tensor, List[torch.Tensor]]):
         if isinstance(ts, list):

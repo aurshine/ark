@@ -108,6 +108,16 @@
 
 ## 三. $ark$的训练结果与数据
 
+### 1. 数据集
+
+| 训练集 | 测试集 |
+| ------ | ------ |
+| 65291  | 7255   |
+
+
+
+### 2. 训练日志
+
 ```txt
 Epoch 1, Train A Epoch Total Loss: 478.0040
 Epoch 1, Accuracy  0.846695, Precision  0.844362, recall  0.812835, FPR  0.125046, F1-score  0.828298
@@ -229,6 +239,10 @@ Epoch 20, Accuracy  0.886932, Precision  0.880390, recall  0.869600, FPR  0.0986
 Epoch: 20, ValidMetrics:
 Epoch 20, Accuracy  0.867264, Precision  0.882371, recall  0.833237, FPR  0.101610, F1-score  0.857100
 ```
+
+
+
+### 3. 训练图像
 
 ![](img\loss.png)
 

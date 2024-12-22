@@ -376,6 +376,7 @@ class ChannelWiseTransformerLayer(nn.Module):
         q, kv = self._raw2q(x), self._raw2kv(x)
         # (batch_size, num_channels * steps, num_channels * hidden_size)
         repeat_q = q.repeat_interleave(self.num_channels, dim=-1)
+        # repeat_q = q.repeat(1, 1, self.num_channels)
         # (batch_size, num_channels * steps, num_channels * hidden_size)
         o = self.channel_wise_layers(repeat_q, kv, **kwargs)
         # (num_channels, batch_size, steps, hidden_size)

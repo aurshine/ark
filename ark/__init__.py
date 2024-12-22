@@ -10,7 +10,7 @@ from .utils import *
 # Ark模型
 __ark__ = None
 # Ark保存模型路径
-__ark_pth__ = None
+__ark_pth__ = os.path.join(os.path.dirname(__file__), 'ark1.pth')
 # Ark运行设备
 __ark_device__ = use_device()
 

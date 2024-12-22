@@ -37,6 +37,10 @@ STOP_LOSS_VALUE = 0.1                                  # 最小停止损失值
 
 OPTIMIZER_PARAMS = {'lr': 1e-4, 'weight_decay': 1e-5}  # 优化器参数(学习率、权重衰减)
 
+RANDOM_SEED = 42                                       # 随机种子
+
+TEST_SIZE = 0.1                                        # 训练集验证集划分比例
+
 TOKENIZER = Tokenizer(PRETRAIN_TOKENIZER_PATH, STEPS)  # 预训练tokenizer
 #################################################################################
 
@@ -64,7 +68,7 @@ def train(model_path=None, pretrain_model_path=None, device=None):
     }
 
     texts, labels = load(os.path.join(DATASET_PATH, 'all_data'))
-    train_texts, valid_texts, train_labels, valid_labels = train_test_split(texts, labels, test_size=0.2, random_state=42)
+    train_texts, valid_texts, train_labels, valid_labels = train_test_split(texts, labels, test_size=TEST_SIZE, random_state=RANDOM_SEED)
 
     # 构造数据加载器
     train_loader = get_ark_loader(train_texts, train_labels, **loader_kwargs)

@@ -310,7 +310,7 @@ class ChannelWiseTransformerLayer(nn.Module):
         self.hidden_size = hidden_size
         
         self.channel_wise_layers = nn.TransformerDecoderLayer(d_model=hidden_size * num_channels, 
-                                                              nhead=num_heads, 
+                                                              nhead=num_heads * num_channels, 
                                                               dim_feedforward=hidden_size * num_channels,
                                                               batch_first=True,
                                                               dropout=dropout,

@@ -97,17 +97,15 @@ class ArkClassifier(nn.Module):
     def __init__(self, hidden_size, num_classes, num_heads, dropout=0, device=None):
         super(ArkClassifier, self).__init__()
         self.device = use_device(device)
-
-        self.query = nn.Parameter(torch.empty(size=(1, 1, hidden_size), device=self.device))
-        nn.init.xavier_normal_(self.query)
         self.fusion = nn.TransformerDecoderLayer(d_model=hidden_size, 
                                                  nhead=num_heads, 
                                                  dim_feedforward=hidden_size*4, 
                                                  dropout=dropout, 
                                                  batch_first=True, 
                                                  device=self.device)
-        self.classifier = nn.Linear(hidden_size, num_classes, device=self.device)
+        self.ln = nn.LayerNorm(hidden_size, device=self.device)
         self.dropout = nn.Dropout(dropout)
+        self.cls = nn.Linear(hidden_size, num_classes, device=self.device)
 
     def forward(self, x, **kwargs):
         """
@@ -117,9 +115,16 @@ class ArkClassifier(nn.Module):
 
         :return: (batch_size, num_classes)
         """
-        query = self.query.repeat(x.shape[0], 1, 1)
-        x = self.fusion(self.dropout(query), x, **kwargs).squeeze(1)
-        return self.classifier(x)
+        # (batch_size, 1, hidden_size)
+        avg_x, max_x = torch.mean(x, dim=1, keepdim=True), torch.max(x, dim=1, keepdim=True)[0]
+        # (batch_size, 1, hidden_size)
+        add_x = self.dropout(self.ln(avg_x + max_x))
+        # (batch_size, 1, hidden_size)
+        y = self.fusion(add_x, x, **kwargs)
+        # (batch_size, num_classes)
+        y = self.cls(y.squeeze(1))
+        return y
+        
 
 
 class ArkBertPretrain(nn.Module):

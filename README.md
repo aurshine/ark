@@ -8,7 +8,7 @@ ark主要采用注意力机制训练，并使用多特征交叉学习的方式�
 
 # 安装
 
-要求python3.9及以上
+要求**python3.9**及以上
 
 ### github
 
@@ -30,6 +30,16 @@ train()
 # pre_train()
 ```
 
+1. 在**./ark/train_module.py**下可配置模型参数和训练参数
+    ![](img\train_config.png)
+    ![](img\model_config.png)
+2. 在**./ark/data/DATASET/all_data**下可添加自己的**csv文件格式**训练集，csv头为`text    label`
+   ![](img\trainset.png)
+3. **train**函数签名
+    ![](img\train_def.png)
+4. **pre_train**函数签名
+    ![](img\pretrain_def.png)
+
 # 预测
 
 ```python
@@ -41,5 +51,8 @@ print(ark(['原神启动',
            '你是真没见过黑社会啊?三天之内杀了你'], device='cpu'))
 ```
 
+![](img/ark_def.png)
+
 # 详细
+
 见[ark详细设计](ark.md)

@@ -58,7 +58,7 @@ def _init_ark(ark_pth: str = None, device=None):
         __ark__.to(device)
         __ark_device__ = device
     
-def ark(texts: List[str],
+def ark(texts: Union[str, List[str]],
         batch_size: int = train_module.BATCH_SIZE,
         ark_pth: str = None,
         device=None

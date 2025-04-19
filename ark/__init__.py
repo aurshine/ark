@@ -87,6 +87,7 @@ def ark(texts: Union[str, List[str]],
     ark_loader = get_ark_loader(texts=texts, 
                                 labels=None, 
                                 tokenizer=__ark__.tokenizer,
+                                shuffle=False,
                                 max_length=train_module.STEPS,
                                 batch_size=batch_size, 
                                 device=device

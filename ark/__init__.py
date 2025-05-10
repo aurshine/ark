@@ -2,6 +2,7 @@ from typing import List
 
 from . import train_module
 from .data.dataloader import get_ark_loader
+from .data.load import load
 from .setting import *
 from .train_module import train, pre_train
 from .utils import *

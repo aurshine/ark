@@ -89,10 +89,10 @@ class Trainer(nn.Module):
             valid_trues.append(valid_true)
 
             is_stop = self._achieve_stop_condition(epoch + 1, stop_min_epoch, epoch_loss, stop_loss_value)
+            self.save_state_dict(os.path.join(self.checkpoint_path, f'epoch{epoch + 1}.pth'))
             if (epoch + 1) % 5 == 0 or is_stop:
                 self.logger.warning(f'Epoch: {epoch + 1}, ValidMetrics:')
                 self.logger.warning(get_metrics_str(epoch + 1, valid_result, valid_true))
-                self.save_state_dict(os.path.join(self.checkpoint_path, f'epoch{epoch + 1}.pth'))
                 if is_stop:
                     break
 

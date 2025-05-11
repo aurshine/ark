@@ -1,6 +1,6 @@
-# $ark$互联网恶意评论识别器
+# Ark
 
-## 一. $ark$出现的原因
+## 一. 互联网环境现状
 
 > 你能看出下面的评论是恶意评论吗?
 >
@@ -19,7 +19,7 @@
 
 ​		谐音字代替关键字的核心思想就是，通过换字的方式逃过审核时关键词检索，如**无斧又无木**实际上是说**无父又无母**，**初升**实际上说的**畜生**。这种方式简单粗暴，但往往简单的东西反而皮实，为了制服这种谐音字评论，原始的关键词检索只能不断扩充它的词表，但这种方式治标不治本，只要再换个谐音字，关键词检索就又失效了。
 
-![](img\你就是歌姬吧.png)
+<img src="img\你就是歌姬吧.png"/>
 
 ### 3. 语义复杂化
 
@@ -36,9 +36,34 @@
 * 在模型结构上，$ark$采用独特的**通道注意力机制**，每个单通道将会学到它与所有通道之间的关系。
 * $ark$的名字来源于诺亚方舟$(Noah's\ Ark)$，寓意是带领人们走出网络恶意的方舟。
 
+<div style="page-break-after:always"></div>
 
+## 二. 注意力机制
 
-## 二. $ark$的模型结构设计
+### 1. 注意力机制的来源
+
+注意力机制源于人类处理信息时**“有选择地关注重要部分”**的认知特点。我们在阅读一段文字或观察一幅图像时，并不会平均地分配注意力，而是更关注与当前任务相关的关键信息。将这一思想引入深度学习，便形成了注意力机制，其目的在于引导模型聚焦于输入信息中最相关的部分，从而提升处理复杂任务的能力。
+
+### 2. 注意力机制的原理
+
+注意力机制的核心思想在于构建一个“查询-键-值”（Query-Key-Value）三元组映射框架。给定一个查询向量（Query），系统会计算其与一组键（Key）之间的相似度得分，并据此对对应的值（Value）进行加权求和，最终生成上下文向量。
+
+$$
+\text{Attention}(Q, K, V) = \text{softmax} \left( \frac{QK^T}{\sqrt{d_k}} \right) V
+$$
+![](img/attention-output.svg)
+
+### 3. 多头注意力机制的原理
+
+传统的单一注意力机制虽然可以聚焦重要信息，但其表示能力受到限制，往往难以同时捕捉多个维度的关联特征。而多头注意力机制通过设置多个“注意力头”，让每个头以不同的方式理解输入内容，从多个角度提取信息。最终，这些不同头的结果会被合并在一起，使得模型获得更丰富、更全面的表示。
+
+![](img/multi-head-attention.svg)
+
+<div style="page-break-after:always"></div>
+
+## 三. $ark$的模型结构设计
+
+![](img/结构图.png)
 
 > $ark$主要由三大层组成
 
@@ -52,25 +77,25 @@
 
 ### 1. Embedding层
 
-> 每个词元可以被分为三个通道，分别代表**原词，拼音，声母**
-
 ![](img\token4channels.jpeg)
 
+> 每个词元可以被分为三个通道，分别代表**原词，拼音，声母**
+
+![](img\token2id2tensor.jpeg)
+
 > 每个词元可以用唯一ID表示，并可以根据ID转化为**词向量**
->
-> ![](img\token2id2tensor.jpeg)
->
+
+![](img\token4channel2tensor.jpeg)
+
 > 一个词元有多个通道，便有多个词向量表示不同维度的特征
->
-> ![](img\token4channel2tensor.jpeg)
->
+
+![](img\pos_encoding.png)
+
 > 为了保留位置信息，对词向量添加位置编码
->
-> ![](img\pos_encoding.jpeg)
->
+
+![](img\channel_encoding.png)
+
 > 为了保留通道信息，对词向量添加通道编码
->
-> ![](img\ch_encoding.jpeg)
 
 ### 2. 通道注意力层
 
@@ -78,7 +103,7 @@
 >
 > (2). 将多通道在句子长度的维度拼接得到**Q**$(批量大小, 通道数 \times 句子长度, 隐藏层大小)$ ，即**每个通道的每个词元都会在多头注意力机制里查询一次**
 >
-> ![](D:\编程语言学习代码存放处\Python-Hyper-Program\ARK\img\concat_step.jpeg)
+> <img src="img\concat_step.jpeg" style="zoom:80%;" />
 >
 > (3). 将多通道在隐藏层维度拼接得到**KV**$(批量大小, 句子长度，通道数 \times 隐藏层大小)$，即**每个词元此时都包含三通道的完整信息**
 >
@@ -89,6 +114,8 @@
 > ![](img\repeat_hidden.jpeg)
 >
 > (5). **Q**与**KV**进入$SelfAttention \rightarrow AddNorm \rightarrow multiHeadAttention \rightarrow AddNorm \rightarrow PositionWiseFFN$，得到结果O$(批量大小, 通道数 \times 句子长度, 通道数 \times 隐藏层大小)$
+>
+> <img src="img/calculate_weight.jpeg" style="zoom: 67%;" />
 >
 > (6). 将**O**展平为$(批量大小, 通道数, 句子长度, 通道数, 隐藏层大小)$
 >
@@ -102,153 +129,64 @@
 >
 > (2). 将**第0维度和第2维度**信息汇聚得到**GX**$(批量大小, 1, 隐藏层大小)$
 >
+> <img src="img/pool.jpeg" alt="image-20250510165448485" style="zoom:80%;" />
+>
 > (3). **GX**与**X**进入$SelfAttention \rightarrow AddNorm \rightarrow multiHeadAttention \rightarrow AddNorm \rightarrow PositionWiseFFN$，得到结果**PY**$(批量大小, 1, 隐藏层大小)$ 
+>
+> <img src="img/calculate_weight2.jpeg" style="zoom:80%;" />
 >
 > (4). **PY**进入线性层分类得到结果**Y**$(批量大小, 类别数)$
 
-## 三. $ark$的训练结果与数据
+<div style="page-break-after:always"></div>
 
-### 1. 数据集
+## 四. 训练结果
 
-| 训练集 | 测试集 |
-| ------ | ------ |
-| 65291  | 7255   |
+### 1. 数据集分布
 
+| 训练集 | 测试集 | 验证集 |
+| ------ | ------ | ------ |
+| 65291  | 7255   | 100    |
 
+### 2. 性能指标结果
 
-### 2. 训练日志
+模型训练 20 个 Epoch 后，在测试集上的表现如下：
 
-```txt
-Epoch 1, Train A Epoch Total Loss: 478.0040
-Epoch 1, Accuracy  0.846695, Precision  0.844362, recall  0.812835, FPR  0.125046, F1-score  0.828298
+| 指标      | 数值     |
+| --------- | -------- |
+| Accuracy  | 0.867264 |
+| Precision | 0.882371 |
+| Recall    | 0.833237 |
+| F1-score  | 0.857100 |
+| FPR       | 0.101610 |
 
-Epoch: 1, ValidMetrics:
-Epoch 1, Accuracy  0.852516, Precision  0.869844, recall  0.815526, FPR  0.113177, F1-score  0.841810
+可以看出，模型在整体准确率上达到了 86.73%，精确率和召回率分别为 88.24% 与 83.32%，在保持较低误报率的同时，实现了对恶意评论的较强识别能力。F1 值也达到了 0.857，说明模型在精度和覆盖率之间取得了良好的平衡。
 
-Epoch 2, Train A Epoch Total Loss: 469.8315
-Epoch 2, Accuracy  0.850049, Precision  0.847645, recall  0.817279, FPR  0.122601, F1-score  0.832185
+### 3. 混淆矩阵与 ROC 曲线（可视化）
 
-Epoch: 2, ValidMetrics:
-Epoch 2, Accuracy  0.853067, Precision  0.791934, recall  0.870675, FPR  0.159187, F1-score  0.829440
+<img src="img\cm.png" style="zoom: 33%;" />
 
-Epoch 3, Train A Epoch Total Loss: 465.2153
-Epoch 3, Accuracy  0.850233, Precision  0.844963, recall  0.821521, FPR  0.125804, F1-score  0.833077
+<img src="img\roc.png" style="zoom: 33%;" />
 
-Epoch: 3, ValidMetrics:
-Epoch 3, Accuracy  0.856651, Precision  0.795906, recall  0.875042, FPR  0.156148, F1-score  0.833600
+### 4. 其他模型对比
 
-Epoch 4, Train A Epoch Total Loss: 454.4017
-Epoch 4, Accuracy  0.857294, Precision  0.852299, recall  0.830174, FPR  0.120072, F1-score  0.841091
+| 模型名称                                    | 召回率 | 假阳率 | 准确率 | 精确率 |
+| ------------------------------------------- | ------ | ------ | ------ | ------ |
+| Ark                                         | 80%    | 22%    | 79%    | 78.43% |
+| Tabularisai/Multilingual-Sentiment-Analysis | 78%    | 62%    | 56%    | 54.41% |
+| SnowNLP                                     | 52%    | 34%    | 60%    | 60.47% |
+| 国内大语言模型                              | 100%   | 0%     | 100%   | 0%     |
 
-Epoch: 4, ValidMetrics:
-2Epoch 4, Accuracy  0.860786, Precision  0.821570, recall  0.863242, FPR  0.141063, F1-score  0.841891
+* Tabularisai/Multilingual-Sentiment-Analysis 为DistilBERT在多语言情感数据集上微调的模型，其设计旨在跨文化、跨语言场景中实现情感识别。然而，该模型在中文网络语料上表现一般，召回率尚可但误报率较高，导致整体准确率仅为56%。
 
-Epoch 5, Train A Epoch Total Loss: 447.3882
-Epoch 5, Accuracy  0.859346, Precision  0.857506, recall  0.828491, FPR  0.114902, F1-score  0.842749
+* SnowNLP 作为基于朴素贝叶斯算法构建的中文情感分析工具，结构简单，推理速度快，但在复杂情感识别任务中的表现较弱。其召回率仅为52%，说明漏检率较高，难以有效识别恶意评论。朴素贝叶斯方法对特征独立性假设依赖较强，难以捕捉上下文关联与语义模糊表达。
 
-Epoch: 5, ValidMetrics:
-Epoch 5, Accuracy  0.859821, Precision  0.860373, recall  0.834123, FPR  0.117814, F1-score  0.847045
+* 国内大语言模型，如DeepSeek、智普清言、豆包等。在本次测试中表现出绝对优势，各项指标均达最优。然而，其优秀表现主要归因于百亿级别的参数与训练数据，在实际部署中面临高成本与高延迟的问题，限制了其在轻量级应用中的可用性。此外，该类模型在情感分类任务中通常依赖提示词实现，其表现受Prompt设计影响显著，稳定性仍有待提高。
 
-Epoch 6, Train A Epoch Total Loss: 441.1767
-Epoch 6, Accuracy  0.861904, Precision  0.857217, recall  0.835628, FPR  0.116166, F1-score  0.846285
+综上所述，Ark模型在轻量化部署条件下保持了较好的准确率、召回率与鲁棒性，相比其他模型在实用性与性能间实现了较优的权衡。
 
-Epoch: 6, ValidMetrics:
-Epoch 6, Accuracy  0.864921, Precision  0.859151, recall  0.844191, FPR  0.117482, F1-score  0.851605
+<div style="page-break-after:always"></div>
 
-Epoch 7, Train A Epoch Total Loss: 434.3322
-Epoch 7, Accuracy  0.863283, Precision  0.860715, recall  0.834517, FPR  0.112710, F1-score  0.847414
-
-Epoch: 7, ValidMetrics:
-Epoch 7, Accuracy  0.863680, Precision  0.871372, recall  0.833918, FPR  0.109778, F1-score  0.852234
-
-Epoch 8, Train A Epoch Total Loss: 427.4127
-Epoch 8, Accuracy  0.865504, Precision  0.857827, recall  0.844281, FPR  0.116784, F1-score  0.851000
-
-Epoch: 8, ValidMetrics:
-Epoch 8, Accuracy  0.862440, Precision  0.869844, recall  0.832700, FPR  0.111053, F1-score  0.850867
-
-Epoch 9, Train A Epoch Total Loss: 417.9241
-Epoch 9, Accuracy  0.868873, Precision  0.865062, recall  0.843305, FPR  0.109787, F1-score  0.854045
-
-Epoch: 9, ValidMetrics:
-Epoch 9, Accuracy  0.860372, Precision  0.888176, recall  0.817952, FPR  0.098892, F1-score  0.851619
-
-Epoch 10, Train A Epoch Total Loss: 416.1656
-Epoch 10, Accuracy  0.871125, Precision  0.864766, recall  0.849567, FPR  0.110883, F1-score  0.857099
-
-Epoch: 10, ValidMetrics:
-Epoch 10, Accuracy  0.866023, Precision  0.848152, recall  0.853891, FPR  0.124126, F1-score  0.851012
-
-Epoch 11, Train A Epoch Total Loss: 412.2815
-Epoch 11, Accuracy  0.870926, Precision  0.866869, recall  0.846234, FPR  0.108467, F1-score  0.856427
-
-Epoch: 11, ValidMetrics:
-Epoch 11, Accuracy  0.866437, Precision  0.853346, recall  0.851005, FPR  0.120816, F1-score  0.852174
-
-Epoch 12, Train A Epoch Total Loss: 405.4339
-Epoch 12, Accuracy  0.876333, Precision  0.871917, recall  0.853540, FPR  0.104645, F1-score  0.862631
-
-Epoch: 12, ValidMetrics:
-Epoch 12, Accuracy  0.866437, Precision  0.825542, recall  0.871613, FPR  0.137425, F1-score  0.847952
-
-Epoch 13, Train A Epoch Total Loss: 397.2579
-Epoch 13, Accuracy  0.876424, Precision  0.869479, recall  0.857008, FPR  0.107371, F1-score  0.863199
-
-Epoch: 13, ValidMetrics:
-Epoch 13, Accuracy  0.867677, Precision  0.852429, recall  0.853994, FPR  0.121113, F1-score  0.853211
-
-Epoch 14, Train A Epoch Total Loss: 392.8095
-Epoch 14, Accuracy  0.879151, Precision  0.872519, recall  0.860005, FPR  0.104870, F1-score  0.866217
-
-Epoch: 14, ValidMetrics:
-Epoch 14, Accuracy  0.869745, Precision  0.865872, recall  0.848503, FPR  0.112133, F1-score  0.857100
-
-Epoch 15, Train A Epoch Total Loss: 387.2073
-Epoch 15, Accuracy  0.880637, Precision  0.874240, recall  0.861553, FPR  0.103437, F1-score  0.867850
-
-Epoch: 15, ValidMetrics:
-Epoch 15, Accuracy  0.861199, Precision  0.888482, recall  0.819155, FPR  0.098516, F1-score  0.852411
-
-Epoch 16, Train A Epoch Total Loss: 380.1710
-Epoch 16, Accuracy  0.884313, Precision  0.876308, recall  0.868254, FPR  0.102285, F1-score  0.872262
-
-Epoch: 16, ValidMetrics:
-Epoch 16, Accuracy  0.867126, Precision  0.863123, recall  0.845555, FPR  0.114461, F1-score  0.854249
-
-Epoch 17, Train A Epoch Total Loss: 380.7224
-Epoch 17, Accuracy  0.883531, Precision  0.879374, recall  0.862261, FPR  0.098716, F1-score  0.870733
-
-Epoch: 17, ValidMetrics:
-Epoch 17, Accuracy  0.865472, Precision  0.868622, recall  0.838891, FPR  0.111226, F1-score  0.853497
-
-Epoch 18, Train A Epoch Total Loss: 373.4108
-Epoch 18, Accuracy  0.885354, Precision  0.879475, recall  0.866772, FPR  0.099137, F1-score  0.873078
-
-Epoch: 18, ValidMetrics:
-Epoch 18, Accuracy  0.867402, Precision  0.813932, recall  0.882996, FPR  0.143700, F1-score  0.847059
-
-Epoch 19, Train A Epoch Total Loss: 366.7032
-Epoch 19, Accuracy  0.887989, Precision  0.879664, recall  0.873237, FPR  0.099699, F1-score  0.876438
-
-Epoch: 19, ValidMetrics:
-Epoch 19, Accuracy  0.869056, Precision  0.868928, recall  0.845171, FPR  0.110283, F1-score  0.856885
-
-Epoch 20, Train A Epoch Total Loss: 367.8412
-Epoch 20, Accuracy  0.886932, Precision  0.880390, recall  0.869600, FPR  0.098603, F1-score  0.874962
-
-Epoch: 20, ValidMetrics:
-Epoch 20, Accuracy  0.867264, Precision  0.882371, recall  0.833237, FPR  0.101610, F1-score  0.857100
-```
-
-
-
-### 3. 训练图像
-
-![](img\loss.png)
-
-![](img\validation.png)
-
-## 四. $ark$的不足
+## 五. $ark$的不足
 
 1. $ark$的数据集$(7w+)$仍需要完善，数据面不够涵盖多方面的知识，好的数据集仍然是好模型的基础
 2. $ark$的上下文只支持$128$，对于长序列$ark$暂时无法支持
